@@ -119,6 +119,7 @@ const GlobeIcon = () => (
 
 // ── CTA configuration ─────────────────────────────────────────────────────────
 function ctaConfig(uiState, hasAccess, game, dl, busy) {
+  if (game?.comingSoon) return { label: "Coming Soon on Rload", variant: "comingsoon", action: null, icon: null, disabled: true };
   if (!hasAccess) return { label: "Subscribe to Play", variant: "subscribe", action: "subscribe", icon: null, disabled: false };
   switch (uiState) {
     case UI.DOWNLOADING: {
@@ -144,13 +145,14 @@ function ctaConfig(uiState, hasAccess, game, dl, busy) {
 }
 
 const CTA_STYLES = {
-  subscribe: { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
-  install:   { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
-  play:      { background: T.greenGrad,  color: "#fff", boxShadow: T.greenGlow },
-  update:    { background: T.orangeGrad, color: "#fff", boxShadow: T.orangeGlow },
-  progress:  { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
-  paused:    { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
-  running:   { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
+  subscribe:  { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
+  install:    { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
+  play:       { background: T.greenGrad,  color: "#fff", boxShadow: T.greenGlow },
+  update:     { background: T.orangeGrad, color: "#fff", boxShadow: T.orangeGlow },
+  progress:   { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
+  paused:     { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
+  running:    { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
+  comingsoon: { background: "transparent", color: T.textMuted, boxShadow: "none", border: `1px solid ${T.border}` },
 };
 
 // ── ProgressBar ───────────────────────────────────────────────────────────────
@@ -258,14 +260,25 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
           <BackIcon/> Library
         </button>
 
-        <div style={{
-          padding: "5px 14px", borderRadius: T.radiusPill,
-          background: "rgba(123,66,246,0.2)", backdropFilter: "blur(12px)",
-          border: "1px solid rgba(123,66,246,0.4)",
-          fontSize: 11, fontWeight: 600, color: T.brandLight, letterSpacing: "0.04em",
-        }}>
-          Available with Rload
-        </div>
+        {game.comingSoon ? (
+          <div style={{
+            padding: "5px 14px", borderRadius: T.radiusPill,
+            background: "rgba(251,146,60,0.15)", backdropFilter: "blur(12px)",
+            border: "1px solid rgba(251,146,60,0.35)",
+            fontSize: 11, fontWeight: 600, color: T.orange, letterSpacing: "0.04em",
+          }}>
+            Coming Soon
+          </div>
+        ) : (
+          <div style={{
+            padding: "5px 14px", borderRadius: T.radiusPill,
+            background: "rgba(123,66,246,0.2)", backdropFilter: "blur(12px)",
+            border: "1px solid rgba(123,66,246,0.4)",
+            fontSize: 11, fontWeight: 600, color: T.brandLight, letterSpacing: "0.04em",
+          }}>
+            Available with Rload
+          </div>
+        )}
       </div>
 
       {/* Main content row */}
@@ -366,7 +379,7 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
               padding: "13px 28px", borderRadius: T.radiusSm,
               fontSize: 15, fontWeight: 700, fontFamily: T.fontBody,
               cursor: cfg.disabled ? "not-allowed" : "pointer",
-              opacity: cfg.disabled ? 0.65 : 1,
+              opacity: cfg.disabled ? (cfg.variant === "comingsoon" ? 1 : 0.65) : 1,
               border: "none", transition: "all 0.18s",
               ...ctaStyle,
             }}
