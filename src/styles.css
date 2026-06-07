@@ -1,0 +1,239 @@
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ── */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: linear-gradient(160deg, #121029 0%, #0d0b1f 60%, #100e24 100%);
+  color: #e8e8e8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Layout ── */
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: 0.02em;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #222;
+  margin: 32px 0;
+}
+
+/* ── Banner ── */
+.banner-desktop {
+  background: #1a1400;
+  border: 1px solid #5a4200;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  color: #e0b030;
+  font-size: 13px;
+}
+
+/* ── Card ── */
+.card {
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.game-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.game-meta {
+  color: #666;
+  font-size: 13px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.card-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #555;
+}
+
+/* ── Buttons ── */
+button {
+  padding: 7px 14px;
+  border-radius: 7px;
+  border: none;
+  background: #3a7bd5;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button:hover:not(:disabled) {
+  background: #4a8be5;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+button.btn-secondary {
+  background: #282828;
+  color: #ccc;
+  border: 1px solid #333;
+}
+
+button.btn-secondary:hover:not(:disabled) {
+  background: #333;
+}
+
+/* ── Badges ── */
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-ok       { background: #0d2e0d; color: #4caf50; }
+.badge-progress { background: #0d1e2e; color: #42a5f5; }
+.badge-warn     { background: #2e1e00; color: #ffa726; }
+.badge-err      { background: #2e0d0d; color: #ef5350; }
+
+/* ── Progress bar ── */
+.progress-track {
+  position: relative;
+  height: 8px;
+  background: #242424;
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3a7bd5;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: #aaa;
+  line-height: 1;
+}
+
+.progress-bytes {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #555;
+}
+
+/* ── Result box ── */
+.result-box {
+  background: #0b0b0b;
+  color: #a8e6a8;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: "Cascadia Code", "Fira Mono", monospace;
+  overflow-x: auto;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── Smoke section ── */
+.smoke-section {
+  background: #111;
+  border: 1px dashed #333;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.smoke-meta {
+  font-size: 12px;
+  color: #555;
+  font-family: monospace;
+  margin-bottom: 10px;
+}
+
+/* ── Misc ── */
+.err-text { color: #ef5350; margin-bottom: 12px; }
+.muted    { color: #555; }
+
+/* ── Hide scrollbar globally (Electron — no OS scroll chrome) ── */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; }
+
+/* ── Hide scrollbar utility class (kept for explicit use) ── */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── Smooth scrolling ── */
+html, body { scroll-behavior: smooth; }
+
+/* ── Skeleton shimmer (global — available on all pages) ── */
+@keyframes rl-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.rl-sk {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 800px 100%;
+  animation: rl-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Focus-visible — brand-colored outline, no default browser ring ── */
+* { outline: none; }
+*:focus-visible {
+  outline: 2px solid rgba(123,66,246,0.75);
+  outline-offset: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(123,66,246,0.10);
+}
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(123,66,246,0.75);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(123,66,246,0.10);
+}
