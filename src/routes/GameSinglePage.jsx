@@ -390,7 +390,7 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
               {cfg.label}
             </button>
 
-            {uiState === UI.UPDATE_AVAILABLE && (
+            {uiState === UI.UPDATE_AVAILABLE && hasAccess && (
               <button onClick={onPlay} style={{
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "12px 20px", borderRadius: T.radiusSm,

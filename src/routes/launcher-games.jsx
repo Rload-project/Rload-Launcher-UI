@@ -854,7 +854,7 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // GameDetailPanel — right panel
 // ─────────────────────────────────────────────────────────────────────────────
-function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose }) {
+function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose }) {
   const pct      = clamp(dl?.percent??0, 0, 100);
   const hasUrl   = !!(game.downloadUrl||game.url);
   const bytesDown  = Number.isFinite(dl?.bytesDownloaded) ? dl.bytesDownloaded : 0;
@@ -932,17 +932,22 @@ function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, err
         {showInstall&&!hasUrl && <div style={{ fontSize:12, color:T.orange, marginBottom:12 }}>No download URL configured.</div>}
         {/* Actions */}
         <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
-          {showPlay && (
+          {!hasAccess && (showPlay || showInstall || showUpdate) && (
+            <button onClick={()=>openExternal("https://rload.be/home#pricing")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
+              Subscribe to Play
+            </button>
+          )}
+          {showPlay && hasAccess && (
             <button onClick={onPlay} disabled={busy} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:busy?"not-allowed":"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Play/> Play Now
             </button>
           )}
-          {showInstall && (
+          {showInstall && hasAccess && (
             <button onClick={onInstall} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.borderBrand}`, background:"rgba(123,66,246,0.12)", color:T.text, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Download/> Install Game
             </button>
           )}
-          {showUpdate && (
+          {showUpdate && hasAccess && (
             <button onClick={onUpdate} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.blue2Border}`, background:T.blue2Bg, color:T.blue2Light, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Update/> Update
             </button>
@@ -3382,6 +3387,129 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+function LauncherInfoPage({ onBack }) {
+  const [info, setInfo]         = useState(null);
+  const [copied, setCopied]     = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const fetchInfo = useCallback(async () => {
+    try {
+      const diag = await window.rload?.updater?.getDiagnostics?.();
+      if (diag && !diag.error) setInfo(diag);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchInfo(); }, [fetchInfo]);
+
+  // Human-readable OS label derived from user agent (no sensitive data)
+  const osLabel = (() => {
+    try {
+      const m = navigator.userAgent.match(/Windows NT (\d+\.\d+)/);
+      if (m) {
+        const v = parseFloat(m[1]);
+        if (v >= 10) return "Windows 10 / 11";
+        if (v >= 6.3) return "Windows 8.1";
+        if (v >= 6.2) return "Windows 8";
+        return "Windows";
+      }
+    } catch {}
+    return "Windows";
+  })();
+
+  const STATUS_LABEL = {
+    idle:        "Up to date",
+    available:   "Update available",
+    downloading: "Downloading…",
+    downloaded:  "Ready to install",
+    checking:    "Checking…",
+    error:       "Error",
+  };
+  const STATUS_COLOR = {
+    idle:"#22c55e", available:"#fb923c", downloading:"#60a5fa",
+    downloaded:"#22c55e", checking:"#c084fc", error:"#f87171",
+  };
+
+  const copySupportInfo = () => {
+    if (!info) return;
+    const lines = [
+      `Rload Support Info`,
+      `──────────────────────────────────`,
+      `Launcher version:          v${info.currentVersion ?? "—"}`,
+      `Latest available version:  ${info.availableVersion ? `v${info.availableVersion}` : "Up to date"}`,
+      `Update status:             ${STATUS_LABEL[info.updateStatus] ?? info.updateStatus ?? "—"}`,
+      `Last update check:         ${info.lastCheckedAt ? new Date(info.lastCheckedAt).toLocaleString() : "Not yet"}`,
+      `Platform:                  Windows`,
+      `Installation type:         Standard Windows installer`,
+      `OS version:                ${osLabel}`,
+    ];
+    navigator.clipboard.writeText(lines.join("\n"))
+      .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2400); })
+      .catch(() => {});
+  };
+
+  const checkForUpdates = async () => {
+    setChecking(true);
+    try { await window.rload?.updater?.check?.(); await fetchInfo(); } catch {}
+    setChecking(false);
+  };
+
+  const Field = ({ label, value }) => (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>{label}</div>
+      <div style={{ padding: "9px 12px", borderRadius: T.radiusSm, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.border}`, fontSize: 12.5, color: T.text, fontFamily: T.fontBody }}>{value || "—"}</div>
+    </div>
+  );
+
+  const ActionBtn = ({ label, onClick, color, disabled }) => (
+    <button onClick={onClick} disabled={disabled}
+      style={{ flex: "1 1 auto", padding: "10px 14px", borderRadius: T.radiusSm, background: `${color}18`, border: `1px solid ${color}55`, color, fontSize: 12, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, fontFamily: T.fontBody, whiteSpace: "nowrap" }}>
+      {label}
+    </button>
+  );
+
+  const statusKey  = info?.updateStatus ?? "idle";
+  const statusColor = STATUS_COLOR[statusKey] || T.textMuted;
+  const statusLabel = STATUS_LABEL[statusKey] || statusKey;
+
+  return (
+    <SubPageShell title="Launcher Information" onBack={onBack}>
+      <div style={{ maxWidth: 420 }}>
+        {/* Primary actions */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+          <ActionBtn label={checking ? "Checking…" : "Check for Updates"} onClick={checkForUpdates} color={T.brand} disabled={checking}/>
+          <ActionBtn label={copied ? "Copied!" : "Copy Support Info"} onClick={copySupportInfo} color={copied ? T.green : T.textSub}/>
+        </div>
+        {/* Secondary action */}
+        <div style={{ marginBottom: 24 }}>
+          <ActionBtn label="Open Logs Folder" onClick={() => window.rload?.app?.openLogs?.()} color={T.textMuted}/>
+        </div>
+
+        {info ? (
+          <>
+            <Field label="Launcher Version"          value={`v${info.currentVersion}`}/>
+            <Field label="Latest Available Version"  value={info.availableVersion ? `v${info.availableVersion}` : "Up to date"}/>
+
+            {/* Status row with dot */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>Update Status</div>
+              <div style={{ padding: "9px 12px", borderRadius: T.radiusSm, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: statusColor, flexShrink: 0 }}/>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: statusColor }}>{statusLabel}</span>
+              </div>
+            </div>
+
+            <Field label="Last Update Check"  value={info.lastCheckedAt ? new Date(info.lastCheckedAt).toLocaleString() : "Not yet"}/>
+            <Field label="Installation Type"  value="Standard Windows installer"/>
+            <Field label="Platform"           value={`Windows · ${osLabel}`}/>
+          </>
+        ) : (
+          <div style={{ padding: 32, textAlign: "center", color: T.textDim, fontSize: 13 }}>Loading…</div>
+        )}
+      </div>
+    </SubPageShell>
+  );
+}
+
 function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLang }) {
   const [subPage, setSubPage] = useState(null);
   const [displayMode, setDisplayMode] = useState("dark");
@@ -3389,10 +3517,11 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
   const installed = games.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId]||UI.IDLE));
   const t = LANGS[lang] || LANGS.en;
 
-  if (subPage === "account")       return <AccountDetailsPage user={user} onBack={()=>setSubPage(null)}/>;
+  if (subPage === "account")        return <AccountDetailsPage user={user} onBack={()=>setSubPage(null)}/>;
   if (subPage === "notifications")  return <NotificationsPage onBack={()=>setSubPage(null)}/>;
   if (subPage === "language")       return <LanguagePage lang={lang} changeLang={changeLang} onBack={()=>setSubPage(null)}/>;
   if (subPage === "privacy")        return <PrivacyPage onBack={()=>setSubPage(null)}/>;
+  if (subPage === "launcher-info")  return <LauncherInfoPage onBack={()=>setSubPage(null)}/>;
 
   const username = user?.name || user?.email?.split("@")[0] || "User";
   const userInitial = username[0]?.toUpperCase() || "U";
@@ -3517,9 +3646,11 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
           </div>
 
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
-          <SettingsRow icon={Icon.Globe}     label={t.language}        onClick={()=>setSubPage("language")}/>
+          <SettingsRow icon={Icon.Globe}     label={t.language}           onClick={()=>setSubPage("language")}/>
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
-          <SettingsRow icon={Icon.Shield}    label={t.privacy}         onClick={()=>setSubPage("privacy")}/>
+          <SettingsRow icon={Icon.Shield}    label={t.privacy}            onClick={()=>setSubPage("privacy")}/>
+          <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
+          <SettingsRow icon={Icon.About}     label="Launcher Information" onClick={()=>setSubPage("launcher-info")}/>
         </div>
 
         {/* Sign out of all devices */}
@@ -3886,6 +4017,7 @@ export default function LauncherGames() {
     installedVersion: installedVersionByGame[selId] || null,
     error:            errByGame[selId],
     busy:             !!busyByGame[selId],
+    hasAccess:        subscriptionStatus?.hasAccess ?? false,
     onInstall:  ()=>handleInstall(selGame),
     onUpdate:   ()=>handleUpdate(selGame, installedVersionByGame[selId]||null),
     onPlay:     ()=>handlePlay(selGame),
