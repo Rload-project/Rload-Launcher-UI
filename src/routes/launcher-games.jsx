@@ -9,7 +9,7 @@ import {
   pauseDownload, resumeDownload, cancelDownload, uninstallGame, launchGame,
   subscribeDownloads, subscribeRunning, isUpdateAvailable,
   getSession, login, logout, subscribeSession, subscribeAuthError,
-  getSubscriptionStatus,
+  getSubscriptionStatus, subscribeSubscriptionRefresh,
 } from "../lib/rload";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -944,14 +944,6 @@ function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, err
             <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               Subscribe to Play
             </button>
-          )}
-          {!hasAccess && (showPlay || showInstall || showUpdate) && (
-            <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-              <div style={{ fontSize:11, color:T.textDim, textAlign:"center", lineHeight:1.5 }}>Already subscribed? Click below to refresh.</div>
-              <button onClick={doRefresh} disabled={refreshing} style={{ padding:"9px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:"transparent", color:T.textSub, cursor:refreshing?"not-allowed":"pointer", fontSize:12.5, fontFamily:T.fontBody, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
-                {refreshing ? "Checking…" : "↻ Refresh Access"}
-              </button>
-            </div>
           )}
           {showPlay && hasAccess && (
             <button onClick={onPlay} disabled={busy} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:busy?"not-allowed":"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
@@ -3774,6 +3766,22 @@ export default function LauncherGames() {
       setAuthBusy(false);
     });
     return () => { alive=false; unsub(); unsubErr(); };
+  }, []);
+
+  // ── Subscription refresh via rload://subscription-activated deep link ─────
+  useEffect(() => {
+    const unsub = subscribeSubscriptionRefresh(async () => {
+      const st = await getSubscriptionStatus();
+      setSubscriptionStatus(st);
+      // Retry once after 3 s to cover Stripe webhook processing delay
+      if (!st?.hasAccess) {
+        setTimeout(async () => {
+          const st2 = await getSubscriptionStatus();
+          setSubscriptionStatus(st2);
+        }, 3000);
+      }
+    });
+    return unsub;
   }, []);
 
   const handleSignIn  = useCallback(async () => {

@@ -392,3 +392,17 @@ export async function getSubscriptionStatus() {
   if (!a?.getSubscriptionStatus) return { hasAccess: false, subscriptionStatus: "none" };
   try { return await a.getSubscriptionStatus(); } catch { return { hasAccess: false, subscriptionStatus: "none" }; }
 }
+
+/**
+ * Subscribe to subscription refresh requests pushed by the main process.
+ * Fired when the user returns via rload://subscription-activated.
+ * @param {function} cb
+ * @returns {function} cleanup
+ */
+export function subscribeSubscriptionRefresh(cb) {
+  if (!hasRload()) return () => {};
+  const a = window.rload.auth;
+  if (!a?.onSubscriptionRefresh) return () => {};
+  const u = safeFn(() => a.onSubscriptionRefresh(() => cb?.()), null);
+  return typeof u === "function" ? u : () => {};
+}
