@@ -1,6 +1,7 @@
 // GameSinglePage.jsx — M4 enhanced game detail view
 // Layout: Hero (cover + metadata) → Screenshots → Why Play → About+Sidebar → Studio → More Games
-import React, { useState } from "react";
+
+import React, { useState, useRef, useEffect } from "react";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -195,12 +196,31 @@ function SectionHeading({ children, tight }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GAME HERO — cover art left, banner background, all key metadata
 // ═══════════════════════════════════════════════════════════════════════════════
-function GameHero({ game, uiState, dl, subscriptionStatus, busy,
-  onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onBack }) {
+function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, installedVersion,
+  onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onBack, onRefreshAccess, onUninstall }) {
 
-  const hasAccess = subscriptionStatus?.hasAccess ?? false;
+  const hasAccess = demoMode ? true : (subscriptionStatus?.hasAccess ?? false);
   const cfg       = ctaConfig(uiState, hasAccess, game, dl, busy);
   const ctaStyle  = CTA_STYLES[cfg.variant] || CTA_STYLES.install;
+  const [refreshing, setRefreshing] = useState(false);
+  async function doRefresh() {
+    if (refreshing || !onRefreshAccess) return;
+    setRefreshing(true);
+    try { await onRefreshAccess(); } finally { setRefreshing(false); }
+  }
+
+  const [uninstallArm, setUninstallArm] = useState(false);
+  const uninstallTimer = useRef(null);
+  function handleUninstallClick() {
+    if (uninstallArm) {
+      clearTimeout(uninstallTimer.current);
+      setUninstallArm(false);
+      onUninstall?.();
+    } else {
+      setUninstallArm(true);
+      uninstallTimer.current = setTimeout(() => setUninstallArm(false), 3000);
+    }
+  }
 
   const bannerSrc = game.banner || game.coverImage || game.thumbnail || game.coverUrl || null;
   const coverSrc  = game.coverImage || game.thumbnail || game.coverUrl || game.banner || null;
@@ -213,7 +233,10 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
   function handleCta() {
     if (cfg.disabled || !cfg.action) return;
     switch (cfg.action) {
-      case "subscribe": window.rload?.openExternal?.("https://rload.be/#pricing"); break;
+      case "subscribe":
+        if (!demoMode) { window.rload?.openExternal?.("https://rload.be/pricing?source=launcher"); }
+        else { console.warn("[RLOAD DEMO MODE] Subscribe redirect suppressed."); }
+        break;
       case "install":   onInstall?.(); break;
       case "play":      onPlay?.();    break;
       case "update":    onUpdate?.();  break;
@@ -390,6 +413,20 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
               {cfg.label}
             </button>
 
+            {cfg.variant === "subscribe" && onRefreshAccess && (
+              <button onClick={doRefresh} disabled={refreshing} style={{
+                padding: "12px 20px", borderRadius: T.radiusSm,
+                background: "rgba(255,255,255,0.05)", border: `1px solid ${T.border}`,
+                color: T.textSub, fontSize: 14, fontWeight: 500, fontFamily: T.fontBody,
+                cursor: refreshing ? "not-allowed" : "pointer", transition: "all 0.15s",
+              }}
+                onMouseEnter={e => { if (!refreshing) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+              >
+                {refreshing ? "Checking…" : "↻ Refresh Access"}
+              </button>
+            )}
+
             {uiState === UI.UPDATE_AVAILABLE && hasAccess && (
               <button onClick={onPlay} style={{
                 display: "flex", alignItems: "center", gap: 6,
@@ -418,10 +455,43 @@ function GameHero({ game, uiState, dl, subscriptionStatus, busy,
                 Cancel
               </button>
             )}
+
+            {[UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR].includes(uiState) && hasAccess && !game?.comingSoon && (
+              <button onClick={handleUninstallClick} disabled={busy} style={{
+                padding: "12px 16px", borderRadius: T.radiusSm,
+                background: uninstallArm ? "rgba(248,113,113,0.10)" : "transparent",
+                border: `1px solid ${uninstallArm ? "rgba(248,113,113,0.45)" : "rgba(248,113,113,0.22)"}`,
+                color: uninstallArm ? T.red : "rgba(248,113,113,0.55)",
+                fontSize: 13, cursor: busy ? "not-allowed" : "pointer",
+                fontFamily: T.fontBody, transition: "all 0.18s", whiteSpace: "nowrap",
+              }}
+                onMouseEnter={e => { if (!busy) { e.currentTarget.style.borderColor = "rgba(248,113,113,0.55)"; e.currentTarget.style.color = T.red; } }}
+                onMouseLeave={e => { if (!uninstallArm) { e.currentTarget.style.borderColor = "rgba(248,113,113,0.22)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; } }}
+              >
+                {uninstallArm ? "Confirm uninstall?" : "Uninstall"}
+              </button>
+            )}
           </div>
 
           <ProgressBar dl={dl} uiState={uiState}/>
+
+          {installedVersion && [UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.RUNNING].includes(uiState) && (
+            <div style={{ marginTop: 8, fontSize: 11, color: uiState === UI.UPDATE_AVAILABLE ? T.orange : T.green, display: "flex", alignItems: "center", gap: 5, opacity: 0.85 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              {uiState === UI.UPDATE_AVAILABLE
+                ? `v${installedVersion} installed · v${game.version} available`
+                : `v${installedVersion} installed`}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <style>{`@keyframes rload-scroll-hint{0%,100%{opacity:.3;transform:translateX(-50%) translateY(0)}50%{opacity:.6;transform:translateX(-50%) translateY(7px)}}`}</style>
+      <div style={{ position:"absolute", bottom:18, left:"50%", zIndex:3, pointerEvents:"none", animation:"rload-scroll-hint 2.4s ease-in-out infinite" }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
       </div>
     </div>
   );
@@ -626,7 +696,7 @@ function GameInfoGrid({ game }) {
   if (game.genres?.length)   cells.push({ label: "Genre",      value: game.genres.map(capitalize).join(", ") });
   if (game.ageRating)        cells.push({ label: "Age Rating", value: game.ageRating });
   if (game.languages?.length) cells.push({ label: "Languages", value: `${game.languages.length} supported` });
-  if (game.downloadSize)     { const s = humanBytes(game.downloadSize); if (s) cells.push({ label: "Download", value: s }); }
+  if (!game.comingSoon)      { const s = humanBytes(game.downloadSize); cells.push({ label: "Download", value: s || "—" }); }
   const platforms = game.platform?.length ? game.platform : ["Windows"];
   cells.push({ label: "Platform", value: platforms.join(", ") });
   if (game.tags?.length)     cells.push({ label: "Tags", value: game.tags.slice(0, 6).join(", ") });
@@ -816,7 +886,7 @@ function GameStudioBlock({ game, allGames }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // 7. MORE GAMES — full width, always at bottom
 // ═══════════════════════════════════════════════════════════════════════════════
-function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame }) {
+function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame, onViewAll }) {
   const related = (allGames || []).filter(g => g.gameId !== currentGameId).slice(0, 8);
   if (related.length === 0) return null;
 
@@ -834,9 +904,25 @@ function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame }) {
       borderTop: `1px solid ${T.border}`,
       marginTop: 8,
     }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 18 }}>
-        <SectionHeading tight>More Games</SectionHeading>
-        <span style={{ fontSize: 12, color: T.textDim }}>on Rload</span>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 18 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+          <SectionHeading tight>More Games</SectionHeading>
+          <span style={{ fontSize: 12, color: T.textDim }}>on Rload</span>
+        </div>
+        {onViewAll && (
+          <button onClick={onViewAll} style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "none", border: "none", cursor: "pointer",
+            fontSize: 12, color: T.textMuted, fontFamily: T.fontBody, padding: 0,
+            transition: "color 0.15s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.color = T.brandLight}
+            onMouseLeave={e => e.currentTarget.style.color = T.textMuted}
+          >
+            See all games
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        )}
       </div>
 
       <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
@@ -896,10 +982,32 @@ function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export function GameSinglePage({
   game, uiState, dl, resolvedExe, installedVersion,
-  subscriptionStatus, busy, error,
-  onInstall, onPlay, onUpdate, onPause, onResume, onCancel,
-  onBack, allGames, uiByGame, onSelectGame,
+  subscriptionStatus, demoMode, busy, error,
+  onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onUninstall,
+  onBack, allGames, uiByGame, onSelectGame, onRefreshAccess, onViewAllGames,
 }) {
+  const effectiveUiState = uiState || UI.IDLE;
+
+  const [uninstallToast, setUninstallToast] = useState(false);
+  const prevGameIdRef  = useRef(game?.gameId);
+  const prevUiStateRef = useRef(effectiveUiState);
+
+  useEffect(() => {
+    if (prevGameIdRef.current !== game?.gameId) {
+      prevGameIdRef.current  = game?.gameId;
+      prevUiStateRef.current = effectiveUiState;
+      return;
+    }
+    const prev = prevUiStateRef.current;
+    prevUiStateRef.current = effectiveUiState;
+    const wasInstalled = [UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR, UI.RUNNING].includes(prev);
+    if (wasInstalled && effectiveUiState === UI.IDLE) {
+      setUninstallToast(true);
+      const t = setTimeout(() => setUninstallToast(false), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [effectiveUiState, game?.gameId]);
+
   if (!game) {
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontFamily: T.fontBody }}>
@@ -908,7 +1016,6 @@ export function GameSinglePage({
     );
   }
 
-  const effectiveUiState = uiState || UI.IDLE;
   const hasContent = (game.screenshots?.length > 0) || game.featureCards?.length > 0
     || game.description || game.systemRequirements || game.trailer;
 
@@ -925,7 +1032,9 @@ export function GameSinglePage({
         game={game}
         uiState={effectiveUiState}
         dl={dl}
+        installedVersion={installedVersion}
         subscriptionStatus={subscriptionStatus}
+        demoMode={demoMode}
         busy={busy}
         onInstall={onInstall}
         onPlay={onPlay}
@@ -934,7 +1043,17 @@ export function GameSinglePage({
         onResume={onResume}
         onCancel={onCancel}
         onBack={onBack}
+        onRefreshAccess={onRefreshAccess}
+        onUninstall={onUninstall}
       />
+
+      {/* ── Uninstall success toast ───────────────────────────────────────── */}
+      {uninstallToast && (
+        <div style={{ margin: "12px 48px 0", padding: "10px 16px", borderRadius: T.radiusSm, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.28)", fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          {game.title} has been uninstalled successfully.
+        </div>
+      )}
 
       {/* ── Error notice ──────────────────────────────────────────────────── */}
       {error && (
@@ -943,8 +1062,15 @@ export function GameSinglePage({
         </div>
       )}
 
+      {/* ── INSTALLED_NO_EXE notice ───────────────────────────────────────── */}
+      {effectiveUiState === UI.INSTALLED_NO_EXE && (
+        <div style={{ margin: "12px 48px 0", padding: "10px 16px", borderRadius: T.radiusSm, background: "rgba(251,146,60,0.10)", border: "1px solid rgba(251,146,60,0.28)", fontSize: 13, color: T.orange }}>
+          Game is installed but the executable could not be found. Try uninstalling then reinstalling.
+        </div>
+      )}
+
       {/* ── Main content ──────────────────────────────────────────────────── */}
-      {hasContent && (
+      {hasContent ? (
         <div style={{ padding: "32px 48px 0" }}>
 
           {/* Full-width: Screenshots */}
@@ -980,6 +1106,11 @@ export function GameSinglePage({
 
           <div style={{ paddingBottom: 8 }}/>
         </div>
+      ) : (
+        <div style={{ margin: "40px 48px", padding: "32px", borderRadius: T.radius, background: T.bgCard, border: `1px solid ${T.border}`, textAlign: "center" }}>
+          <div style={{ fontSize: 22, marginBottom: 10 }}>🎮</div>
+          <div style={{ fontSize: 14, color: T.textMuted, fontFamily: T.fontBody }}>More details coming soon.</div>
+        </div>
       )}
 
       {/* ── More Games — always full width at bottom ──────────────────────── */}
@@ -988,6 +1119,7 @@ export function GameSinglePage({
         allGames={allGames}
         uiByGame={uiByGame}
         onSelectGame={onSelectGame}
+        onViewAll={onViewAllGames}
       />
     </div>
   );

@@ -1,7 +1,9 @@
 // launcher-ui/src/routes/launcher-games.jsx
 // ── Rload Launcher — Premium UI (Vercel website style) ──
+
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { GameSinglePage } from "./GameSinglePage.jsx";
+
 import {
   rloadAvailable, listLocalGames, getInstalledStatus, installGame, updateGame,
   pauseDownload, resumeDownload, cancelDownload, uninstallGame, launchGame,
@@ -854,8 +856,14 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // GameDetailPanel — right panel
 // ─────────────────────────────────────────────────────────────────────────────
-function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose }) {
+function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose, onRefreshAccess }) {
   const pct      = clamp(dl?.percent??0, 0, 100);
+  const [refreshing, setRefreshing] = useState(false);
+  async function doRefresh() {
+    if (refreshing || !onRefreshAccess) return;
+    setRefreshing(true);
+    try { await onRefreshAccess(); } finally { setRefreshing(false); }
+  }
   const hasUrl   = !!(game.downloadUrl||game.url);
   const bytesDown  = Number.isFinite(dl?.bytesDownloaded) ? dl.bytesDownloaded : 0;
   const bytesTotal = Number.isFinite(dl?.totalBytes)      ? dl.totalBytes      : 0;
@@ -933,9 +941,17 @@ function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, err
         {/* Actions */}
         <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
           {!hasAccess && (showPlay || showInstall || showUpdate) && (
-            <button onClick={()=>openExternal("https://rload.be/home#pricing")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
+            <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               Subscribe to Play
             </button>
+          )}
+          {!hasAccess && (showPlay || showInstall || showUpdate) && (
+            <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+              <div style={{ fontSize:11, color:T.textDim, textAlign:"center", lineHeight:1.5 }}>Already subscribed? Click below to refresh.</div>
+              <button onClick={doRefresh} disabled={refreshing} style={{ padding:"9px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:"transparent", color:T.textSub, cursor:refreshing?"not-allowed":"pointer", fontSize:12.5, fontFamily:T.fontBody, display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+                {refreshing ? "Checking…" : "↻ Refresh Access"}
+              </button>
+            </div>
           )}
           {showPlay && hasAccess && (
             <button onClick={onPlay} disabled={busy} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:busy?"not-allowed":"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
@@ -956,7 +972,7 @@ function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, err
           {showResume && <button onClick={onResume} disabled={busy} style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:T.bgCard, color:T.textSub, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody }}>Resume</button>}
           {showCancel && <button onClick={onCancel} disabled={busy} style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:T.bgCard, color:T.textMuted, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody }}>Cancel</button>}
           {showRunning && <button disabled style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:"rgba(255,255,255,0.02)", color:T.textMuted, cursor:"not-allowed", fontSize:12.5, opacity:0.5, fontFamily:T.fontBody }}>Game Running…</button>}
-          {!isXfer && (
+          {[UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR].includes(uiState) && (
             <button onClick={onUninstall} disabled={busy} style={{ marginTop:2, padding:"7px 16px", borderRadius:T.radius, border:"1px solid rgba(248,113,113,0.18)", background:"rgba(248,113,113,0.05)", color:"rgba(248,113,113,0.65)", cursor:busy?"not-allowed":"pointer", fontSize:11.5, fontFamily:T.fontBody }}>
               Uninstall
             </button>
@@ -3307,30 +3323,34 @@ function AccountDetailsPage({ user, onBack }) {
   );
 }
 
-function NotificationsPage({ onBack }) {
-  const [push, setPush]   = useState(true);
-  const [email, setEmail] = useState(false);
-  const [newRel, setNewRel] = useState(true);
-  const Toggle = ({ on, setOn }) => (
+function NotifToggle({ on, setOn }) {
+  return (
     <div onClick={()=>setOn(!on)} style={{ width:40, height:22, borderRadius:11, background:on?T.brand:"rgba(255,255,255,0.12)", cursor:"pointer", position:"relative", transition:"background 0.18s", flexShrink:0 }}>
       <div style={{ position:"absolute", top:3, left:on?20:3, width:16, height:16, borderRadius:"50%", background:"#fff", transition:"left 0.18s", boxShadow:"0 1px 4px rgba(0,0,0,0.3)" }}/>
     </div>
   );
-  const Row = ({ label, desc, on, setOn }) => (
+}
+function NotifRow({ label, desc, on, setOn }) {
+  return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 0", borderBottom:`1px solid ${T.border}` }}>
       <div>
         <div style={{ fontSize:13.5, fontWeight:500, color:T.text, marginBottom:2 }}>{label}</div>
         <div style={{ fontSize:11.5, color:T.textDim }}>{desc}</div>
       </div>
-      <Toggle on={on} setOn={setOn}/>
+      <NotifToggle on={on} setOn={setOn}/>
     </div>
   );
+}
+function NotificationsPage({ onBack }) {
+  const [push, setPush]   = useState(true);
+  const [email, setEmail] = useState(false);
+  const [newRel, setNewRel] = useState(true);
   return (
     <SubPageShell title="Notifications" onBack={onBack}>
       <div style={{ maxWidth:420 }}>
-        <Row label="Push notifications"  desc="Receive desktop alerts from Rload"  on={push}   setOn={setPush}/>
-        <Row label="Email notifications" desc="Get updates via email"               on={email}  setOn={setEmail}/>
-        <Row label="New releases"        desc="Notify me when new games are added"  on={newRel} setOn={setNewRel}/>
+        <NotifRow label="Push notifications"  desc="Receive desktop alerts from Rload"  on={push}   setOn={setPush}/>
+        <NotifRow label="Email notifications" desc="Get updates via email"               on={email}  setOn={setEmail}/>
+        <NotifRow label="New releases"        desc="Notify me when new games are added"  on={newRel} setOn={setNewRel}/>
       </div>
     </SubPageShell>
   );
@@ -3387,6 +3407,22 @@ function PrivacyPage({ onBack }) {
   );
 }
 
+function InfoField({ label, value }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>{label}</div>
+      <div style={{ padding: "9px 12px", borderRadius: T.radiusSm, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.border}`, fontSize: 12.5, color: T.text, fontFamily: T.fontBody }}>{value || "—"}</div>
+    </div>
+  );
+}
+function InfoActionBtn({ label, onClick, color, disabled }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{ flex: "1 1 auto", padding: "10px 14px", borderRadius: T.radiusSm, background: `${color}18`, border: `1px solid ${color}55`, color, fontSize: 12, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, fontFamily: T.fontBody, whiteSpace: "nowrap" }}>
+      {label}
+    </button>
+  );
+}
 function LauncherInfoPage({ onBack }) {
   const [info, setInfo]         = useState(null);
   const [copied, setCopied]     = useState(false);
@@ -3453,20 +3489,6 @@ function LauncherInfoPage({ onBack }) {
     setChecking(false);
   };
 
-  const Field = ({ label, value }) => (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 5 }}>{label}</div>
-      <div style={{ padding: "9px 12px", borderRadius: T.radiusSm, background: "rgba(255,255,255,0.04)", border: `1px solid ${T.border}`, fontSize: 12.5, color: T.text, fontFamily: T.fontBody }}>{value || "—"}</div>
-    </div>
-  );
-
-  const ActionBtn = ({ label, onClick, color, disabled }) => (
-    <button onClick={onClick} disabled={disabled}
-      style={{ flex: "1 1 auto", padding: "10px 14px", borderRadius: T.radiusSm, background: `${color}18`, border: `1px solid ${color}55`, color, fontSize: 12, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1, fontFamily: T.fontBody, whiteSpace: "nowrap" }}>
-      {label}
-    </button>
-  );
-
   const statusKey  = info?.updateStatus ?? "idle";
   const statusColor = STATUS_COLOR[statusKey] || T.textMuted;
   const statusLabel = STATUS_LABEL[statusKey] || statusKey;
@@ -3476,18 +3498,18 @@ function LauncherInfoPage({ onBack }) {
       <div style={{ maxWidth: 420 }}>
         {/* Primary actions */}
         <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-          <ActionBtn label={checking ? "Checking…" : "Check for Updates"} onClick={checkForUpdates} color={T.brand} disabled={checking}/>
-          <ActionBtn label={copied ? "Copied!" : "Copy Support Info"} onClick={copySupportInfo} color={copied ? T.green : T.textSub}/>
+          <InfoActionBtn label={checking ? "Checking…" : "Check for Updates"} onClick={checkForUpdates} color={T.brand} disabled={checking}/>
+          <InfoActionBtn label={copied ? "Copied!" : "Copy Support Info"} onClick={copySupportInfo} color={copied ? T.green : T.textSub}/>
         </div>
         {/* Secondary action */}
         <div style={{ marginBottom: 24 }}>
-          <ActionBtn label="Open Logs Folder" onClick={() => window.rload?.app?.openLogs?.()} color={T.textMuted}/>
+          <InfoActionBtn label="Open Logs Folder" onClick={() => window.rload?.app?.openLogs?.()} color={T.textMuted}/>
         </div>
 
         {info ? (
           <>
-            <Field label="Launcher Version"          value={`v${info.currentVersion}`}/>
-            <Field label="Latest Available Version"  value={info.availableVersion ? `v${info.availableVersion}` : "Up to date"}/>
+            <InfoField label="Launcher Version"          value={`v${info.currentVersion}`}/>
+            <InfoField label="Latest Available Version"  value={info.availableVersion ? `v${info.availableVersion}` : "Up to date"}/>
 
             {/* Status row with dot */}
             <div style={{ marginBottom: 12 }}>
@@ -3498,9 +3520,9 @@ function LauncherInfoPage({ onBack }) {
               </div>
             </div>
 
-            <Field label="Last Update Check"  value={info.lastCheckedAt ? new Date(info.lastCheckedAt).toLocaleString() : "Not yet"}/>
-            <Field label="Installation Type"  value="Standard Windows installer"/>
-            <Field label="Platform"           value={`Windows · ${osLabel}`}/>
+            <InfoField label="Last Update Check"  value={info.lastCheckedAt ? new Date(info.lastCheckedAt).toLocaleString() : "Not yet"}/>
+            <InfoField label="Installation Type"  value="Standard Windows installer"/>
+            <InfoField label="Platform"           value={`Windows · ${osLabel}`}/>
           </>
         ) : (
           <div style={{ padding: 32, textAlign: "center", color: T.textDim, fontSize: 13 }}>Loading…</div>
@@ -3690,8 +3712,16 @@ export default function LauncherGames() {
   const [prevGameTab, setPrevGameTab]                       = useState("home");
   const [launchingGame, setLaunchingGame]                   = useState(null);
   const [lang, setLang]                                     = useState(() => localStorage.getItem("rload-lang") || "en");
+  const [demoMode, setDemoMode] = useState(false); // safe default: gates enforced until IPC responds
   const unsubRef    = useRef(null);
   const unsubRunRef = useRef(null);
+
+  // Fetch demoMode from main process — RLOAD_DEMO_MODE env var is the single source of truth
+  useEffect(() => {
+    window.rload?.app?.getConfig?.()
+      .then(c => { if (c?.demoMode) setDemoMode(true); })
+      .catch(() => {}); // stays false — subscription gates enforced on error
+  }, []);
 
   const changeLang = useCallback((l) => {
     localStorage.setItem("rload-lang", l);
@@ -3861,8 +3891,11 @@ export default function LauncherGames() {
     const id = game.gameId;
     const tl = LANGS[lang] || LANGS.en;
     if (!subscriptionStatus?.hasAccess) {
-      openExternal("https://rload.be/home#pricing");
-      return;
+      if (!demoMode) {
+        openExternal("https://rload.be/pricing?source=launcher");
+        return;
+      }
+      console.warn("[RLOAD DEMO MODE] Subscription gate bypassed for local demo.");
     }
     setBusyByGame(p=>({...p,[id]:true})); setErrByGame(p=>({...p,[id]:""}));
     setExeByGame(p=>({...p,[id]:null})); setUiByGame(p=>({...p,[id]:UI.DOWNLOADING}));
@@ -3875,8 +3908,13 @@ export default function LauncherGames() {
     }
     if (!res||res.ok===false) {
       if (res?.code==="SUBSCRIPTION_REQUIRED"||res?.code==="AUTH_REQUIRED") {
+        if (!demoMode) {
+          setUiByGame(p=>({...p,[id]:UI.IDLE}));
+          openExternal("https://rload.be/pricing?source=launcher");
+          return;
+        }
+        console.warn("[RLOAD DEMO MODE] SUBSCRIPTION_REQUIRED from backend bypassed.");
         setUiByGame(p=>({...p,[id]:UI.IDLE}));
-        openExternal("https://rload.be/home#pricing");
         return;
       }
       setUiByGame(p=>{if(p[id]===UI.CANCELED)return p;return{...p,[id]:UI.ERROR}});
@@ -3889,14 +3927,17 @@ export default function LauncherGames() {
     } else {
       setUiByGame(p=>({...p,[id]:UI.INSTALLED_NO_EXE}));
     }
-  }, [lang, subscriptionStatus]);
+  }, [lang, subscriptionStatus, demoMode]);
 
   const handleUpdate = useCallback(async (game, oldVersion) => {
     const id = game.gameId;
     const tl = LANGS[lang] || LANGS.en;
     if (!subscriptionStatus?.hasAccess) {
-      openExternal("https://rload.be/home#pricing");
-      return;
+      if (!demoMode) {
+        openExternal("https://rload.be/pricing?source=launcher");
+        return;
+      }
+      console.warn("[RLOAD DEMO MODE] Subscription gate bypassed for local demo.");
     }
     setBusyByGame(p=>({...p,[id]:true})); setErrByGame(p=>({...p,[id]:""}));
     setUiByGame(p=>({...p,[id]:UI.UPDATING}));
@@ -3909,8 +3950,13 @@ export default function LauncherGames() {
     }
     if (!res||res.ok===false) {
       if (res?.code==="SUBSCRIPTION_REQUIRED"||res?.code==="AUTH_REQUIRED") {
+        if (!demoMode) {
+          setUiByGame(p=>({...p,[id]:UI.UPDATE_AVAILABLE}));
+          openExternal("https://rload.be/pricing?source=launcher");
+          return;
+        }
+        console.warn("[RLOAD DEMO MODE] SUBSCRIPTION_REQUIRED from backend bypassed.");
         setUiByGame(p=>({...p,[id]:UI.UPDATE_AVAILABLE}));
-        openExternal("https://rload.be/home#pricing");
         return;
       }
       setUiByGame(p=>({...p,[id]:UI.UPDATE_AVAILABLE}));
@@ -3924,13 +3970,16 @@ export default function LauncherGames() {
       setInstalledVersionByGame(p=>({...p,[id]:res.installedVersion||game.version}));
       setUiByGame(p=>({...p,[id]:UI.INSTALLED_NO_EXE}));
     }
-  }, [lang, subscriptionStatus]);
+  }, [lang, subscriptionStatus, demoMode]);
 
   const handlePlay = useCallback(async game => {
     // Subscription gate — only block Play, never block startup or install
     if (!subscriptionStatus?.hasAccess) {
-      openExternal("https://rload.be/home#pricing");
-      return;
+      if (!demoMode) {
+        openExternal("https://rload.be/pricing?source=launcher");
+        return;
+      }
+      console.warn("[RLOAD DEMO MODE] Subscription gate bypassed for local demo.");
     }
     const id = game.gameId;
     setBusyByGame(p=>({...p,[id]:true})); setErrByGame(p=>({...p,[id]:""}));
@@ -3943,7 +3992,10 @@ export default function LauncherGames() {
       const res = await launchGame(game);
       const tl = LANGS[lang] || LANGS.en;
       if (res?.ok||res?.code==="ALREADY_RUNNING") setUiByGame(p=>({...p,[id]:UI.RUNNING}));
-      else if (res?.code==="SUBSCRIPTION_REQUIRED") { openExternal("https://rload.be/home#pricing"); }
+      else if (res?.code==="SUBSCRIPTION_REQUIRED") {
+        if (!demoMode) { openExternal("https://rload.be/pricing?source=launcher"); }
+        else { console.warn("[RLOAD DEMO MODE] SUBSCRIPTION_REQUIRED from backend bypassed."); setUiByGame(p=>({...p,[id]:UI.INSTALLED})); }
+      }
       else setErrByGame(p=>({...p,[id]:toErrStr(res?.error)||tl.launchFailed}));
     } catch(e) {
       const tl = LANGS[lang] || LANGS.en;
@@ -3951,7 +4003,12 @@ export default function LauncherGames() {
     } finally {
       setTimeout(()=>setBusyByGame(p=>({...p,[id]:false})),300);
     }
-  }, [lang, subscriptionStatus]);
+  }, [lang, subscriptionStatus, demoMode]);
+
+  const handleRefreshSubscription = useCallback(async () => {
+    const st = await getSubscriptionStatus();
+    setSubscriptionStatus(st);
+  }, []);
 
   const handleUninstall = useCallback(async game => {
     const id = game.gameId;
@@ -4017,14 +4074,15 @@ export default function LauncherGames() {
     installedVersion: installedVersionByGame[selId] || null,
     error:            errByGame[selId],
     busy:             !!busyByGame[selId],
-    hasAccess:        subscriptionStatus?.hasAccess ?? false,
+    hasAccess:        demoMode ? true : (subscriptionStatus?.hasAccess ?? false),
     onInstall:  ()=>handleInstall(selGame),
     onUpdate:   ()=>handleUpdate(selGame, installedVersionByGame[selId]||null),
     onPlay:     ()=>handlePlay(selGame),
     onPause:    ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:UI.PAUSED})); return await pauseDownload(dlIdByGame[selId]); }),
     onResume:   ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:UI.DOWNLOADING})); return await resumeDownload(dlIdByGame[selId]); }),
     onCancel:   ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:p[selId]===UI.UPDATING?UI.UPDATE_AVAILABLE:UI.CANCELED})); return await cancelDownload(dlIdByGame[selId]); }),
-    onUninstall:()=>handleUninstall(selGame),
+    onUninstall:        ()=>handleUninstall(selGame),
+    onRefreshAccess:    handleRefreshSubscription,
   } : null;
 
   // ── Derived stats ─────────────────────────────────────────────────────────
@@ -4058,6 +4116,8 @@ export default function LauncherGames() {
             uiByGame={uiByGame}
             onSelectGame={handleSelectGame}
             subscriptionStatus={subscriptionStatus}
+            demoMode={demoMode}
+            onViewAllGames={()=>{ setSelectedGameId(null); handleTabChange("games"); }}
           />
         )}
         {activeTab==="home" && (
