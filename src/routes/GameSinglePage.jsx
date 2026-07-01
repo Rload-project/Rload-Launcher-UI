@@ -5,19 +5,19 @@ import React, { useState, useRef, useEffect } from "react";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bgDeep:       "#121029",
-  bgMid:        "#181530",
+  bgDeep:       "#302861",
+  bgMid:        "#442c75",
   bgCard:       "rgba(255,255,255,0.05)",
   bgCardHover:  "rgba(255,255,255,0.09)",
   bgGlass:      "rgba(255,255,255,0.06)",
   border:       "rgba(255,255,255,0.11)",
   borderBright: "rgba(255,255,255,0.20)",
-  borderBrand:  "rgba(123,66,246,0.3)",
-  brand:        "#7B42F6",
-  brandGrad:    "linear-gradient(135deg, #7B42F6 0%, #5B28D6 100%)",
-  brandGlow:    "0 4px 24px rgba(123,66,246,0.45)",
+  borderBrand:  "rgba(128,74,240,0.3)",
+  brand:        "#804af0",
+  brandGrad:    "linear-gradient(135deg, #804af0 0%, #442c75 100%)",
+  brandGlow:    "0 4px 24px rgba(128,74,240,0.45)",
   brandLight:   "#DAB2FF",
-  brandSoft:    "rgba(123,66,246,0.15)",
+  brandSoft:    "rgba(128,74,240,0.15)",
   green:        "#22c55e",
   greenGrad:    "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
   greenGlow:    "0 4px 24px rgba(34,197,94,0.4)",
@@ -32,14 +32,18 @@ const T = {
   textSub:      "rgba(255,255,255,0.72)",
   textMuted:    "rgba(255,255,255,0.50)",
   textDim:      "rgba(255,255,255,0.30)",
-  fontHead:     "'Space Grotesk', ui-sans-serif, system-ui, sans-serif",
-  fontBody:     "'Inter', ui-sans-serif, system-ui, sans-serif",
+  fontHead:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
+  fontBody:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
   radius:       "1rem",
   radiusSm:     "0.75rem",
   radiusLg:     "1.25rem",
   radiusPill:   "999px",
   shadowCover:  "0 24px 64px rgba(0,0,0,0.75)",
   shadowCard:   "0 4px 16px rgba(0,0,0,0.30)",
+  shadowHover:  "0 12px 32px rgba(0,0,0,0.50)",
+  ringBrand:    "0 0 0 1px rgba(128,74,240,0.4)",
+  transitionBase: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+  transitionFast: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
 };
 
 // ── UI state constants ────────────────────────────────────────────────────────
@@ -75,6 +79,18 @@ function countryName(code) {
   return map[(code || "").toUpperCase()] || code || null;
 }
 function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// ── Cover placeholder gradient — elegant fallback when no artwork is available ──
+const GRAD_PAIRS = [
+  ["#1a1a2e","#4a1942"],["#0f3460","#16213e"],["#2d1b69","#0d4f56"],
+  ["#1a0533","#4c1d95"],["#0c1445","#1e3a5f"],["#2c0a4e","#0a3d2b"],
+  ["#3d0429","#1a0f3c"],["#0a2942","#1a4a35"],
+];
+function coverGradient(seed) {
+  const idx = (seed||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0) % GRAD_PAIRS.length;
+  const [a,b] = GRAD_PAIRS[idx];
+  return `linear-gradient(145deg, ${a} 0%, ${b} 100%)`;
+}
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const BackIcon = () => (
@@ -295,8 +311,8 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
         ) : (
           <div style={{
             padding: "5px 14px", borderRadius: T.radiusPill,
-            background: "rgba(123,66,246,0.2)", backdropFilter: "blur(12px)",
-            border: "1px solid rgba(123,66,246,0.4)",
+            background: "rgba(128,74,240,0.2)", backdropFilter: "blur(12px)",
+            border: "1px solid rgba(128,74,240,0.4)",
             fontSize: 11, fontWeight: 600, color: T.brandLight, letterSpacing: "0.04em",
           }}>
             Available with Rload
@@ -311,18 +327,25 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
         padding: "100px 48px 40px",
       }}>
 
-        {/* Cover art */}
-        {coverSrc && (
-          <div style={{
-            flexShrink: 0, width: 220, height: 293,
-            borderRadius: T.radius, overflow: "hidden",
-            boxShadow: T.shadowCover,
-            border: "1px solid rgba(255,255,255,0.12)",
-          }}>
+        {/* Cover art — always renders; falls back to a themed gradient + monogram when no artwork is available */}
+        <div style={{
+          flexShrink: 0, width: 220, height: 293,
+          borderRadius: T.radius, overflow: "hidden",
+          boxShadow: T.shadowCover,
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: coverGradient(game.gameId || game.title),
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          {coverSrc ? (
             <img src={coverSrc} alt={game.title}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}/>
-          </div>
-        )}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              onError={e => { e.currentTarget.style.display = "none"; }}/>
+          ) : (
+            <span style={{ fontSize: 44, fontWeight: 800, fontFamily: T.fontHead, color: "rgba(255,255,255,0.28)" }}>
+              {(game.title || game.gameId || "?").charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
 
         {/* Info block */}
         <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
@@ -333,7 +356,7 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
               {game.genres.map(g => (
                 <span key={g} style={{
                   padding: "3px 10px", borderRadius: T.radiusPill,
-                  background: "rgba(123,66,246,0.2)", border: "1px solid rgba(123,66,246,0.35)",
+                  background: "rgba(128,74,240,0.2)", border: "1px solid rgba(128,74,240,0.35)",
                   color: T.brandLight, fontSize: 11, fontWeight: 600, letterSpacing: "0.03em",
                 }}>
                   {capitalize(g)}
@@ -849,7 +872,7 @@ function GameStudioBlock({ game, allGames }) {
             color: T.brandLight, fontSize: 13, fontWeight: 600,
             cursor: "pointer", fontFamily: T.fontBody, transition: "all 0.15s",
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(123,66,246,0.25)"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(128,74,240,0.25)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = T.brandSoft; }}
         >
           View Studio <ArrowRightIcon/>
@@ -936,7 +959,7 @@ function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame, onViewAll 
             }}>
               <div style={{
                 width: 148, height: 93, borderRadius: T.radiusSm, overflow: "hidden",
-                background: cover ? "transparent" : "rgba(123,66,246,0.12)",
+                background: coverGradient(g.gameId || g.title),
                 border: `1px solid ${T.border}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 position: "relative", transition: "border-color 0.15s",
@@ -944,10 +967,13 @@ function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame, onViewAll 
                 onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderBrand; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; }}
               >
-                {cover ? (
-                  <img src={cover} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
-                ) : (
-                  <span style={{ fontSize: 11, color: T.textDim, fontStyle: "italic", textAlign: "center", padding: "0 8px" }}>Coming Soon</span>
+                {/* Monogram always rendered under the gradient — stays visible if the cover image 404s */}
+                <span style={{ fontSize: 20, fontWeight: 800, fontFamily: T.fontHead, color: "rgba(255,255,255,0.28)" }}>
+                  {(g.title || g.gameId || "?").charAt(0).toUpperCase()}
+                </span>
+                {cover && (
+                  <img src={cover} alt={g.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={e => { e.currentTarget.style.display = "none"; }}/>
                 )}
                 {chip && (
                   <div style={{

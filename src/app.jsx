@@ -40,7 +40,7 @@ const errStyles = {
   page: {
     padding: 36,
     color: "#ff7b7b",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+    fontFamily: "'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
     background: "#0b0b0d",
     minHeight: "100vh",
   },
@@ -84,7 +84,7 @@ function StartupIntro({ onDone }) {
       <div style={{
         position: "absolute", bottom: "-10%", left: "50%", transform: "translateX(-50%)",
         width: "60%", height: "45%", pointerEvents: "none",
-        background: "radial-gradient(ellipse at center,rgba(123,66,246,0.5) 0%,rgba(91,40,214,0.2) 40%,transparent 70%)",
+        background: "radial-gradient(ellipse at center,rgba(128,74,240,0.5) 0%,rgba(68,44,117,0.2) 40%,transparent 70%)",
       }}/>
       <video
         src="./videos/rload_intro.mp4"
@@ -142,14 +142,14 @@ const OVERLAY = {
   WebkitBackdropFilter: "blur(8px)",
 };
 const MODAL_BASE = {
-  background: "linear-gradient(145deg,#181530 0%,#120f2a 100%)",
-  border: "1px solid rgba(123,66,246,0.4)",
+  background: "linear-gradient(145deg,#442c75 0%,#221c46 100%)",
+  border: "1px solid rgba(128,74,240,0.4)",
   borderRadius: 20,
   padding: "36px 32px",
   width: 420,
   maxWidth: "90vw",
-  boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(123,66,246,0.12)",
-  fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(128,74,240,0.12)",
+  fontFamily: "'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
   color: "#FCFCFC",
 };
 
@@ -211,10 +211,10 @@ function UpdateModal() {
     return (
       <div style={{
         position: "fixed", bottom: 20, right: 20, zIndex: 99998,
-        background: "rgba(18,14,32,0.97)", border: "1px solid rgba(123,66,246,0.45)",
+        background: "rgba(18,14,32,0.97)", border: "1px solid rgba(128,74,240,0.45)",
         borderRadius: 14, padding: "12px 16px", minWidth: 240,
         boxShadow: "0 4px 32px rgba(0,0,0,0.55)",
-        fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
+        fontFamily: "'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial",
         color: "#e8e2ff",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -234,7 +234,7 @@ function UpdateModal() {
       <div style={OVERLAY}>
         <div style={MODAL_BASE}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,#7b42f6,#5b28d6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 24px rgba(123,66,246,0.5)" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg,#7b42f6,#5b28d6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 24px rgba(128,74,240,0.5)" }}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>
                 <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
@@ -260,7 +260,7 @@ function UpdateModal() {
               setState((prev) => ({ ...prev, phase: "downloading", percent: 0, speed: 0, transferred: 0, total: 0, background: false }));
               window.rload?.updater?.download?.();
             }}
-            style={{ width: "100%", padding: "13px 0", borderRadius: 12, background: "linear-gradient(135deg,#7b42f6,#5b28d6)", border: "none", color: "#fff", fontSize: 14.5, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 20px rgba(123,66,246,0.45)", letterSpacing: "-0.1px" }}>
+            style={{ width: "100%", padding: "13px 0", borderRadius: 12, background: "linear-gradient(135deg,#7b42f6,#5b28d6)", border: "none", color: "#fff", fontSize: 14.5, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 20px rgba(128,74,240,0.45)", letterSpacing: "-0.1px" }}>
             Download Update
           </button>
         </div>
@@ -347,7 +347,7 @@ function UpdateModal() {
   // ── Error — dismissible corner banner ─────────────────────────────────
   if (phase === "error") {
     return (
-      <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 99998, background: "rgba(18,14,32,0.97)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 14, padding: "14px 18px", maxWidth: 360, boxShadow: "0 4px 32px rgba(0,0,0,0.55)", fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial", color: "#f87171", fontSize: 13 }}>
+      <div style={{ position: "fixed", bottom: 20, right: 20, zIndex: 99998, background: "rgba(18,14,32,0.97)", border: "1px solid rgba(248,113,113,0.35)", borderRadius: 14, padding: "14px 18px", maxWidth: 360, boxShadow: "0 4px 32px rgba(0,0,0,0.55)", fontFamily: "'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial", color: "#f87171", fontSize: 13 }}>
         <button onClick={() => setState(null)} style={{ position: "absolute", top: 8, right: 10, background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 15, lineHeight: 1, padding: 0 }}>✕</button>
         <div style={{ fontWeight: 600, marginBottom: 4 }}>Update error</div>
         <div style={{ opacity: 0.7, fontSize: 11.5 }}>{state.message}</div>
