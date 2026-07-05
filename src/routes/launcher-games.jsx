@@ -95,6 +95,11 @@ const T = {
 // Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+// Angular tile shape (AAA game-UI cut corner — Riot/PlayStation/Xbox client style) instead of a
+// soft rounded rectangle: sharp corners with one diagonal notch, used for the "wow" editorial cards.
+function cutCorner(size = 22) {
+  return `polygon(0 0, calc(100% - ${size}px) 0, 100% ${size}px, 100% 100%, 0 100%)`;
+}
 function humanBytes(n) {
   if (!Number.isFinite(n) || n < 0) return "0 B";
   const u = ["B","KB","MB","GB","TB"]; let i=0,v=n;
@@ -174,7 +179,9 @@ const UPCOMING_EVENTS = [
   { id:"amaze-2026",     day:"06", month:"MAY", category:"Creator Events",  status:"Upcoming", title:"A MAZE. Berlin 2026",                description:"International festival celebrating art games and indie culture.",                  time:"6–10 May · Berlin, Germany",       lieu:"Berlin, Germany",      imageUrl:"./images/events/amaze-berlin-2026.jpeg"           },
   { id:"nordicgame-2026",day:"20", month:"MAY", category:"Creator Events",  status:"Upcoming", title:"Nordic Game 2026",                   description:"The leading games conference in the Nordics — B2B, pitching, and talks.",         time:"20–22 May · Malmö, Sweden",        lieu:"Malmö, Sweden",        imageUrl:"./images/events/nordic-game-2026.jpg"             },
   { id:"devcom-2026",    day:"17", month:"AUG", category:"Creator Events",  status:"Upcoming", title:"devcom Developer Conference 2026",   description:"Europe's largest game developer conference, co-located with Gamescom.",           time:"17–18 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"./images/events/devcom-2026.jpeg"                 },
-  { id:"gamescom-2026",  day:"19", month:"AUG", category:"Games Launches",  status:"Upcoming", title:"Gamescom 2026",                      description:"The world's largest gaming event — reveals, demos, and live shows.",              time:"19–23 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"./images/events/gamescom-2026.png"                },
+  // Local asset was just the gamescom wordmark on white — swapped for a real crowd/booth photo so
+  // the thumbnail actually reads as an event, not a logo. CC0, Wikimedia Commons (see M4.6 summary).
+  { id:"gamescom-2026",  day:"19", month:"AUG", category:"Games Launches",  status:"Upcoming", title:"Gamescom 2026",                      description:"The world's largest gaming event — reveals, demos, and live shows.",              time:"19–23 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"https://upload.wikimedia.org/wikipedia/commons/7/77/Gamescom-crowd.jpg"                },
   { id:"egx-2026",       day:"24", month:"SEP", category:"Games Launches",  status:"Upcoming", title:"EGX 2026",                           description:"The UK's biggest gaming festival — playable demos, tournaments, and reveals.",     time:"24–27 Sep · London, UK",           lieu:"London, UK",           imageUrl:"./images/events/egx-2026.jpeg"                    },
   { id:"pgw-2026",       day:"29", month:"OCT", category:"Games Launches",  status:"Upcoming", title:"Paris Games Week 2026",              description:"France's premier gaming event. Indie spotlight, reveals, and esports stages.",    time:"29 Oct – 2 Nov · Paris, France",   lieu:"Paris, France",        imageUrl:"./images/events/pgw-2026.jpg"                     },
   { id:"indigo-2026",    day:"05", month:"NOV", category:"Creator Events",  status:"Upcoming", title:"IndiGO Showcase 2026",               description:"European indie games showcase — demos, pitches, and publisher meetings.",         time:"5–6 Nov · Amsterdam, Netherlands", lieu:"Amsterdam, Netherlands",imageUrl:"./images/events/events_placeholder.jpg"           },
@@ -203,23 +210,39 @@ function eventCategoryColor(cat) {
 // ─────────────────────────────────────────────────────────────────────────────
 const HERO_IMAGE = "https://cdn.rload.be/covers/ravenfield.jpg";
 
-// ── This Week on Rload — curated bento, 4 distinct titles, editorial voice instead of star ratings ──
-const THIS_WEEK_ITEMS = [
-  { id:1, title:"Nightfall Blade",    studio:"Darkrise Studio", note:"A stealth-action favorite this week — patient, precise, unforgiving.", imageUrl:"./images/home/recommended/nightfall_blade.png"  },
-  { id:2, title:"Blackline Protocol", studio:"Iron Forge Dev",  note:"Tactical FPS with real weight behind every shot.",                      imageUrl:"./images/streaming/blackline_protocol.png"      },
-  { id:3, title:"Thundertrack",       studio:"Speedcraft",      note:"Arcade racing that rewards reckless confidence.",                        imageUrl:"./images/streaming/thundertrack.png"            },
-  { id:4, title:"Steel Trigger",      studio:"Iron Forge Dev",  note:"A shooter with real recoil, no hand-holding.",                            imageUrl:"./images/home/new_releases/steel_trigger.png"   },
-];
-
-// ── Studio Spotlight — one studio, one voice, full width. Proximity with creators is core to Rload. ──
-const STUDIO_SPOTLIGHT = {
-  studio:   "Mythic Leaf",
-  game:     "Shadowborn Oath",
-  imageUrl: "./images/streaming/shadowborn_oath.png",
-  quote:    "We wanted a world that remembers what you did in it. Shadowborn Oath took two years — every choice still echoes three acts later.",
+// ── This Week on Rload (M4.6) — one story, not four cards. A single featured game with editorial
+// copy, plus three quiet secondary picks that never compete with it. ──
+const FEATURED_THIS_WEEK = {
+  title: "Blackline Protocol",
+  studio: "Iron Forge Dev",
+  imageUrl: "./images/streaming/blackline_protocol.png",
+  imagePosition: "center 48%",
+  tagline: "Tactical FPS where every move has weight.",
+  paragraph: "Discipline over chaos. In Blackline Protocol, tight environments, realistic firefights, and limited intel turn every mission into a test of judgment. Think. Coordinate. Execute. There's no room for mistakes.",
+  whyWePickedIt: [
+    "Outstanding atmosphere and environmental storytelling",
+    "Tactical gameplay where every decision matters",
+    "One of this week's standout discoveries",
+  ],
+};
+// ── Studio Spotlight — real studio, real data only. No testimonial: none has been verified, so none is shown.
+// Bio verified against the studio's own listing on Walga (Wallonia Games Association) — real studio,
+// real other titles, not invented. See sources in the M4.6 follow-up summary. ──
+const KAKUDO_SPOTLIGHT = {
+  gameId:    "kakudo",
+  studio:    "Bad Weather Studios",
+  game:      "KAKUDO",
+  bioParagraphs: [
+    "Bad Weather Studios is an independent game studio focused on strong identities and memorable experiences. The studio creates games with tight gameplay, strange atmospheres, and distinctive worlds. As the creators of «KAKUDO», «The Strange Laboratory», and «Invasion», Bad Weather Studios moves freely between action-driven and experimental projects, always prioritizing player feel and artistic coherence.",
+    "The studio has also contributed as a support team on well-known fan-projects such as Rayman 2 Redreamed and TimeSplitters Rewind, showcasing solid technical expertise and the ability to collaborate on ambitious productions.",
+  ],
+  bgImage:   "./images/games/kakudo/screenshots/ss_3.jpg",
+  collage:   ["./images/games/kakudo/banner.jpg", "./images/games/kakudo/screenshots/ss_5.jpg", "./images/games/kakudo/cover.jpg"],
+  stats:     ["1 game on Rload", "Belgium", "Independent Studio"],
 };
 
 const COMING_SOON_ITEMS = [
+  { id:0, title:"KAKUDO",           subtitle:"Exploration maze",       genre:"Adventure", studio:"Bad Weather Studios", imageUrl:"./images/games/kakudo/banner.jpg"                 },
   { id:1, title:"Crater Signal",    subtitle:"Sci-fi survival",       genre:"Survival",  studio:"Voxel Minds",      imageUrl:"./images/home/hero_slides/rooftop_bg.png"           },
   { id:2, title:"Hollow Circuit",   subtitle:"Rogue cyberpunk",        genre:"Roguelike", studio:"Synthcode Games",  imageUrl:"./images/home/hero_slides/cranktop_bg.png"          },
   { id:3, title:"Tundra Run",       subtitle:"Extreme racing",         genre:"Racing",    studio:"Arctic Pixel Lab", imageUrl:"./images/home/hero_slides/tundra_bg.png"            },
@@ -227,7 +250,7 @@ const COMING_SOON_ITEMS = [
   { id:5, title:"Voidwatcher",      subtitle:"Deep space horror",      genre:"Horror",    studio:"Dark Matter Labs", imageUrl:"./images/home/new_releases/steel_trigger.png"       },
 ];
 const PC_RANKED_ITEMS = [
-  { rank:1, title:"Iron Onslaught",     genre:["Action","Tactical"],  studio:"FireLine Studios", plays:"48.2k", imageUrl:"./images/games/placeholders/iron_onslaught.png"      },
+  { rank:1, title:"Iron Onslaught",     genre:["Action","Tactical"],  studio:"FireLine Studios", plays:"48.2k", imageUrl:"./images/games/placeholders/iron_onslaught.png", imagePosition:"center 30%" },
   { rank:2, title:"Gladiator Battle",   genre:["Fights","Arena"],     studio:"Arena Forge",      plays:"39.7k", imageUrl:"./images/games/placeholders/gladiator_battle.png"    },
   { rank:3, title:"Circuit Bloom",      genre:["Puzzle","Chill"],     studio:"PixelNova",        plays:"31.4k", imageUrl:"./images/games/placeholders/circuit_bloom.png"       },
   { rank:4, title:"Steelbound Legacy",  genre:["RPG","Strategy"],     studio:"IronLore Games",   plays:"28.9k", imageUrl:"./images/games/placeholders/steelbound_legacy.png"   },
@@ -999,14 +1022,16 @@ function HomeFeaturedCard({ game, uiState, onSelect }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // EventCard — matches Vercel website EventCard design with thumbnail
 // ─────────────────────────────────────────────────────────────────────────────
-function EventCard({ ev, showThumbnail = false }) {
+function EventCard({ ev, showThumbnail = false, thumbSize = 100 }) {
   const cc = eventCategoryColor(ev.category);
   const [imgErr, setImgErr] = useState(false);
   return (
-    <div style={{ borderRadius:T.radius, padding:16, display:"flex", alignItems:"flex-start", gap:16, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
-      {/* Thumbnail — shown in EventsPage list view */}
+    <div style={{ borderRadius:T.radius, padding:16, display:"flex", alignItems:thumbSize>120?"center":"flex-start", gap:16, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
+      {/* Thumbnail — shown in EventsPage list view. Home opts into a bigger thumbSize; the
+          Events tab keeps the original compact size — they share this component, so sizing is a
+          prop, not a shared default, to avoid one page's request silently resizing the other. */}
       {showThumbnail && ev.imageUrl && !imgErr && (
-        <div style={{ width:100, height:90, borderRadius:"0.65rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
+        <div style={{ width:thumbSize, height:thumbSize===100?90:thumbSize, borderRadius:"0.75rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
           <img src={ev.imageUrl} alt={ev.title}
             style={{ width:"100%", height:"100%", objectFit:"cover" }}
             onError={()=>setImgErr(true)}/>
@@ -1104,7 +1129,7 @@ function ComingSoonCard({ title, imageUrl }) {
   const [err, setErr]  = useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ position:"relative", minWidth:260, borderRadius:T.radius, overflow:"hidden", cursor:"pointer", flexShrink:0,
+      style={{ position:"relative", minWidth:260, clipPath:cutCorner(18), cursor:"pointer", flexShrink:0,
         border:`1px solid ${hov ? T.border : "rgba(255,255,255,0.07)"}`,
         transform:hov?"translateY(-3px)":"none", transition:"transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out",
         boxShadow:hov?"0 16px 40px rgba(0,0,0,0.5)":"none",
@@ -1211,91 +1236,6 @@ function ExclusivePortraitCard({ title, imageUrl, rating, genre, studio, tag }) 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RankListTile — premium leaderboard tile (prestige/ranking feel)
-// ─────────────────────────────────────────────────────────────────────────────
-const RANK_MEDAL = {
-  1: { bg:"linear-gradient(135deg,#FFD700,#FFA500)", shadow:"0 0 14px rgba(255,200,0,0.5)", text:"#fff" },
-  2: { bg:"linear-gradient(135deg,#C0C0C0,#A0A0A0)", shadow:"0 0 14px rgba(192,192,192,0.4)", text:"#fff" },
-  3: { bg:"linear-gradient(135deg,#CD7F32,#A0522D)", shadow:"0 0 14px rgba(205,127,50,0.4)", text:"#fff" },
-};
-
-function RankListTile({ item }) {
-  const [hov, setHov] = useState(false);
-  const [err, setErr]  = useState(false);
-  const medal = RANK_MEDAL[item.rank];
-  const rankBg   = medal ? medal.bg   : T.brandGrad;
-  const rankShad = medal ? medal.shadow : T.brandGlow;
-  const rankTxt  = medal ? medal.text  : "#fff";
-
-  return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 16px",
-        borderRadius:"1rem", cursor:"pointer", position:"relative", overflow:"hidden",
-        background: hov
-          ? "linear-gradient(135deg, rgba(128,74,240,0.12) 0%, rgba(255,255,255,0.04) 100%)"
-          : "rgba(255,255,255,0.03)",
-        border:`1px solid ${hov ? T.borderBrand : T.border}`,
-        boxShadow: hov ? "0 4px 24px rgba(128,74,240,0.15)" : "none",
-        transform: hov ? "translateY(-1px)" : "translateY(0)",
-        transition:"transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out",
-      }}>
-
-      {/* Rank number — large watermark behind */}
-      <div style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
-        fontSize:52, fontWeight:900, color:"rgba(255,255,255,0.04)", fontFamily:T.fontHead,
-        lineHeight:1, pointerEvents:"none", userSelect:"none" }}>
-        {item.rank}
-      </div>
-
-      {/* Medal / rank badge */}
-      <div style={{ width:34, height:34, borderRadius:"50%", background:rankBg,
-        display:"flex", alignItems:"center", justifyContent:"center",
-        flexShrink:0, boxShadow:rankShad, zIndex:1 }}>
-        <span style={{ fontSize:12, fontWeight:900, color:rankTxt, fontFamily:T.fontHead }}>
-          {item.rank <= 3 ? ["🥇","🥈","🥉"][item.rank-1] : item.rank}
-        </span>
-      </div>
-
-      {/* Thumbnail — larger */}
-      <div style={{ width:88, height:88, borderRadius:"0.85rem", overflow:"hidden",
-        background:coverGradient(item.title), flexShrink:0, zIndex:1,
-        boxShadow:"0 2px 12px rgba(0,0,0,0.4)" }}>
-        {!err && (
-          <img src={item.imageUrl} alt={item.title}
-            style={{ width:"100%", height:"100%", objectFit:"cover",
-              transform: hov ? "scale(1.06)" : "scale(1)", transition:"transform 0.2s ease-out" }}
-            onError={()=>setErr(true)}/>
-        )}
-      </div>
-
-      {/* Info */}
-      <div style={{ flex:1, minWidth:0, zIndex:1 }}>
-        <div style={{ fontSize:14.5, fontWeight:700, color:T.text, fontFamily:T.fontHead,
-          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-          marginBottom:6, letterSpacing:"-0.1px" }}>{item.title}</div>
-        <div style={{ fontSize:11.5, color:T.textDim, marginBottom:7 }}>{item.studio}</div>
-        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-          {(item.genre||[]).map(g=>(
-            <span key={g} style={{ fontSize:9.5, padding:"2px 8px", borderRadius:T.radiusPill,
-              background:"rgba(128,74,240,0.1)", border:`1px solid ${T.borderBrand}`,
-              color:T.brandLight, fontWeight:500 }}>{g}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Play count bar */}
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0, zIndex:1 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:T.brand }}>{item.plays||"—"}</div>
-        <div style={{ fontSize:9.5, color:T.textDim }}>plays</div>
-        <div style={{ width:40, height:3, borderRadius:2, background:"rgba(255,255,255,0.08)", overflow:"hidden" }}>
-          <div style={{ height:"100%", borderRadius:2, background:rankBg, width:`${Math.max(20,100-(item.rank-1)*11)}%` }}/>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // WideCard — 16:9 landscape card with title+rating overlay
 // ─────────────────────────────────────────────────────────────────────────────
 function WideCard({ title, imageUrl, rating, studio, country }) {
@@ -1369,6 +1309,159 @@ function StreamerCard({ title, imageUrl, viewers }) {
   );
 }
 
+// Hero primary CTA — glow appears only on hover, never permanent, so the game art stays the star.
+function HeroPlayButton({ onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ height:54, padding:"0 32px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
+        border:"none", fontSize:14, fontWeight:700, cursor:"pointer",
+        boxShadow: hov ? T.brandGlowHov : "none",
+        fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:9, transition:T.transitionBase }}>
+      <Icon.Play/> Play Now
+    </button>
+  );
+}
+
+// Studio Spotlight — one real studio, one real (unreleased) game. Right side is a small
+// overlapping collage of actual Kakudo screenshots rather than a single flat background.
+// Bolds «Quoted Titles» within a bio paragraph — a "press kit" convention (game names as the
+// visual anchor points a reader's eye catches first), without hardcoding JSX into the data.
+function renderStudioBio(text) {
+  return text.split(/(«[^»]+»)/g).map((part, i) =>
+    part.startsWith("«") ? <strong key={i} style={{ color:T.text, fontWeight:700 }}>{part}</strong> : part
+  );
+}
+
+function StudioSpotlight({ games, onSelectGame, onTabChange }) {
+  const kakudoGame = games.find(g => g.gameId === KAKUDO_SPOTLIGHT.gameId);
+  const openKakudo = () => kakudoGame ? onSelectGame(kakudoGame) : onTabChange("games");
+  return (
+    <div style={{ padding:"0 32px", marginBottom:32 }}>
+      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400,
+        border:`1px solid ${T.borderBrand}`, display:"flex", background:T.bgDeep }}>
+        <img src={KAKUDO_SPOTLIGHT.bgImage} alt=""
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", opacity:0.55 }}
+          onError={e=>e.currentTarget.style.display="none"}/>
+        {/* Masking overlay kept light (~15%) so the real screenshot reads through, not a flat violet block */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(20,16,42,0.55) 0%, rgba(20,16,42,0.30) 45%, rgba(20,16,42,0.15) 100%)" }}/>
+        {/* Faint violet halo behind the CTA zone */}
+        <div style={{ position:"absolute", left:-60, bottom:-100, width:380, height:380, borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(128,74,240,0.28) 0%, transparent 70%)", pointerEvents:"none" }}/>
+
+        {/* Left — studio text. Light: identity + bio + CTA, nothing else (no genre/category chips). */}
+        <div style={{ position:"relative", flex:"0 0 62%", padding:"32px 40px 32px 40px", display:"flex", flexDirection:"column", justifyContent:"center" }}>
+          <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight, marginBottom:12, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
+            Studio Spotlight
+          </div>
+          <div style={{ fontSize:30, fontWeight:800, color:T.text, fontFamily:T.fontHead, marginBottom:8, letterSpacing:"-0.3px", textShadow:"0 2px 16px rgba(0,0,0,0.65)" }}>
+            {KAKUDO_SPOTLIGHT.studio}
+          </div>
+          <div style={{ fontSize:14, color:"rgba(255,255,255,0.9)", fontWeight:600, marginBottom:14, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
+            Meet the team behind Kakudo.
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:20 }}>
+            {KAKUDO_SPOTLIGHT.bioParagraphs.map((p,i)=>(
+              <div key={i} style={{ fontSize:15.5, fontWeight:500, color:"rgba(255,255,255,0.86)", lineHeight:1.65, maxWidth:900, textShadow:"0 1px 10px rgba(0,0,0,0.55)" }}>
+                {renderStudioBio(p)}
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
+            {KAKUDO_SPOTLIGHT.stats.map(s=>(
+              <span key={s} style={{ fontSize:11, padding:"5px 12px", borderRadius:T.radiusPill,
+                background:"rgba(20,16,42,0.55)", border:"1px solid rgba(255,255,255,0.16)", color:T.textMuted, backdropFilter:"blur(6px)" }}>
+                {s}
+              </span>
+            ))}
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:22 }}>
+            {/* No dedicated studio page exists yet — routes to the Games tab as the closest
+                available destination rather than duplicating the Play Kakudo button below. */}
+            <button onClick={()=>onTabChange("games")}
+              style={{ padding:"11px 24px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
+                border:"none", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody, transition:T.transitionBase }}>
+              Explore Bad Weather Studios
+            </button>
+            <button onClick={openKakudo}
+              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12.5,
+                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
+              <Icon.Play/> Play Kakudo
+            </button>
+          </div>
+        </div>
+
+        {/* Right — overlapping collage of real Kakudo screenshots, 16:9 and ~1.3x bigger than the
+            first pass. Interactive: hover straightens + enlarges + brings to front, no click needed. */}
+        <div style={{ position:"relative", flex:"0 0 38%" }}>
+          <KakudoCollage images={KAKUDO_SPOTLIGHT.collage}
+            imgW={260} imgH={146} tilts={[-4,3,-2]} rights={[10,50,90]} tops={[50,150,250]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Hover: straighten to 0deg, scale up slightly, and jump in front of its siblings — no click needed.
+function KakudoCollage({ images, imgW=190, imgH=120, tilts=[-5,4,-3], rights=[130,70,10], tops=[70,70,70] }) {
+  const [hovIdx, setHovIdx] = useState(null);
+  return (
+    <>
+      {images.map((src, i)=>{
+        const isHov = hovIdx === i;
+        return (
+          <img key={src} src={src} alt="" onMouseEnter={()=>setHovIdx(i)} onMouseLeave={()=>setHovIdx(null)}
+            style={{ position:"absolute", width:imgW, height:imgH, objectFit:"cover", clipPath:cutCorner(14),
+              boxShadow: isHov ? "0 16px 40px rgba(0,0,0,0.55)" : T.shadowHoverLg,
+              border:"1px solid rgba(255,255,255,0.16)", cursor:"pointer",
+              right: rights[i], top: tops[i],
+              zIndex: isHov ? 10 : i,
+              transform: isHov ? "rotate(0deg) scale(1.08)" : `rotate(${tilts[i]}deg) scale(1)`,
+              transition:"transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease-out" }}
+            onError={e=>{ e.currentTarget.style.display="none"; }}/>
+        );
+      })}
+    </>
+  );
+}
+
+// Community Favorites card — wide editorial tile. #1 gets a subtle violet accent,
+// never a gold/yellow medal — that reads as mobile-game leaderboard, not Rload.
+function CommunityFavoriteCard({ item }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ position:"relative", clipPath:cutCorner(26), aspectRatio:"16/10",
+        background:coverGradient(item.title),
+        boxShadow: hov ? T.shadowHover : T.shadowCard,
+        transform: hov ? "translateY(-3px)" : "none", cursor:"pointer", transition:T.transitionBase }}>
+      {/* Artwork fills the card edge-to-edge — no letterbox bars. */}
+      <img src={item.imageUrl} alt={item.title}
+        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover",
+          objectPosition: item.imagePosition || "center",
+          transform:hov?"scale(1.05)":"scale(1)", transition:"transform 0.3s ease-out" }}
+        onError={e=>e.currentTarget.style.display="none"}/>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.85) 0%, rgba(14,12,31,0.15) 55%, transparent 100%)" }}/>
+      {/* A thin violet line tracing the cut edge — sells the "cut," not just a diagonal crop */}
+      <div style={{ position:"absolute", top:0, right:0, width:37, height:37,
+        borderTop:`1.5px solid ${T.brand}`, borderRight:`1.5px solid ${T.brand}`, opacity:0.55,
+        clipPath:"polygon(48% 0, 100% 0, 100% 52%)" }}/>
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"14px 16px" }}>
+        <div style={{ fontSize:14.5, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.1px", marginBottom:2 }}>
+          {item.title}
+        </div>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.55)", marginBottom:8 }}>{item.studio}</div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <span style={{ fontSize:9.5, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)", color:T.textMuted }}>
+            {item.genre?.[0]}
+          </span>
+          <span style={{ fontSize:10.5, color:"rgba(255,255,255,0.45)" }}>{item.plays} plays</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HomePage — premium redesign with 12+ sections and varied card families
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1376,6 +1469,12 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
   const [heroMode, setHeroMode] = useState("video"); // "video" | "img" | "gone"
   const installed = games.filter(g=>[UI.INSTALLED,UI.RUNNING,UI.UPDATE_AVAILABLE,UI.INSTALLED_NO_EXE].includes(uiByGame[g.gameId]||UI.IDLE));
   const running   = games.filter(g=>uiByGame[g.gameId]===UI.RUNNING);
+  // Only ever show events that haven't happened yet — a past date on the Home page reads as neglect.
+  const now = new Date();
+  const nextEvents = UPCOMING_EVENTS
+    .filter(ev => new Date(`${ev.day} ${ev.month} 2026`) >= now)
+    .sort((a,b)=> new Date(`${a.day} ${a.month} 2026`) - new Date(`${b.day} ${b.month} 2026`))
+    .slice(0,2);
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
@@ -1394,14 +1493,15 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
             style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
             onError={()=>setHeroMode("gone")}/>
         )}
-        {/* Dark overlays — single-hue (base violet), left fade for readability, bottom fade grounds into the page below */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(34,28,70,0.7) 0%, rgba(34,28,70,0.38) 45%, rgba(34,28,70,0.0) 100%)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(48,40,97,0.9) 0%, rgba(34,28,70,0.42) 24%, transparent 65%)" }}/>
+        {/* Dark overlays — left fade for readability, bottom fade. Restored to the pre-M4.5 neutral
+            dark navy treatment (no purple wash over the video). */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(14,12,31,0.62) 0%, rgba(14,12,31,0.34) 45%, rgba(14,12,31,0.0) 100%)" }}/>
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.68) 0%, rgba(14,12,31,0.37) 22%, transparent 65%)" }}/>
         {/* Content overlay — left side */}
-        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 40px 40px", maxWidth:560 }}>
+        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 48px 48px", maxWidth:520 }}>
           {/* A quiet label, not a glowing badge — the CTA below is the only bright element on this screen */}
           <div style={{ fontSize:10.5, fontWeight:600, color:"rgba(255,255,255,0.55)", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:14 }}>
-            Rload Exclusive
+            This Week on Rload
           </div>
           <div style={{ fontSize:36, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.7px", lineHeight:1.1, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
             Ravenfield
@@ -1412,10 +1512,7 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
           </div>
           {/* One invitation, not three — a single dominant action, one quiet secondary link */}
           <div style={{ display:"flex", alignItems:"center", gap:22, marginBottom:16 }}>
-            <button onClick={()=>onTabChange("games")}
-              style={{ padding:"12px 28px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff", border:"none", fontSize:13.5, fontWeight:700, cursor:"pointer", boxShadow:T.brandGlow, fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:8, transition:T.transitionBase }}>
-              <Icon.Play/> Play Now
-            </button>
+            <HeroPlayButton onClick={()=>onTabChange("games")}/>
             <button onClick={()=>onTabChange("games")}
               style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6, transition:T.transitionFast }}>
               View Details <Icon.ArrowRight/>
@@ -1451,73 +1548,33 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
         </div>
       )}
 
-      {/* ── This Week on Rload — curated by the team, not an algorithm. Bento: one large, three small. ── */}
-      <div style={{ padding:"28px 32px 0", marginBottom:32 }}>
-        <SectionHeader title="This Week on Rload" subtitle="Picked by the Rload team"/>
-        <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr", gridTemplateRows:"320px", gap:12 }}>
-          <div style={{ gridRow:"1", gridColumn:"1" }}>
-            <ThisWeekCard item={THIS_WEEK_ITEMS[0]} large onSelect={()=>onTabChange("games")}/>
-          </div>
-          <div style={{ display:"grid", gridTemplateRows:"1fr 1fr 1fr", gap:12 }}>
-            {THIS_WEEK_ITEMS.slice(1).map(item=>(
-              <ThisWeekCard key={item.id} item={item} onSelect={()=>onTabChange("games")}/>
-            ))}
-          </div>
-        </div>
+      {/* ── This Week on Rload (M4.6) — one story, not a grid. See ThisWeekFeature. ── */}
+      <div style={{ padding:"28px 40px 0", maxWidth:1700, margin:"0 auto 32px" }}>
+        <ThisWeekFeature featured={FEATURED_THIS_WEEK} onSelect={()=>onTabChange("games")}/>
       </div>
 
-      {/* ── Studio Spotlight — proximity with creators. One studio, one voice, full width. ── */}
-      <div style={{ padding:"0 32px", marginBottom:32 }}>
-        <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:190, border:`1px solid ${T.borderBrand}` }}>
-          <div style={{ position:"absolute", inset:0, background:T.bgMid }}/>
-          <img src={STUDIO_SPOTLIGHT.imageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", opacity:0.32 }} onError={e=>e.currentTarget.style.display="none"}/>
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(48,40,97,0.97) 0%, rgba(48,40,97,0.8) 52%, rgba(48,40,97,0.3) 100%)" }}/>
-          <div style={{ position:"relative", padding:"30px 36px", maxWidth:600 }}>
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight, marginBottom:12 }}>Studio Spotlight</div>
-            <div style={{ fontSize:21, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginBottom:12, letterSpacing:"-0.2px" }}>{STUDIO_SPOTLIGHT.studio}</div>
-            <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.78)", lineHeight:1.7, marginBottom:20, fontStyle:"italic", maxWidth:480 }}>
-              "{STUDIO_SPOTLIGHT.quote}"
-            </div>
-            <button onClick={()=>onTabChange("games")}
-              style={{ padding:"10px 22px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.08)", border:`1px solid rgba(255,255,255,0.18)`, color:T.text, fontSize:12.5, fontWeight:600, cursor:"pointer", display:"inline-flex", alignItems:"center", gap:8, fontFamily:T.fontBody }}>
-              Play {STUDIO_SPOTLIGHT.game} <Icon.ArrowRight/>
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* ── Studio Spotlight — real studio, real game (Bad Weather Studios / KAKUDO). No invented quote. ── */}
+      <StudioSpotlight games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
 
-      {/* ── Most Played (installed games) ───────────────────────────────────── */}
+      {/* ── Your Library — one calm row, not a grid. Installed / continue-playing first. ───── */}
       {installed.length > 0 && (
         <div style={{ padding:"0 32px", marginBottom:28 }}>
           <SectionHeader title="Your Library" count={installed.length} onMore={()=>onTabChange("games")}/>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10 }}>
-            {installed.slice(0,8).map(g=>(
-              <SmallCoverCard key={g.gameId} game={g} uiState={uiByGame[g.gameId]||UI.IDLE} onSelect={onSelectGame}/>
-            ))}
-          </div>
+          <LibraryRow games={installed.slice(0,9)} uiByGame={uiByGame} onSelectGame={onSelectGame}/>
         </div>
       )}
 
-      {/* ── Community Favorites — ranked by real plays, a different lens than curation ── */}
+      {/* ── Community Favorites — three wide editorial cards, not a leaderboard. No medals, no gold. ── */}
       <div style={{ padding:"0 32px", marginBottom:32 }}>
-        <SectionHeader title="Community Favorites" subtitle="Ranked by plays this month" onMore={()=>onTabChange("games")}/>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:10 }}>
-          {PC_RANKED_ITEMS.slice(0,6).map((item,i)=>(
-            <div key={item.rank}
-              style={{ opacity:0, animation:`fadeSlideIn 0.35s ease forwards`, animationDelay:`${i*0.06}s` }}>
-              <RankListTile item={item}/>
-            </div>
+        <SectionHeader title="Community Favorites" subtitle="Most played by Rload members this month" onMore={()=>onTabChange("games")}/>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
+          {PC_RANKED_ITEMS.slice(0,3).map(item=>(
+            <CommunityFavoriteCard key={item.rank} item={item}/>
           ))}
         </div>
-        <style>{`
-          @keyframes fadeSlideIn {
-            from { opacity:0; transform:translateY(12px); }
-            to   { opacity:1; transform:translateY(0); }
-          }
-        `}</style>
       </div>
 
-      {/* ── Coming Soon ─────────────────────────────────────────────────────── */}
+      {/* ── Coming Soon — no decorative watermark, just the games themselves. ── */}
       <div style={{ padding:"0 32px", marginBottom:28 }}>
         <SectionHeader title="Coming Soon" subtitle="Games arriving on Rload soon"/>
         <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:8 }} className="hide-scrollbar">
@@ -1527,67 +1584,118 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
         </div>
       </div>
 
-      {/* ── Game Events Schedule ────────────────────────────────────────────── */}
+      {/* ── Events — sober, editorial, 2 max on Home; the rest lives on the Events tab ── */}
       <div style={{ padding:"0 32px", marginBottom:32 }}>
-        <SectionHeader title="Game Events Schedule" subtitle="Events not to be missed on Rload and in your region" onMore={()=>onTabChange("events")}/>
+        <SectionHeader title="Events" subtitle="Indie events and developer moments" onMore={()=>onTabChange("events")}/>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-          {UPCOMING_EVENTS.slice(0,4).map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true}/>)}
+          {nextEvents.map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true} thumbSize={247}/>)}
         </div>
-        <button onClick={()=>onTabChange("events")}
-          style={{ marginTop:14, padding:"9px 20px", borderRadius:T.radiusPill, border:`1px solid ${T.borderBrand}`, background:"rgba(128,74,240,0.1)", color:T.brandLight, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody, display:"inline-flex", alignItems:"center", gap:6, fontWeight:500 }}>
-          View all events <Icon.ArrowRight/>
-        </button>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
+      {/* ── Footer — same footer as Developers/Events, per explicit request to make it consistent. ── */}
       <AppFooter onTabChange={onTabChange}/>
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ThisWeekCard — editorial bento card for "This Week on Rload".
-// Deliberately distinct from FeaturedCard: carries a curator's note instead of
-// a rating/genre pill, and never shows a "Soon" badge (these are current picks).
+// ThisWeekFeature (M4.6) — one composition, one story. No card borders, no boxed
+// layout, no visible subdivisions: the artwork is masked directly into the
+// section background rather than sitting inside a bordered panel. A single
+// featured game gets full editorial treatment; three quiet secondary picks sit
+// below in a low-weight strip so they never compete with the hero above them.
 // ─────────────────────────────────────────────────────────────────────────────
-function ThisWeekCard({ item, large, onSelect }) {
-  const [hov, setHov] = useState(false);
+// Reuses T.bgDeep (not a custom near-black) so the section blends seamlessly into the Hero above
+// and Studio Spotlight below instead of showing a visible brightness seam at its edges.
+const WEEK_BG = T.bgDeep;
+function ThisWeekFeature({ featured, onSelect }) {
+  const [parallax, setParallax] = useState({ x:0, y:0 });
+  const handleMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    setParallax({ x: px * -5, y: py * -4 }); // capped ~2-3px net after the transform's own scale
+  };
+  const resetParallax = () => setParallax({ x:0, y:0 });
+
   return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} onClick={onSelect}
-      style={{ position:"relative", borderRadius:T.radius, overflow:"hidden", height:"100%",
-        cursor:onSelect?"pointer":"default",
-        background:coverGradient(item.title),
-        border:`1px solid ${hov?T.borderBrand:"rgba(255,255,255,0.07)"}`,
-        boxShadow:hov?T.shadowHoverLg:T.shadowCard,
-        transform:hov?"translateY(-2px)":"none",
-        transition:T.transitionBase }}>
-      {/* Small cards use square/logo-heavy key art with the title baked into the top — "center top"
-          (right for the large card's tall portrait art) would crop straight into that text, so small
-          cards center the crop instead and let the card's own title label (below) carry the name. */}
-      <img src={item.imageUrl} alt={item.title}
-        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:large?"center top":"center",
-          transform:hov?"scale(1.05)":"scale(1)", transition:"transform 0.4s ease-out" }}
-        onError={e=>e.currentTarget.style.display="none"}/>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(34,28,70,0.95) 0%, rgba(34,28,70,0.55) 40%, transparent 75%)" }}/>
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:large?"18px 20px":"12px 14px" }}>
-        <div style={{ fontSize:large?17:13, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:4, textShadow:"0 2px 12px rgba(0,0,0,0.8)" }}>
-          {item.title}
+    <div style={{ position:"relative", height:430, overflow:"hidden", background:WEEK_BG }}>
+      {/* Featured artwork fills the whole left panel edge-to-edge (cover, not contain — contain
+          left empty letterbox bars, which read as unfinished rather than "full frame"). The crop
+          position is tuned so the subject and title text stay in frame. No color wash over the
+          artwork — it renders at full clarity, exactly as shot. */}
+      <div onMouseMove={handleMove} onMouseLeave={resetParallax}
+        style={{ position:"absolute", left:0, top:0, width:"68%", height:"100%", overflow:"hidden" }}>
+        <img src={featured.imageUrl} alt={featured.title}
+          style={{ position:"absolute", inset:-8, width:"calc(100% + 16px)", height:"calc(100% + 16px)", objectFit:"cover",
+            objectPosition: featured.imagePosition || "center",
+            transform:`translate(${parallax.x}px, ${parallax.y}px)`, transition:"transform 1.1s cubic-bezier(0.16,1,0.3,1)" }}
+          onError={e=>e.currentTarget.style.display="none"}/>
+      </div>
+
+      {/* Editorial column fills the remaining right side. */}
+      <div style={{ position:"relative", zIndex:1, display:"flex", height:"100%" }}>
+        <div style={{ width:"68%", flexShrink:0 }}/>
+        <div style={{ flex:1, minWidth:0, padding:"36px 48px", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"flex-start", boxSizing:"border-box" }}>
+          <div style={{ fontSize:11, fontWeight:600, letterSpacing:"3px", textTransform:"uppercase", color:"rgba(180,168,214,0.6)", marginBottom:10 }}>
+            This Week on Rload
+          </div>
+          <div style={{ fontSize:46, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1.02, letterSpacing:"-0.5px", marginBottom:8 }}>
+            {featured.title}
+          </div>
+          <div style={{ fontSize:13.5, fontWeight:500, color:T.brandLight, marginBottom:14, cursor:"pointer" }}>
+            {featured.studio}
+          </div>
+          <div style={{ fontSize:14.5, fontWeight:600, color:"rgba(255,255,255,0.92)", lineHeight:1.4, marginBottom:8 }}>
+            {featured.tagline}
+          </div>
+          <div style={{ fontSize:12.5, color:"rgba(216,210,232,0.7)", lineHeight:1.55, marginBottom:16 }}>
+            {featured.paragraph}
+          </div>
+          <div style={{ display:"flex", gap:30, marginBottom:18 }}>
+            {featured.whyWePickedIt.map((reason,i)=>(
+              <div key={reason} style={{ display:"flex", alignItems:"flex-start", gap:8, maxWidth:170 }}>
+                <span style={{ color:T.brand, flexShrink:0, marginTop:1 }}>{WHY_ICONS[i]}</span>
+                <span style={{ fontSize:11, color:"rgba(216,210,232,0.72)", lineHeight:1.4 }}>{reason}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:22 }}>
+            <PlayNowFeatured onClick={onSelect}/>
+            <button onClick={onSelect}
+              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:13,
+                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
+              View Details <Icon.ArrowRight/>
+            </button>
+          </div>
         </div>
-        {item.studio && (
-          <div style={{ fontSize:large?11:10, color:T.brandLight, fontWeight:600, marginBottom:large?8:0 }}>
-            {item.studio}
-          </div>
-        )}
-        {large && item.note && (
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.68)", lineHeight:1.5, maxWidth:340 }}>
-            {item.note}
-          </div>
-        )}
       </div>
     </div>
   );
 }
+const WHY_ICONS = [
+  <svg key="a" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>,
+  <svg key="b" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="4" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="20"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/></svg>,
+  <Icon.Star key="c"/>,
+];
 
+function PlayNowFeatured({ onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ alignSelf:"flex-start", height:52, padding:"0 34px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
+        border:"none", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody,
+        display:"flex", alignItems:"center", gap:9,
+        transform: hov ? "translateY(-2px)" : "none",
+        boxShadow: hov ? T.brandGlow : "none",
+        transition:"transform 0.2s ease-out, box-shadow 0.2s ease-out" }}>
+      <Icon.Play/> Play Now
+    </button>
+  );
+}
+
+// Secondary pick — artwork, title, studio, nothing else. No genre, no badge, no CTA:
+// its only job is to say "here are three more," never to compete with the hero above.
 // ─────────────────────────────────────────────────────────────────────────────
 // Vercel-style game row card (Recently Played / Updates Available)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2100,24 +2208,131 @@ function FeaturedBento({ cards, onSelect }) {
   );
 }
 
-// ThreeDRow — Image #4 inspired subtle 3D perspective row (one special row only)
-function ThreeDRow({ games, uiByGame, dlByGame, selectedGameId, onSelectGame }) {
+// useScrollDots — pagination for a horizontal overflow row: figures out how many "pages" the
+// row can be swiped through (by how many items fit per view), tracks which page is currently
+// scrolled into view, and exposes goToPage() to jump there with a smooth scroll. Native
+// drag/wheel scrolling is untouched — this only adds an extra way to page through.
+function useScrollDots(itemCount, itemSize, gap) {
+  const scrollRef = useRef(null);
+  const [page, setPage] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const perPage = () => Math.max(1, Math.floor((el.clientWidth + gap) / (itemSize + gap)));
+    const recompute = () => setPageCount(Math.max(1, Math.ceil(itemCount / perPage())));
+    recompute();
+    // Map scrollLeft's fraction of the actual scrollable range onto a page index — NOT
+    // scrollLeft / pageWidth. The last page is almost always shorter than a full page's
+    // worth of items (e.g. 9 items at 7-per-page leaves only 2 items, ~280px, of real
+    // scroll range), so dividing by a full page-width would round straight back to 0 and
+    // the active dot would never leave page 1 no matter how far the row was scrolled.
+    const onScroll = () => {
+      const pages = Math.max(1, Math.ceil(itemCount / perPage()));
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const idx = maxScroll > 0 ? Math.round((el.scrollLeft / maxScroll) * (pages - 1)) : 0;
+      setPage(Math.min(pages - 1, Math.max(0, idx)));
+    };
+    window.addEventListener("resize", recompute);
+    el.addEventListener("scroll", onScroll, { passive:true });
+    return () => {
+      window.removeEventListener("resize", recompute);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, [itemCount, itemSize, gap]);
+
+  const goToPage = (p) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const perPage = Math.max(1, Math.floor((el.clientWidth + gap) / (itemSize + gap)));
+    const pages = Math.max(1, Math.ceil(itemCount / perPage));
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    const target = pages > 1 ? (p / (pages - 1)) * maxScroll : 0;
+    el.scrollTo({ left: target, behavior:"smooth" });
+  };
+
+  return { scrollRef, page, pageCount, goToPage };
+}
+
+// CarouselDots — Apple-TV-style page indicator below a swipeable row. Renders nothing when
+// the row doesn't actually overflow (not enough items to need paging).
+function CarouselDots({ page, pageCount, onSelect }) {
+  if (pageCount <= 1) return null;
   return (
-    <div style={{ perspective:"900px", perspectiveOrigin:"50% 50%",
-      display:"flex", gap:14, overflowX:"auto", paddingBottom:8, paddingTop:4 }}
-      className="hide-scrollbar">
-      {games.map((g, i) => {
-        const mid   = (games.length - 1) / 2;
-        const dist  = i - mid;
-        const rotY  = dist * -5;   // mild Y rotation: edges tilt away
-        const scl   = 1 - Math.abs(dist) * 0.025;
-        const badge = getStateBadge(uiByGame[g.gameId]);
-        const sel   = selectedGameId === g.gameId;
-        return (
-          <ThreeDCard key={g.gameId} game={g} badge={badge} sel={sel} rotY={rotY} scl={scl}
-            onClick={()=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
-        );
-      })}
+    <div style={{ display:"flex", justifyContent:"center", gap:6, marginTop:10 }}>
+      {Array.from({ length:pageCount }).map((_,i)=>(
+        <button key={i} onClick={()=>onSelect(i)} aria-label={`Go to page ${i+1}`}
+          style={{ width:i===page?18:6, height:6, borderRadius:3, border:"none", padding:0, cursor:"pointer",
+            background:i===page?T.brand:"rgba(255,255,255,0.22)",
+            transition:"width 0.2s ease-out, background 0.2s ease-out" }}/>
+      ))}
+    </div>
+  );
+}
+
+// RecentPlayedRow — "Recently Played" scroll row (Games page), with page dots underneath.
+function RecentPlayedRow({ games, uiByGame, selectedGameId, onSelectGame }) {
+  const itemSize = 198, gap = 12;
+  const { scrollRef, page, pageCount, goToPage } = useScrollDots(games.length, itemSize, gap);
+  return (
+    <div>
+      <div ref={scrollRef} style={{ display:"flex", gap, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+        {games.map(g=>{
+          const badge = getStateBadge(uiByGame[g.gameId]);
+          const sel   = selectedGameId===g.gameId;
+          return (
+            <RecentCard key={g.gameId} g={g} badge={badge} sel={sel}
+              onClick={()=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
+          );
+        })}
+      </div>
+      <CarouselDots page={page} pageCount={pageCount} onSelect={goToPage}/>
+    </div>
+  );
+}
+
+// LibraryRow — "Your Library" scroll row (Home), with page dots underneath.
+function LibraryRow({ games, uiByGame, onSelectGame }) {
+  const itemSize = 132, gap = 14;
+  const { scrollRef, page, pageCount, goToPage } = useScrollDots(games.length, itemSize, gap);
+  return (
+    <div>
+      <div ref={scrollRef} style={{ display:"flex", gap, overflowX:"auto", paddingBottom:8 }} className="hide-scrollbar">
+        {games.map(g=>(
+          <div key={g.gameId} style={{ width:itemSize, flexShrink:0 }}>
+            <SmallCoverCard game={g} uiState={uiByGame[g.gameId]||UI.IDLE} onSelect={onSelectGame}/>
+          </div>
+        ))}
+      </div>
+      <CarouselDots page={page} pageCount={pageCount} onSelect={goToPage}/>
+    </div>
+  );
+}
+
+// ThreeDRow — Image #4 inspired subtle 3D perspective row (one special row only), with page dots underneath.
+function ThreeDRow({ games, uiByGame, dlByGame, selectedGameId, onSelectGame }) {
+  const itemSize = 160, gap = 14;
+  const { scrollRef, page, pageCount, goToPage } = useScrollDots(games.length, itemSize, gap);
+  return (
+    <div>
+      <div ref={scrollRef} style={{ perspective:"900px", perspectiveOrigin:"50% 50%",
+        display:"flex", gap, overflowX:"auto", paddingBottom:8, paddingTop:4 }}
+        className="hide-scrollbar">
+        {games.map((g, i) => {
+          const mid   = (games.length - 1) / 2;
+          const dist  = i - mid;
+          const rotY  = dist * -5;   // mild Y rotation: edges tilt away
+          const scl   = 1 - Math.abs(dist) * 0.025;
+          const badge = getStateBadge(uiByGame[g.gameId]);
+          const sel   = selectedGameId === g.gameId;
+          return (
+            <ThreeDCard key={g.gameId} game={g} badge={badge} sel={sel} rotY={rotY} scl={scl}
+              onClick={()=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
+          );
+        })}
+      </div>
+      <CarouselDots page={page} pageCount={pageCount} onSelect={goToPage}/>
     </div>
   );
 }
@@ -2429,17 +2644,8 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
             {(sidebarView==="all"||sidebarView==="recent") && installed.length>0 && (
               <div style={{ padding:"22px 22px 0" }}>
                 <SectionHeading title="Recently Played"/>
-                <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:4 }}
-                  className="hide-scrollbar">
-                  {installed.map(g=>{
-                    const badge = getStateBadge(uiByGame[g.gameId]);
-                    const sel   = selectedGameId===g.gameId;
-                    return (
-                      <RecentCard key={g.gameId} g={g} badge={badge} sel={sel}
-                        onClick={()=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
-                    );
-                  })}
-                </div>
+                <RecentPlayedRow games={installed} uiByGame={uiByGame}
+                  selectedGameId={selectedGameId} onSelectGame={onSelectGame}/>
               </div>
             )}
 
@@ -2563,7 +2769,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
 // EventsPage — matches Vercel website layout exactly
 // ─────────────────────────────────────────────────────────────────────────────
 const TIMEFRAMES = ["all","today","week","month"];
-function EventsPage() {
+function EventsPage({ onTabChange }) {
   const [search, setSearch]     = useState("");
   const [category, setCategory] = useState("All events");
   const [timeframe, setTimeframe] = useState("all");
@@ -2685,6 +2891,8 @@ function EventsPage() {
           })}
         </div>
       </div>
+
+      <AppFooter onTabChange={onTabChange}/>
     </div>
   );
 }
@@ -4097,7 +4305,7 @@ export default function LauncherGames() {
             gameDetailProps={gameDetailProps} gamesLoading={gamesLoading}
             onTabChange={handleTabChange}/>
         )}
-        {activeTab==="events"    && <EventsPage/>}
+        {activeTab==="events"    && <EventsPage onTabChange={handleTabChange}/>}
         {activeTab==="streaming" && <StreamingPage/>}
         {activeTab==="community" && <CommunityPage/>}
         {activeTab==="about"     && <AboutPage onTabChange={handleTabChange}/>}
