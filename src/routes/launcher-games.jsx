@@ -706,7 +706,6 @@ function LoginScreen({ authBusy, authError, onSignIn }) {
         {[
           { label:"Privacy", url:"https://rload.be/privacy" },
           { label:"Terms",   url:"https://rload.be/terms"   },
-          { label:"Status",  url:"https://status.rload.be"  },
         ].map(({ label, url }) => (
           <React.Fragment key={label}>
             <span style={{ fontSize:10.5, color:"rgba(255,255,255,0.10)" }}>·</span>
@@ -2656,7 +2655,9 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
           <SidebarSectionLabel label="System"/>
           <SidebarNavItem icon="⚙️" label="Settings" active={false} onClick={()=>onTabChange?.("profile")}/>
           <SidebarNavItem icon="💬" label="Support"  active={false} onClick={()=>openExternal("https://rload.be/support")}/>
-          <SidebarNavItem icon="🟢" label="Status"   active={false} onClick={()=>openExternal("https://status.rload.be")}/>
+          {/* status.rload.be does not exist yet — disabled rather than linking
+              to a dead page. Re-enable once a real status page is live. */}
+          <SidebarNavItem icon="🟢" label="Status"   active={false} disabled={true} onClick={()=>{}}/>
         </div>
 
         {/* Version footer */}

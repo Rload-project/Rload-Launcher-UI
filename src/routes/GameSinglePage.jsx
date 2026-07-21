@@ -393,19 +393,20 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
             </p>
           )}
 
-          {/* Metadata row */}
+          {/* Metadata row — each MetaDot only renders when a later segment
+              actually exists, so the row never ends on a dangling separator */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
             {releaseYear && <>
               <span style={{ fontSize: 12, color: T.textMuted }}>{releaseYear}</span>
-              <MetaDot/>
+              {(langCount > 0 || sizeFmt || game.ageRating) && <MetaDot/>}
             </>}
             {langCount > 0 && <>
               <span style={{ fontSize: 12, color: T.textMuted }}>{langCount} language{langCount !== 1 ? "s" : ""}</span>
-              <MetaDot/>
+              {(sizeFmt || game.ageRating) && <MetaDot/>}
             </>}
             {sizeFmt && <>
               <span style={{ fontSize: 12, color: T.textMuted }}>{sizeFmt}</span>
-              <MetaDot/>
+              {game.ageRating && <MetaDot/>}
             </>}
             {game.ageRating && (
               <span style={{
