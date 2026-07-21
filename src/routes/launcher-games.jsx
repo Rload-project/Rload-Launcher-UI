@@ -126,9 +126,6 @@ function coverGradient(gameId) {
 // Real events data (from Vercel website Events.tsx)
 // ─────────────────────────────────────────────────────────────────────────────
 const UPCOMING_EVENTS = [
-  { id:"reboot-2026",    day:"22", month:"APR", category:"Creator Events",  status:"Upcoming", title:"Reboot Develop Blue 2026",          description:"Europe's leading indie & AA developer conference.",                                 time:"22–25 Apr · Dubrovnik, Croatia",   lieu:"Dubrovnik, Croatia",   imageUrl:"./images/events/reboot-develop-blue-2026.jpg"    },
-  { id:"amaze-2026",     day:"06", month:"MAY", category:"Creator Events",  status:"Upcoming", title:"A MAZE. Berlin 2026",                description:"International festival celebrating art games and indie culture.",                  time:"6–10 May · Berlin, Germany",       lieu:"Berlin, Germany",      imageUrl:"./images/events/amaze-berlin-2026.jpeg"           },
-  { id:"nordicgame-2026",day:"20", month:"MAY", category:"Creator Events",  status:"Upcoming", title:"Nordic Game 2026",                   description:"The leading games conference in the Nordics — B2B, pitching, and talks.",         time:"20–22 May · Malmö, Sweden",        lieu:"Malmö, Sweden",        imageUrl:"./images/events/nordic-game-2026.jpg"             },
   { id:"devcom-2026",    day:"17", month:"AUG", category:"Creator Events",  status:"Upcoming", title:"devcom Developer Conference 2026",   description:"Europe's largest game developer conference, co-located with Gamescom.",           time:"17–18 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"./images/events/devcom-2026.jpeg"                 },
   // Local asset was just the gamescom wordmark on white — swapped for a real crowd/booth photo so
   // the thumbnail actually reads as an event, not a logo. CC0, Wikimedia Commons (see M4.6 summary).
@@ -140,6 +137,9 @@ const UPCOMING_EVENTS = [
   { id:"gameawards-2026",day:"10", month:"DEC", category:"Lives & streams", status:"Upcoming", title:"The Game Awards 2026 — Watch Party", description:"Community watch party for the biggest night in gaming. Live reactions & giveaways.", time:"10 Dec · Online + Local screenings",lieu:"Online",             imageUrl:"./images/events/game-awards-2026.png"             },
 ];
 const PREVIOUS_EVENTS = [
+  { day:"20", month:"MAY", category:"Creator Events",  title:"Nordic Game 2026",                time:"Malmö, Sweden" },
+  { day:"06", month:"MAY", category:"Creator Events",  title:"A MAZE. Berlin 2026",              time:"Berlin, Germany" },
+  { day:"22", month:"APR", category:"Creator Events",  title:"Reboot Develop Blue 2026",         time:"Dubrovnik, Croatia" },
   { day:"26", month:"MAR", category:"Creator Events",  title:"GDC 2026 Recap Stream",           time:"18:00 – 20:00" },
   { day:"14", month:"MAR", category:"Tournaments",     title:"Rload Spring Cup — Finals",       time:"17:00 – 23:00" },
   { day:"01", month:"MAR", category:"Games Launches",  title:"Steam Next Fest March 2026",      time:"All week"      },
