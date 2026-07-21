@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <radialGradient id="bg-neon_scout" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#2b2354"/>
+        <stop offset="100%" stop-color="#1a1533"/>
+      </radialGradient>
+      <linearGradient id="rim-neon_scout" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+    </defs>
+    <circle cx="128" cy="128" r="126" fill="url(#bg-neon_scout)"/>
+    <circle cx="128" cy="128" r="126" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <path d="M40 60 A100 100 0 0 1 196 46" stroke="url(#rim-neon_scout)" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="128" cy="222" rx="70" ry="16" fill="rgba(0,0,0,0.35)"/>
+  
+<path d="M104 168 L104 196 Q128 210 152 196 L152 168 Z" fill="#2e2650"/><circle cx="128" cy="128" r="52" fill="#3a2f66"/><circle cx="128" cy="128" r="52" fill="none" stroke="#241f42" stroke-width="2"/><rect x="86" y="118" width="84" height="16" rx="8" fill="#22D3EE"/><line x1="128" y1="80" x2="128" y2="52" stroke="#22D3EE" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="128" cy="48" r="6" fill="#22D3EE"/>
+</svg>

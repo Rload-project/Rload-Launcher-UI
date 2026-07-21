@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <radialGradient id="bg-void_monk" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#1c3a5e"/>
+        <stop offset="100%" stop-color="#161233"/>
+      </radialGradient>
+      <linearGradient id="rim-void_monk" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+    </defs>
+    <circle cx="128" cy="128" r="126" fill="url(#bg-void_monk)"/>
+    <circle cx="128" cy="128" r="126" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <path d="M40 60 A100 100 0 0 1 196 46" stroke="url(#rim-void_monk)" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="128" cy="222" rx="70" ry="16" fill="rgba(0,0,0,0.35)"/>
+  
+<path d="M104 168 L104 196 Q128 210 152 196 L152 168 Z" fill="#213048"/><path d="M76 150 Q72 78 128 66 Q184 78 180 150 Q180 178 128 182 Q76 178 76 150 Z" fill="#182640"/>
+          <path d="M78 148 Q75 84 128 72 Q181 84 178 148" fill="none" stroke="#3a5a7a" stroke-width="3" opacity="0.6"/>
+    <circle cx="103" cy="176" r="4" fill="#22D3EE" opacity="0.6"/><circle cx="118" cy="182" r="4" fill="#22D3EE" opacity="0.6"/><circle cx="138" cy="182" r="4" fill="#22D3EE" opacity="0.6"/><circle cx="153" cy="176" r="4" fill="#22D3EE" opacity="0.6"/>
+    <circle cx="112" cy="132" r="4" fill="#22D3EE"/><circle cx="144" cy="132" r="4" fill="#22D3EE"/>
+</svg>

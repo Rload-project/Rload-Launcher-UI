@@ -1,0 +1,82 @@
+[
+  {
+    "id": "title-rload-member",
+    "name": "Rload Member",
+    "description": "Every player's starting title.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "locked": false
+  },
+  {
+    "id": "title-signal-hunter",
+    "name": "Signal Hunter",
+    "description": "Discovered and played your first indie game.",
+    "unlockType": "achievement",
+    "unlockRequirement": "first_discovery",
+    "locked": true
+  },
+  {
+    "id": "title-studio-drifter",
+    "name": "Studio Drifter",
+    "description": "Played games from 5 different studios.",
+    "unlockType": "achievement",
+    "unlockRequirement": "studio_hopper",
+    "locked": true
+  },
+  {
+    "id": "title-local-frequency",
+    "name": "Local Frequency",
+    "description": "Played Belgian-made indie games.",
+    "unlockType": "achievement",
+    "unlockRequirement": "belgian_explorer",
+    "locked": true
+  },
+  {
+    "id": "title-gem-hunter",
+    "name": "Gem Hunter",
+    "description": "Uncovered hidden indie gems.",
+    "unlockType": "achievement",
+    "unlockRequirement": "hidden_gem_hunter",
+    "locked": true
+  },
+  {
+    "id": "title-wide-horizon",
+    "name": "Wide Horizon",
+    "description": "Played 10 different games.",
+    "unlockType": "achievement",
+    "unlockRequirement": "explorer_ii",
+    "locked": true
+  },
+  {
+    "id": "title-chain-reactor",
+    "name": "Chain Reactor",
+    "description": "Unlocked 5 achievements.",
+    "unlockType": "achievement",
+    "unlockRequirement": "completion_starter",
+    "locked": true
+  },
+  {
+    "id": "title-early-supporter",
+    "name": "Early Supporter",
+    "description": "Subscribed to Rload in its first season.",
+    "unlockType": "points",
+    "unlockRequirement": "300 points",
+    "locked": true
+  },
+  {
+    "id": "title-founder",
+    "name": "Founder",
+    "description": "A founding-era member of Rload.",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "locked": true
+  },
+  {
+    "id": "title-day-zero",
+    "name": "Day Zero",
+    "description": "Here at the very beginning of Rload.",
+    "unlockType": "achievement",
+    "unlockRequirement": "founding_member",
+    "locked": true
+  }
+]

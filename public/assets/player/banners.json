@@ -1,0 +1,182 @@
+[
+  {
+    "id": "rload-minimal-purple",
+    "title": "Minimal Purple",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-minimal-purple.svg",
+    "asset": "./assets/player/banners/rload-minimal-purple.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-purple-nebula",
+    "title": "Purple Nebula",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-purple-nebula.svg",
+    "asset": "./assets/player/banners/rload-purple-nebula.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-pixel-sunset",
+    "title": "Pixel Sunset",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-pixel-sunset.svg",
+    "asset": "./assets/player/banners/rload-pixel-sunset.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-forest",
+    "title": "Forest",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-forest.svg",
+    "asset": "./assets/player/banners/rload-forest.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-mountains",
+    "title": "Mountains",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-mountains.svg",
+    "asset": "./assets/player/banners/rload-mountains.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-cyber-grid",
+    "title": "Cyber Grid",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-cyber-grid.svg",
+    "asset": "./assets/player/banners/rload-cyber-grid.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-neon-city",
+    "title": "Neon City",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-neon-city.svg",
+    "asset": "./assets/player/banners/rload-neon-city.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-abstract-shapes",
+    "title": "Abstract Shapes",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-abstract-shapes.svg",
+    "asset": "./assets/player/banners/rload-abstract-shapes.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-ocean-depths",
+    "title": "Ocean Depths",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-ocean-depths.svg",
+    "asset": "./assets/player/banners/rload-ocean-depths.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-golden-hour",
+    "title": "Golden Hour",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/banners/rload-golden-hour.svg",
+    "asset": "./assets/player/banners/rload-golden-hour.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-arcade",
+    "title": "Arcade",
+    "unlockType": "points",
+    "unlockRequirement": "550 points",
+    "preview": "./assets/player/banners/rload-arcade.svg",
+    "asset": "./assets/player/banners/rload-arcade.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-space",
+    "title": "Space",
+    "unlockType": "points",
+    "unlockRequirement": "700 points",
+    "preview": "./assets/player/banners/rload-space.svg",
+    "asset": "./assets/player/banners/rload-space.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-pixel-galaxy",
+    "title": "Pixel Galaxy",
+    "unlockType": "points",
+    "unlockRequirement": "850 points",
+    "preview": "./assets/player/banners/rload-pixel-galaxy.svg",
+    "asset": "./assets/player/banners/rload-pixel-galaxy.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-retro-wave",
+    "title": "Retro Wave",
+    "unlockType": "points",
+    "unlockRequirement": "450 points",
+    "preview": "./assets/player/banners/rload-retro-wave.svg",
+    "asset": "./assets/player/banners/rload-retro-wave.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-desert-dunes",
+    "title": "Desert Dunes",
+    "unlockType": "points",
+    "unlockRequirement": "500 points",
+    "preview": "./assets/player/banners/rload-desert-dunes.svg",
+    "asset": "./assets/player/banners/rload-desert-dunes.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-storm",
+    "title": "Storm",
+    "unlockType": "points",
+    "unlockRequirement": "650 points",
+    "preview": "./assets/player/banners/rload-storm.svg",
+    "asset": "./assets/player/banners/rload-storm.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-crystal-cave",
+    "title": "Crystal Cave",
+    "unlockType": "points",
+    "unlockRequirement": "950 points",
+    "preview": "./assets/player/banners/rload-crystal-cave.svg",
+    "asset": "./assets/player/banners/rload-crystal-cave.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-aurora",
+    "title": "Aurora",
+    "unlockType": "achievement",
+    "unlockRequirement": "studio_hopper",
+    "preview": "./assets/player/banners/rload-aurora.svg",
+    "asset": "./assets/player/banners/rload-aurora.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-founders",
+    "title": "Founder's Banner",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/banners/rload-founders.svg",
+    "asset": "./assets/player/banners/rload-founders.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-founders-eclipse",
+    "title": "Founder's Eclipse",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/banners/rload-founders-eclipse.svg",
+    "asset": "./assets/player/banners/rload-founders-eclipse.svg",
+    "locked": true
+  }
+]

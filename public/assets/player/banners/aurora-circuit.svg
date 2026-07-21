@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+
+    <defs>
+      <linearGradient id="bg-aurora_circuit" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1a2340"/>
+        <stop offset="100%" stop-color="#0e1128"/>
+      </linearGradient>
+      <linearGradient id="vig-aurora_circuit" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+      </linearGradient>
+      <radialGradient id="focus-aurora_circuit" cx="70%" cy="45%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1600" height="500" fill="url(#bg-aurora_circuit)"/>
+    <rect width="1600" height="500" fill="url(#focus-aurora_circuit)"/>
+  
+<path d="M650 380 Q950 150 1250 260 T1600 200" stroke="#22D3EE" stroke-width="22" fill="none" opacity="0.32" stroke-linecap="round"/><path d="M650 340 Q950 120 1250 240 T1600 180" stroke="#EC4899" stroke-width="18" fill="none" opacity="0.32" stroke-linecap="round"/><path d="M650 300 Q950 90 1250 220 T1600 160" stroke="#22D3EE" stroke-width="14" fill="none" opacity="0.32" stroke-linecap="round"/><line x1="700" y1="500" x2="700" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/><line x1="830" y1="500" x2="790" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/><line x1="960" y1="500" x2="880" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/><line x1="1090" y1="500" x2="970" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/><line x1="1220" y1="500" x2="1060" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/><line x1="1350" y1="500" x2="1150" y2="420" stroke="#3B82F6" stroke-width="1.5" opacity="0.22"/>
+<rect width="1600" height="500" fill="url(#vig-aurora_circuit)"/>
+</svg>

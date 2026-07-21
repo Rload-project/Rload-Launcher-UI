@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <radialGradient id="bg-cyber_ronin" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#1c3a5e"/>
+        <stop offset="100%" stop-color="#161233"/>
+      </radialGradient>
+      <linearGradient id="rim-cyber_ronin" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+    </defs>
+    <circle cx="128" cy="128" r="126" fill="url(#bg-cyber_ronin)"/>
+    <circle cx="128" cy="128" r="126" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <path d="M40 60 A100 100 0 0 1 196 46" stroke="url(#rim-cyber_ronin)" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="128" cy="222" rx="70" ry="16" fill="rgba(0,0,0,0.35)"/>
+  
+<path d="M104 168 L104 196 Q128 210 152 196 L152 168 Z" fill="#213048"/><path d="M80 140 Q76 66 128 62 Q180 66 176 140 L176 152 Q128 168 80 152 Z" fill="#1a2a44"/>
+    <path d="M70 130 L90 96 L104 108 L92 140 Z" fill="#243a5e"/><path d="M186 130 L166 96 L152 108 L164 140 Z" fill="#243a5e"/>
+    <path d="M82 98 Q128 78 174 98 L174 112 Q128 94 82 112 Z" fill="#FFC24B"/>
+    <rect x="122" y="114" width="12" height="38" fill="#0a0e1a"/>
+    <circle cx="108" cy="128" r="3" fill="#FFC24B"/><circle cx="148" cy="128" r="3" fill="#FFC24B"/>
+</svg>

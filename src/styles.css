@@ -76,3 +76,75 @@ a:focus-visible {
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(128,74,240,0.10);
 }
+
+/* ── Player Identity — toast notifications ── */
+@keyframes rl-toast-in {
+  0%   { opacity: 0; transform: translate(24px, -10px) scale(0.92); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+@keyframes rl-toast-out {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(24px, -6px) scale(0.96); }
+}
+.rl-toast-enter { animation: rl-toast-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rl-toast-exit  { animation: rl-toast-out 0.35s ease-in both; }
+
+/* ── Player Identity — achievement unlock pulse ── */
+@keyframes rl-unlock-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(128,74,240,0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(128,74,240,0); }
+  100% { box-shadow: 0 0 0 0 rgba(128,74,240,0); }
+}
+.rl-unlock-pulse { animation: rl-unlock-pulse 1.4s ease-out 1; }
+
+/* ── Player Identity — Day Zero premium hero treatment (gold halo, once completed) ── */
+@keyframes rl-day-zero-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255,194,75,0.25), 0 0 18px rgba(255,194,75,0.12); }
+  50%      { box-shadow: 0 0 0 1px rgba(255,194,75,0.45), 0 0 30px rgba(255,194,75,0.28); }
+}
+.rl-day-zero-glow { animation: rl-day-zero-glow 3.2s ease-in-out infinite; }
+
+/* ── Player Identity — dynamic profile banner (Ken Burns drift + light sheen) ── */
+@keyframes rl-banner-pan {
+  0%   { transform: scale(1.06) translate(0, 0); }
+  50%  { transform: scale(1.11) translate(-1.2%, -0.8%); }
+  100% { transform: scale(1.06) translate(0, 0); }
+}
+.rl-banner-pan {
+  animation: rl-banner-pan 18s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes rl-banner-sheen-sweep {
+  0%   { transform: translateX(-60%) rotate(8deg); opacity: 0; }
+  15%  { opacity: 0.5; }
+  40%  { opacity: 0; }
+  100% { transform: translateX(160%) rotate(8deg); opacity: 0; }
+}
+.rl-banner-sheen {
+  position: absolute; top: -20%; bottom: -20%; left: 0; width: 35%;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
+  animation: rl-banner-sheen-sweep 7s ease-in-out infinite;
+  animation-delay: 2s;
+  pointer-events: none;
+}
+/* ── Player Identity — level-up pop (PlayerLevel pill, one-shot) ── */
+@keyframes rl-level-up-pop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.22); }
+  60%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.rl-level-up-pop { animation: rl-level-up-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 1; }
+
+/* ── Player Identity — collection count tick (CollectionOverview, on increment) ── */
+@keyframes rl-count-tick {
+  0%   { color: inherit; transform: translateY(0); }
+  30%  { color: #22c55e; transform: translateY(-2px); }
+  100% { color: inherit; transform: translateY(0); }
+}
+.rl-count-tick { animation: rl-count-tick 0.5s ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rl-banner-pan, .rl-banner-sheen, .rl-day-zero-glow, .rl-unlock-pulse,
+  .rl-level-up-pop, .rl-count-tick { animation: none; }
+}

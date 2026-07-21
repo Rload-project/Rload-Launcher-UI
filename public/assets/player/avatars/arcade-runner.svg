@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <radialGradient id="bg-arcade_runner" cx="42%" cy="38%" r="75%">
+        <stop offset="0%" stop-color="#2b2354"/>
+        <stop offset="100%" stop-color="#1a1533"/>
+      </radialGradient>
+      <linearGradient id="rim-arcade_runner" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+    </defs>
+    <circle cx="128" cy="128" r="126" fill="url(#bg-arcade_runner)"/>
+    <circle cx="128" cy="128" r="126" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <path d="M40 60 A100 100 0 0 1 196 46" stroke="url(#rim-arcade_runner)" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <ellipse cx="128" cy="222" rx="70" ry="16" fill="rgba(0,0,0,0.35)"/>
+  
+<path d="M104 168 L104 196 Q128 210 152 196 L152 168 Z" fill="#2e2650"/><circle cx="128" cy="128" r="52" fill="#3a2f66"/><circle cx="128" cy="128" r="52" fill="none" stroke="#241f42" stroke-width="2"/><rect x="82" y="104" width="92" height="12" rx="6" fill="#EC4899"/>
+    <path d="M64 118 L78 122 M64 134 L78 132" stroke="#EC4899" stroke-width="3" opacity="0.6"/><circle cx="110" cy="128" r="6" fill="#e8e2ff"/><circle cx="146" cy="128" r="6" fill="#e8e2ff"/>
+</svg>

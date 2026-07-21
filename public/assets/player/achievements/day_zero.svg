@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <linearGradient id="metal-day_zero" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3a2f66"/>
+        <stop offset="45%" stop-color="#57406e"/>
+        <stop offset="100%" stop-color="#1a1530"/>
+      </linearGradient>
+      <radialGradient id="core-day_zero" cx="50%" cy="42%" r="65%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.30)"/>
+        <stop offset="60%" stop-color="rgba(255,255,255,0.08)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <filter id="glow-day_zero" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="8" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="shadow-day_zero" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.45"/>
+      </filter>
+    </defs>
+    <g filter="url(#shadow-day_zero)">
+      <polygon points="128,8 240,68 240,188 128,248 16,188 16,68" fill="url(#metal-day_zero)"/>
+    </g>
+    <polygon points="128,8 240,68 240,188 128,248 16,188 16,68" fill="none" stroke="#FFC24B" stroke-width="2.5" filter="url(#glow-day_zero)"/>
+    <polygon points="128.0,12.0 236.5,69.9 236.5,186.1 128.0,244.0 19.5,186.1 19.5,69.9" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+    <polygon points="128.0,14.0 234.7,70.8 234.7,185.2 128.0,242.0 21.3,185.2 21.3,70.8" fill="none" stroke="#FFC24B" stroke-opacity="0.85" stroke-width="1.4"/><polygon points="128.0,19.0 230.3,73.2 230.3,182.8 128.0,237.0 25.7,182.8 25.7,73.2" fill="none" stroke="#FFC24B" stroke-opacity="0.63" stroke-width="1.4"/><polygon points="128.0,24.0 225.9,75.6 225.9,180.4 128.0,232.0 30.1,180.4 30.1,75.6" fill="none" stroke="#FFC24B" stroke-opacity="0.41" stroke-width="1.4"/>
+    <circle cx="128" cy="122" r="66" fill="url(#core-day_zero)"/>
+    <circle cx="128" cy="122" r="66" fill="none" stroke="#FFC24B" stroke-opacity="0.5" stroke-width="1.2"/>
+  
+<path d="M72 63 L73.54 68.46 L79 70 L73.54 71.54 L72 77 L70.46 71.54 L65 70 L70.46 68.46 Z" fill="#FFE9B8" opacity="0.9"/><path d="M190 77 L191.1 80.9 L195 82 L191.1 83.1 L190 87 L188.9 83.1 L185 82 L188.9 80.9 Z" fill="#FFE9B8" opacity="0.7"/><path d="M78 173 L79.1 176.9 L83 178 L79.1 179.1 L78 183 L76.9 179.1 L73 178 L76.9 176.9 Z" fill="#FFE9B8" opacity="0.65"/><path d="M184 164 L185.76 170.24 L192 172 L185.76 173.76 L184 180 L182.24 173.76 L176 172 L182.24 170.24 Z" fill="#FFE9B8" opacity="0.85"/>
+<g transform="translate(22.21 6.12) scale(0.9476)" fill="rgba(255,255,255,0.94)"><path d="M131.09,145.81c14.69-19.11,41.29-33.91,29.06-62.04-3.13-7.2-10.53-14.75-17.97-17.45-.62-.22-6.23-1.74-6.57-1.74H58.88v101.02c0,.43.56,1.06,0,1.74h21.52v-81.23h51.72c.36,0,3.13,1.41,3.77,1.78,6.39,3.66,7.16,11.63,2.82,17.31l-20.82,22.57v-28.47h-21.52v68.04h68.04v-21.52h-33.32Z"/><path d="M131.09,145.81h33.32v21.52h-68.04v-68.04h21.52v28.47l20.82-22.57c4.34-5.68,3.58-13.65-2.82-17.31-.65-.37-3.42-1.78-3.77-1.78h-51.72v81.23h-21.52c.56-.67,0-1.31,0-1.74v-101.02h76.71c.34,0,5.95,1.52,6.57,1.74,7.45,2.7,14.84,10.25,17.97,17.45,12.23,28.13-14.37,42.93-29.06,62.04Z"/></g>
+
+    <circle cx="128" cy="222" r="17" fill="#0f0c1f" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+    <circle cx="128" cy="222" r="13.5" fill="rgba(255,255,255,0.85)"/>
+    <g transform="translate(110.01 203.32) scale(0.1611)" fill="#2a2350"><path d="M131.09,145.81c14.69-19.11,41.29-33.91,29.06-62.04-3.13-7.2-10.53-14.75-17.97-17.45-.62-.22-6.23-1.74-6.57-1.74H58.88v101.02c0,.43.56,1.06,0,1.74h21.52v-81.23h51.72c.36,0,3.13,1.41,3.77,1.78,6.39,3.66,7.16,11.63,2.82,17.31l-20.82,22.57v-28.47h-21.52v68.04h68.04v-21.52h-33.32Z"/><path d="M131.09,145.81h33.32v21.52h-68.04v-68.04h21.52v28.47l20.82-22.57c4.34-5.68,3.58-13.65-2.82-17.31-.65-.37-3.42-1.78-3.77-1.78h-51.72v81.23h-21.52c.56-.67,0-1.31,0-1.74v-101.02h76.71c.34,0,5.95,1.52,6.57,1.74,7.45,2.7,14.84,10.25,17.97,17.45,12.23,28.13-14.37,42.93-29.06,62.04Z"/></g>
+  
+</svg>

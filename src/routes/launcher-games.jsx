@@ -11,6 +11,15 @@ import {
   getSession, login, logout, subscribeSession, subscribeAuthError,
   getSubscriptionStatus, subscribeSubscriptionRefresh,
 } from "../lib/rload";
+import { T } from "../lib/theme";
+import { getProfile as getPlayerProfile, subscribeProfile as subscribePlayerProfile, recordGameEvent, setCountry as setPlayerCountry, setDisplayName as setPlayerDisplayName } from "../lib/playerStore";
+import { ProfileHeader } from "../components/player/ProfileHeader.jsx";
+import { AchievementsPage } from "../components/player/AchievementsPage.jsx";
+import { CosmeticsPickerModal } from "../components/player/CosmeticsPickerModal.jsx";
+import { NotificationToastHost } from "../components/player/NotificationToastHost.jsx";
+import { findAvatar } from "../components/player/PlayerAvatar.jsx";
+import { findBanner } from "../components/player/PlayerBanner.jsx";
+import { findBadge } from "../components/player/PlayerBadge.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Local cover images — fallback when CDN has no thumbnail for a game
@@ -29,67 +38,9 @@ const LOCAL_COVERS = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Design tokens — matches rload-website-vercel exactly
+// Design tokens — moved to ../lib/theme.js (imported above) so Player
+// Identity components share the exact same (official Rload) palette.
 // ─────────────────────────────────────────────────────────────────────────────
-const T = {
-  // ── Official Rload palette (charte graphique) — base #302861 · surface #442c75 · accent #804af0 ──
-  bgDeep:       "#302861",   // base — darkest official purple, main app background
-  bgMid:        "#442c75",   // surface — official mid violet, nav bar / elevated panels
-  bgSidebar:    "#221c46",   // shade of base (darker, same hue family) — sidebar contrast only
-  bgCard:       "rgba(255,255,255,0.05)",
-  bgCardHover:  "rgba(255,255,255,0.09)",
-  bgGlass:      "rgba(255,255,255,0.06)",
-  border:       "rgba(255,255,255,0.11)",
-  borderBright: "rgba(255,255,255,0.20)",
-  borderBrand:  "rgba(128,74,240,0.3)",
-  brand:        "#804af0",
-  brandGrad:    "linear-gradient(135deg, #804af0 0%, #442c75 100%)",
-  brandGradHov: "linear-gradient(135deg, #8f5ff2 0%, #4f3384 100%)",
-  brandGlow:    "0 4px 24px rgba(128,74,240,0.45)",
-  brandGlowHov: "0 8px 36px rgba(128,74,240,0.6)",
-  brandLight:   "#C9AEFB",
-  brandSoft:    "#B79AF0",
-  green:        "#22c55e",
-  greenBg:      "rgba(34,197,94,0.14)",
-  greenBorder:  "rgba(34,197,94,0.28)",
-  blue:         "#60a5fa",
-  blueBg:       "rgba(96,165,250,0.14)",
-  blueBorder:   "rgba(96,165,250,0.28)",
-  blue2:        "#2B7FFF",
-  blue2Bg:      "rgba(43,127,255,0.2)",
-  blue2Border:  "rgba(43,127,255,0.3)",
-  blue2Light:   "#8EC5FF",
-  purple:       "#c084fc",
-  purpleBg:     "rgba(192,132,252,0.14)",
-  purpleBorder: "rgba(192,132,252,0.28)",
-  orange:       "#fb923c",
-  orangeBg:     "rgba(251,146,60,0.14)",
-  orangeBorder: "rgba(251,146,60,0.28)",
-  red:          "#f87171",
-  redBg:        "rgba(248,113,113,0.14)",
-  redBorder:    "rgba(248,113,113,0.28)",
-  text:         "#FCFCFC",
-  textSub:      "rgba(255,255,255,0.72)",
-  textMuted:    "rgba(255,255,255,0.50)",
-  textDim:      "rgba(255,255,255,0.30)",
-  fontHead:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
-  fontBody:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
-  // ── Radius scale: buttons 12px · cards 16px · panels 20px ──
-  radius:       "1rem",        // 16px — cards
-  radiusSm:     "0.75rem",     // 12px — buttons / chips
-  radiusLg:     "1.25rem",     // 20px — panels / modals
-  radiusPill:   "999px",
-  // ── Shadow scale ──
-  shadowXs:     "0 2px 8px rgba(0,0,0,0.22)",
-  shadowCard:   "0 4px 16px rgba(0,0,0,0.30)",
-  shadowHover:  "0 12px 32px rgba(0,0,0,0.50)",
-  shadowHoverLg:"0 20px 48px rgba(0,0,0,0.55)",
-  shadowModal:  "0 24px 64px rgba(0,0,0,0.65)",
-  ringBrand:    "0 0 0 1px rgba(128,74,240,0.4)",
-  // ── Motion — shared easing for hover/press transitions ──
-  transitionBase: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-  transitionFast: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Utilities
@@ -319,6 +270,8 @@ const LANGS = {
     receiveAlerts:"Receive desktop alerts from Rload", getUpdatesEmail:"Get updates via email",
     chooseLanguage:"Choose your preferred language for the launcher interface.",
     dataPrivacy:"Data & Privacy", security:"Security",
+    dataPrivacyBody:"Rload collects minimal data required to operate the launcher. Your game install paths and preferences are stored locally on your device only. Authentication is handled securely via Auth0.",
+    securityBody:"All connections to Rload services use HTTPS. Tokens are stored securely using the OS credential store. You can sign out at any time to revoke access.",
     // Games
     installed:"Installed", updates:"Updates", library:"Library",
     allGames:"All Games", notInstalled:"Not Installed", favorites:"Favorites",
@@ -358,6 +311,44 @@ const LANGS = {
     step2Title:"Upload Your Game Build", step2Desc:"Upload your game files directly. We support all major formats and handle delivery.",
     step3Title:"Set Price & Metadata", step3Desc:"Configure your game's title, description, pricing, genres, and release details.",
     step4Title:"Publish and Go Live", step4Desc:"Hit publish and your game is instantly accessible to the entire Rload community.",
+    // Player Identity
+    profileDetails:"Profile Details", launcherInformation:"Launcher Information",
+    editProfile:"Edit Profile", membership:"Membership", helpSupport:"Help & Support",
+    achievements:"Achievements", pointsLabel:"points",
+    foundingMemberLabel:"Founding Member", rloadMemberLabel:"Rload Member",
+    gamesPlayedStat:"Games Played", hoursPlayedStat:"Hours Played",
+    studiosDiscoveredStat:"Studios Discovered", subscriptionStat:"Subscription", memberSinceStat:"Member Since",
+    subscriptionDemo:"Demo Mode", subscriptionPremium:"Premium", subscriptionFree:"Free",
+    avatarLabel:"Avatar", bannerLabel:"Banner", badgeLabel:"Badge", countryLabel:"Country", noneLabel:"None", locked:"Locked",
+    displayNameLabel:"Display Name", editLabel:"Edit", saveLabel:"Save", cancelLabel:"Cancel",
+    cosmeticTab_avatar:"Avatar", cosmeticTab_banner:"Banner", cosmeticTab_badge:"Badge", cosmeticTab_title:"Title",
+    achCategory_discovery:"Discovery", achCategory_studios:"Studios", achCategory_playtime:"Playtime",
+    achCategory_exploration:"Exploration", achCategory_special:"Special", achCategory_community:"Community",
+    ach_first_step_title:"Boot Sequence", ach_first_step_desc:"You installed your first game on Rload.",
+    ach_first_launch_title:"First Launch", ach_first_launch_desc:"You launched your first game.",
+    ach_first_discovery_title:"Signal Found", ach_first_discovery_desc:"You discovered and played your first indie game.",
+    ach_explorer_i_title:"Triple Play", ach_explorer_i_desc:"You played 3 different games.",
+    ach_explorer_ii_title:"World Traveler", ach_explorer_ii_desc:"You played 10 different games.",
+    ach_studio_hopper_title:"Studio Drifter", ach_studio_hopper_desc:"You played games from 5 different studios.",
+    ach_belgian_explorer_title:"Local Legend", ach_belgian_explorer_desc:"You played Belgian-made indie games.",
+    ach_hidden_gem_hunter_title:"Below the Surface", ach_hidden_gem_hunter_desc:"You uncovered 3 hidden indie gems.",
+    ach_weekend_player_title:"Weekend Ritual", ach_weekend_player_desc:"You played during 3 different weekends.",
+    ach_completion_starter_title:"Chain Reaction", ach_completion_starter_desc:"You unlocked 5 achievements.",
+    ach_founding_member_title:"Day Zero", ach_founding_member_desc:"You were here at the beginning of Rload.",
+    notifAchievementUnlockedTitle:"🏆 Achievement Unlocked",
+    notifAvatarUnlockedTitle:"New avatar unlocked: {name}",
+    notifBannerUnlockedTitle:"New banner unlocked: {name}",
+    notifBadgeUnlockedTitle:"New badge unlocked: {name}",
+    notifTitleUnlockedTitle:"New title unlocked: {name}",
+    notifLevelUpTitle:"Level up! You reached level {level}",
+    rewardsWaiting:"{count} rewards waiting",
+    rewardLabel:"Reward", rewardTypeAvatar:"Avatar", rewardTypeBanner:"Banner", rewardTypeBadge:"Profile Badge", rewardTypeTitle:"Title",
+    collectionLabel:"Collection", collectionAchievements:"Achievements", collectionAvatars:"Avatars",
+    collectionBanners:"Banners", collectionBadges:"Profile Badges", collectionTitles:"Titles",
+    recentAchievements:"Recent Achievements", nextReward:"Next Reward",
+    noAchievementsYet:"No achievements unlocked yet.", allCaughtUp:"All caught up — new achievements coming soon.",
+    cosmeticCollection:"Cosmetic Collection",
+    changeAvatar:"Change Avatar", changeBanner:"Change Banner", changeBadge:"Change Badge",
   },
   fr: {
     home:"Accueil", games:"Jeux", streaming:"Streaming", events:"Événements",
@@ -377,6 +368,8 @@ const LANGS = {
     receiveAlerts:"Recevoir des alertes bureau de Rload", getUpdatesEmail:"Recevoir les mises à jour par email",
     chooseLanguage:"Choisissez votre langue préférée pour le launcher.",
     dataPrivacy:"Données & Confidentialité", security:"Sécurité",
+    dataPrivacyBody:"Rload collecte le minimum de données nécessaires au fonctionnement du launcher. Les chemins d'installation et vos préférences restent stockés localement sur votre appareil. L'authentification est gérée de façon sécurisée via Auth0.",
+    securityBody:"Toutes les connexions aux services Rload utilisent HTTPS. Les jetons sont stockés de façon sécurisée dans le gestionnaire d'identifiants du système. Vous pouvez vous déconnecter à tout moment pour révoquer l'accès.",
     installed:"Installé", updates:"Mises à jour", library:"Bibliothèque",
     allGames:"Tous les jeux", notInstalled:"Non installé", favorites:"Favoris",
     totalGames:"Jeux au total", playtimeWeek:"Temps de jeu cette semaine",
@@ -408,6 +401,44 @@ const LANGS = {
     step2Title:"Uploader votre build", step2Desc:"Uploadez vos fichiers de jeu directement. Nous supportons tous les formats majeurs.",
     step3Title:"Définir le prix & métadonnées", step3Desc:"Configurez le titre, la description, le prix, les genres et les détails de sortie.",
     step4Title:"Publier et aller en ligne", step4Desc:"Publiez et votre jeu est instantanément accessible à toute la communauté Rload.",
+    // Player Identity
+    profileDetails:"Détails du profil", launcherInformation:"Informations du launcher",
+    editProfile:"Modifier le profil", membership:"Abonnement", helpSupport:"Aide & Support",
+    achievements:"Succès", pointsLabel:"points",
+    foundingMemberLabel:"Membre fondateur", rloadMemberLabel:"Membre Rload",
+    gamesPlayedStat:"Jeux joués", hoursPlayedStat:"Heures jouées",
+    studiosDiscoveredStat:"Studios découverts", subscriptionStat:"Abonnement", memberSinceStat:"Membre depuis",
+    subscriptionDemo:"Mode démo", subscriptionPremium:"Premium", subscriptionFree:"Gratuit",
+    avatarLabel:"Avatar", bannerLabel:"Bannière", badgeLabel:"Badge", countryLabel:"Pays", noneLabel:"Aucun", locked:"Verrouillé",
+    displayNameLabel:"Nom affiché", editLabel:"Modifier", saveLabel:"Enregistrer", cancelLabel:"Annuler",
+    cosmeticTab_avatar:"Avatar", cosmeticTab_banner:"Bannière", cosmeticTab_badge:"Badge", cosmeticTab_title:"Titre",
+    achCategory_discovery:"Découverte", achCategory_studios:"Studios", achCategory_playtime:"Temps de jeu",
+    achCategory_exploration:"Exploration", achCategory_special:"Spécial", achCategory_community:"Communauté",
+    ach_first_step_title:"Boot Sequence", ach_first_step_desc:"Vous avez installé votre premier jeu sur Rload.",
+    ach_first_launch_title:"Premier lancement", ach_first_launch_desc:"Vous avez lancé votre premier jeu.",
+    ach_first_discovery_title:"Signal Found", ach_first_discovery_desc:"Vous avez découvert et joué à votre premier jeu indé.",
+    ach_explorer_i_title:"Triple Play", ach_explorer_i_desc:"Vous avez joué à 3 jeux différents.",
+    ach_explorer_ii_title:"Globe-trotteur", ach_explorer_ii_desc:"Vous avez joué à 10 jeux différents.",
+    ach_studio_hopper_title:"Studio Drifter", ach_studio_hopper_desc:"Vous avez joué à des jeux de 5 studios différents.",
+    ach_belgian_explorer_title:"Légende Locale", ach_belgian_explorer_desc:"Vous avez joué à des jeux indés belges.",
+    ach_hidden_gem_hunter_title:"Below the Surface", ach_hidden_gem_hunter_desc:"Vous avez déniché 3 pépites indé cachées.",
+    ach_weekend_player_title:"Weekend Ritual", ach_weekend_player_desc:"Vous avez joué pendant 3 week-ends différents.",
+    ach_completion_starter_title:"Chain Reaction", ach_completion_starter_desc:"Vous avez débloqué 5 succès.",
+    ach_founding_member_title:"Day Zero", ach_founding_member_desc:"Vous étiez là dès les débuts de Rload.",
+    notifAchievementUnlockedTitle:"🏆 Succès débloqué",
+    notifAvatarUnlockedTitle:"Nouvel avatar débloqué : {name}",
+    notifBannerUnlockedTitle:"Nouvelle bannière débloquée : {name}",
+    notifBadgeUnlockedTitle:"Nouveau badge débloqué : {name}",
+    notifTitleUnlockedTitle:"Nouveau titre débloqué : {name}",
+    notifLevelUpTitle:"Niveau supérieur ! Vous avez atteint le niveau {level}",
+    rewardsWaiting:"{count} récompenses en attente",
+    rewardLabel:"Récompense", rewardTypeAvatar:"Avatar", rewardTypeBanner:"Bannière", rewardTypeBadge:"Badge de profil", rewardTypeTitle:"Titre",
+    collectionLabel:"Collection", collectionAchievements:"Succès", collectionAvatars:"Avatars",
+    collectionBanners:"Bannières", collectionBadges:"Badges de profil", collectionTitles:"Titres",
+    recentAchievements:"Succès récents", nextReward:"Prochaine récompense",
+    noAchievementsYet:"Aucun succès débloqué pour l'instant.", allCaughtUp:"Tout est à jour — de nouveaux succès arrivent bientôt.",
+    cosmeticCollection:"Collection cosmétique",
+    changeAvatar:"Changer d'avatar", changeBanner:"Changer de bannière", changeBadge:"Changer de badge",
   },
   nl: {
     home:"Thuis", games:"Spellen", streaming:"Streaming", events:"Evenementen",
@@ -427,6 +458,8 @@ const LANGS = {
     receiveAlerts:"Bureaubladmeldingen van Rload ontvangen", getUpdatesEmail:"Updates ontvangen via e-mail",
     chooseLanguage:"Kies uw voorkeurstaal voor de launcher.",
     dataPrivacy:"Gegevens & Privacy", security:"Beveiliging",
+    dataPrivacyBody:"Rload verzamelt enkel de minimale gegevens die nodig zijn om de launcher te laten werken. Je installatiepaden en voorkeuren worden uitsluitend lokaal op je apparaat opgeslagen. Authenticatie verloopt veilig via Auth0.",
+    securityBody:"Alle verbindingen met Rload-diensten gebruiken HTTPS. Tokens worden veilig opgeslagen in het credential-systeem van het besturingssysteem. Je kan op elk moment afmelden om de toegang in te trekken.",
     installed:"Geïnstalleerd", updates:"Updates", library:"Bibliotheek",
     allGames:"Alle spellen", notInstalled:"Niet geïnstalleerd", favorites:"Favorieten",
     totalGames:"Totaal spellen", playtimeWeek:"Speeltijd deze week",
@@ -458,6 +491,44 @@ const LANGS = {
     step2Title:"Uw game build uploaden", step2Desc:"Upload uw gamebestanden direct. Wij ondersteunen alle grote formaten.",
     step3Title:"Prijs & metadata instellen", step3Desc:"Configureer de titel, beschrijving, prijs, genres en releasegegevens.",
     step4Title:"Publiceren en live gaan", step4Desc:"Publiceer en uw spel is direct toegankelijk voor de hele Rload-gemeenschap.",
+    // Player Identity
+    profileDetails:"Profielgegevens", launcherInformation:"Launcherinformatie",
+    editProfile:"Profiel bewerken", membership:"Lidmaatschap", helpSupport:"Hulp & Ondersteuning",
+    achievements:"Prestaties", pointsLabel:"punten",
+    foundingMemberLabel:"Oprichtend lid", rloadMemberLabel:"Rload-lid",
+    gamesPlayedStat:"Gespeelde spellen", hoursPlayedStat:"Gespeelde uren",
+    studiosDiscoveredStat:"Ontdekte studio's", subscriptionStat:"Abonnement", memberSinceStat:"Lid sinds",
+    subscriptionDemo:"Demomodus", subscriptionPremium:"Premium", subscriptionFree:"Gratis",
+    avatarLabel:"Avatar", bannerLabel:"Banier", badgeLabel:"Badge", countryLabel:"Land", noneLabel:"Geen", locked:"Vergrendeld",
+    displayNameLabel:"Weergavenaam", editLabel:"Bewerken", saveLabel:"Opslaan", cancelLabel:"Annuleren",
+    cosmeticTab_avatar:"Avatar", cosmeticTab_banner:"Banier", cosmeticTab_badge:"Badge", cosmeticTab_title:"Titel",
+    achCategory_discovery:"Ontdekking", achCategory_studios:"Studio's", achCategory_playtime:"Speeltijd",
+    achCategory_exploration:"Verkenning", achCategory_special:"Speciaal", achCategory_community:"Gemeenschap",
+    ach_first_step_title:"Boot Sequence", ach_first_step_desc:"Je hebt je eerste spel op Rload geïnstalleerd.",
+    ach_first_launch_title:"Eerste start", ach_first_launch_desc:"Je hebt je eerste spel gestart.",
+    ach_first_discovery_title:"Signal Found", ach_first_discovery_desc:"Je hebt je eerste indiegame ontdekt en gespeeld.",
+    ach_explorer_i_title:"Triple Play", ach_explorer_i_desc:"Je hebt 3 verschillende spellen gespeeld.",
+    ach_explorer_ii_title:"Wereldreiziger", ach_explorer_ii_desc:"Je hebt 10 verschillende spellen gespeeld.",
+    ach_studio_hopper_title:"Studio Drifter", ach_studio_hopper_desc:"Je hebt spellen van 5 verschillende studio's gespeeld.",
+    ach_belgian_explorer_title:"Lokale Legende", ach_belgian_explorer_desc:"Je hebt Belgische indiegames gespeeld.",
+    ach_hidden_gem_hunter_title:"Below the Surface", ach_hidden_gem_hunter_desc:"Je hebt 3 verborgen indieparels ontdekt.",
+    ach_weekend_player_title:"Weekend Ritual", ach_weekend_player_desc:"Je hebt tijdens 3 verschillende weekends gespeeld.",
+    ach_completion_starter_title:"Chain Reaction", ach_completion_starter_desc:"Je hebt 5 prestaties ontgrendeld.",
+    ach_founding_member_title:"Day Zero", ach_founding_member_desc:"Je was erbij vanaf het prille begin van Rload.",
+    notifAchievementUnlockedTitle:"🏆 Prestatie ontgrendeld",
+    notifAvatarUnlockedTitle:"Nieuwe avatar ontgrendeld: {name}",
+    notifBannerUnlockedTitle:"Nieuwe banier ontgrendeld: {name}",
+    notifBadgeUnlockedTitle:"Nieuwe badge ontgrendeld: {name}",
+    notifTitleUnlockedTitle:"Nieuwe titel ontgrendeld: {name}",
+    notifLevelUpTitle:"Level omhoog! Je bereikte level {level}",
+    rewardsWaiting:"{count} beloningen in wachtrij",
+    rewardLabel:"Beloning", rewardTypeAvatar:"Avatar", rewardTypeBanner:"Banier", rewardTypeBadge:"Profielbadge", rewardTypeTitle:"Titel",
+    collectionLabel:"Collectie", collectionAchievements:"Prestaties", collectionAvatars:"Avatars",
+    collectionBanners:"Banieren", collectionBadges:"Profielbadges", collectionTitles:"Titels",
+    recentAchievements:"Recente prestaties", nextReward:"Volgende beloning",
+    noAchievementsYet:"Nog geen prestaties ontgrendeld.", allCaughtUp:"Alles bijgewerkt — binnenkort nieuwe prestaties.",
+    cosmeticCollection:"Cosmetische collectie",
+    changeAvatar:"Avatar wijzigen", changeBanner:"Banier wijzigen", changeBadge:"Badge wijzigen",
   },
 };
 
@@ -716,7 +787,17 @@ const NAV_ITEMS = [
 
 function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
   const [hov, setHov] = useState(null);
+  const [navAvatarId, setNavAvatarId] = useState(null);
   const initial = (user?.email||user?.name||"U")[0].toUpperCase();
+
+  // Mirrors whatever avatar the player has equipped (ProfilePage owns the
+  // authoritative load/init) — subscribes independently so the nav circle
+  // updates immediately after a Save in the cosmetics picker.
+  useEffect(() => {
+    const unsub = subscribePlayerProfile((p) => setNavAvatarId(p?.avatarId || null));
+    return unsub;
+  }, []);
+  const navAvatar = navAvatarId ? findAvatar(navAvatarId) : null;
   return (
     <div style={{ height:62, flexShrink:0, background:T.bgMid, borderBottom:`1px solid ${T.border}`, display:"flex", alignItems:"center", padding:"0 152px 0 24px", fontFamily:T.fontBody, position:"relative", zIndex:100, WebkitAppRegion:"drag" }}>
       {/* Logo — white transparent SVG */}
@@ -759,17 +840,17 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
             transition:"background 0.18s ease-out, color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out" }}>
           <Icon.Bell/>
         </div>
-        {/* Profile avatar button */}
+        {/* Profile avatar button — shows the player's equipped avatar once loaded, falls back to initial */}
         <div onClick={()=>onTab("profile")} onMouseEnter={()=>setHov("profile")} onMouseLeave={()=>setHov(null)}
           style={{ width:38, height:38, borderRadius:"50%",
-            background:tab==="profile" ? T.brandGrad : "rgba(128,74,240,0.25)",
+            background:navAvatar ? "transparent" : (tab==="profile" ? T.brandGrad : "rgba(128,74,240,0.25)"),
             border:`2px solid ${tab==="profile" ? T.brand : "rgba(128,74,240,0.45)"}`,
-            display:"flex", alignItems:"center", justifyContent:"center",
+            display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden",
             cursor:"pointer", fontSize:14, fontWeight:700, color:"#fff",
             transition:"background 0.18s ease-out, color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out", boxShadow:tab==="profile" ? T.brandGlow : "none",
             userSelect:"none",
           }}>
-          {initial}
+          {navAvatar ? <img src={navAvatar.asset} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : initial}
         </div>
       </div>
     </div>
@@ -1025,6 +1106,44 @@ function HomeFeaturedCard({ game, uiState, onSelect }) {
 function EventCard({ ev, showThumbnail = false, thumbSize = 100 }) {
   const cc = eventCategoryColor(ev.category);
   const [imgErr, setImgErr] = useState(false);
+  const big = thumbSize > 120;
+
+  // Big mode (Home): image ~34% / content ~66%, date badge overlaid on the image corner instead
+  // of its own column — frees the width the old 3-column layout (image + date + content) was
+  // wasting, so title/description get real room instead of a cramped sliver on the right.
+  if (big) {
+    return (
+      <div style={{ borderRadius:T.radius, padding:16, display:"flex", alignItems:"center", gap:16, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
+        {showThumbnail && ev.imageUrl && !imgErr && (
+          <div style={{ position:"relative", aspectRatio:"9/16", height:thumbSize, borderRadius:"0.75rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
+            <img src={ev.imageUrl} alt={ev.title}
+              style={{ width:"100%", height:"100%", objectFit:"cover" }}
+              onError={()=>setImgErr(true)}/>
+            <div style={{ position:"absolute", left:10, bottom:10, textAlign:"center", background:"rgba(20,16,42,0.85)", backdropFilter:"blur(6px)", borderRadius:"0.7rem", border:"1px solid rgba(128,74,240,0.4)", padding:"8px 12px" }}>
+              <div style={{ fontSize:18, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
+              <div style={{ fontSize:9.5, fontWeight:600, color:T.brandLight, marginTop:2, letterSpacing:"0.04em" }}>{ev.month}</div>
+            </div>
+          </div>
+        )}
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ display:"flex", gap:6, marginBottom:8, flexWrap:"wrap" }}>
+            <span style={{ fontSize:10, fontWeight:600, padding:"2px 10px", borderRadius:T.radiusPill, color:cc.color, background:"#804af033", border:"1px solid rgba(128,74,240,0.3)" }}>{ev.category}</span>
+            {ev.status && (
+              <span style={{ fontSize:10, fontWeight:600, padding:"2px 10px", borderRadius:T.radiusPill, color:T.blue2Light, background:"#2B7FFF33", border:"1px solid rgba(43,127,255,0.3)" }}>{ev.status}</span>
+            )}
+          </div>
+          <div style={{ fontSize:17, fontWeight:600, color:T.text, fontFamily:T.fontHead, lineHeight:1.3, marginBottom:6 }}>{ev.title}</div>
+          {ev.description && <div style={{ fontSize:13, color:"#a0a0a0", lineHeight:1.55, marginBottom:6, whiteSpace:"normal" }}>{ev.description}</div>}
+          {ev.time && (
+            <div style={{ display:"flex", alignItems:"center", gap:6, color:"#878787", fontSize:12, marginTop:4 }}>
+              <Icon.Calendar/> {ev.time}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ borderRadius:T.radius, padding:16, display:"flex", alignItems:thumbSize>120?"center":"flex-start", gap:16, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
       {/* Thumbnail — shown in EventsPage list view. Home opts into a bigger thumbSize; the
@@ -1819,20 +1938,20 @@ function PlaceholderCard({ p }) {
 function SidebarSectionLabel({ label }) {
   return (
     <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.14em",
-      textTransform:"uppercase", padding:"18px 14px 6px", userSelect:"none", fontFamily:T.fontBody }}>
+      textTransform:"uppercase", padding:"28px 14px 8px", userSelect:"none", fontFamily:T.fontBody }}>
       {label}
     </div>
   );
 }
 
-// SidebarNavItem — premium pill-style active state matching reference screenshot
+// SidebarNavItem — Apple TV-inspired floating sidebar, adapted to Rload's purple identity
 function SidebarNavItem({ icon, label, active, onClick, badge, disabled }) {
   const [hov, setHov] = useState(false);
   return (
     <div onClick={disabled?undefined:onClick}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px",
-        borderRadius:"0.75rem", cursor:disabled?"default":"pointer", userSelect:"none", margin:"1px 0",
+      style={{ display:"flex", alignItems:"center", gap:10, padding:"0 12px", height:44,
+        borderRadius:10, cursor:disabled?"default":"pointer", userSelect:"none", margin:"1px 0",
         background: active
           ? "linear-gradient(135deg, rgba(128,74,240,0.38) 0%, rgba(68,44,117,0.28) 100%)"
           : (hov&&!disabled)?"rgba(255,255,255,0.07)":"transparent",
@@ -2475,21 +2594,8 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     downloads: activeDownloads.length,
   };
 
-  // ── Tag-based filters — disabled gracefully if no games carry the tag ─────
-  const TAG_FILTERS = [
-    { id:"multiplayer", label:"Multiplayer", icon:"👥" },
-    { id:"local",       label:"Local Co-op", icon:"🖥" },
-    { id:"controller",  label:"Controller",  icon:"🕹" },
-    { id:"demo",        label:"Demo",        icon:"🎮" },
-  ].map(tf => ({
-    ...tf,
-    count: realGames.filter(g => g.tags?.some(t => t.toLowerCase().includes(tf.id))).length,
-  }));
-
   // ── Grid games based on sidebar view ─────────────────────────────────────
   const getGridGames = () => {
-    const activeTag = sidebarView.startsWith("tag:") ? sidebarView.slice(4) : null;
-    if (activeTag)                    return realGames.filter(g => g.tags?.some(t=>t.toLowerCase().includes(activeTag)));
     if (sidebarView==="installed")    return search ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : installed;
     if (sidebarView==="updates")      return withUpdates;
     if (sidebarView==="favorites")    return search ? searchBase.filter(g=>favorites.has(g.gameId)) : favorited;
@@ -2513,7 +2619,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     : sidebarView==="favorites"  ? "Favorites"
     : sidebarView==="downloads"  ? "Active Downloads"
     : sidebarView==="queue"      ? "Download Queue"
-    : TAG_FILTERS.find(t=>t.id===sidebarView.slice(4))?.label || "Games";
+    : "Games";
 
   // ── Featured: prefer real CDN games, pad with FEATURED_PLACEHOLDERS ─────
   const featuredReal = realGames.slice(0, 3);
@@ -2523,14 +2629,15 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
   return (
     <div style={{ display:"flex", flex:1, overflow:"hidden", fontFamily:T.fontBody }}>
 
-      {/* ── LEFT SIDEBAR — premium pill style ────────────────────────────── */}
-      <div style={{ width:218, flexShrink:0, display:"flex", flexDirection:"column",
-        background:`linear-gradient(180deg, #0d0b20 0%, #100e24 100%)`,
-        borderRight:`1px solid rgba(255,255,255,0.08)`,
-        boxShadow:"2px 0 16px rgba(0,0,0,0.35)",
+      {/* ── LEFT SIDEBAR — floating frosted-glass panel, Apple TV-inspired, Rload identity ─── */}
+      <div style={{ width:240, flexShrink:0, display:"flex", flexDirection:"column",
+        margin:"20px 0 20px 20px", borderRadius:22,
+        background:"rgba(20,20,22,0.78)", backdropFilter:"blur(22px)", WebkitBackdropFilter:"blur(22px)",
+        border:"1px solid rgba(255,255,255,0.06)",
+        boxShadow:"0 8px 32px rgba(0,0,0,0.35)",
         overflowY:"auto", overflowX:"hidden" }} className="hide-scrollbar">
 
-        <div style={{ flex:1, padding:"8px 10px 0" }}>
+        <div style={{ flex:1, padding:"20px 10px 0" }}>
 
           {/* LIBRARY */}
           <SidebarSectionLabel label="Library"/>
@@ -2544,17 +2651,6 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
           <SidebarSectionLabel label="Downloads"/>
           <SidebarNavItem icon="⬇" label="Active Downloads" active={sidebarView==="downloads"} onClick={()=>{ setSidebarView("downloads"); setSearch(""); }} badge={counts.downloads}/>
           <SidebarNavItem icon="☰" label="Queue"             active={sidebarView==="queue"}     onClick={()=>setSidebarView("queue")} disabled={true}/>
-
-          {/* TAGS */}
-          <SidebarSectionLabel label="Tags"/>
-          {TAG_FILTERS.map(tf=>(
-            <SidebarNavItem key={tf.id}
-              icon={tf.icon} label={tf.label}
-              active={sidebarView===`tag:${tf.id}`}
-              onClick={()=>setSidebarView(`tag:${tf.id}`)}
-              disabled={tf.count===0}
-              badge={tf.count>0?tf.count:null}/>
-          ))}
 
           {/* SYSTEM */}
           <SidebarSectionLabel label="System"/>
@@ -2691,7 +2787,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
                 marginBottom:14 }}>
                 <SectionHeading title={gridTitle} noMargin/>
                 {(sidebarView==="all"||sidebarView==="recent") && (
-                  <span style={{ fontSize:11, color:T.textDim }}>{realGames.length} games</span>
+                  <span style={{ fontSize:11, color:T.textDim }}>{gridGames.length} games</span>
                 )}
               </div>
 
@@ -3460,12 +3556,12 @@ function SettingsRow({ icon: RowIcon, label, onClick }) {
   );
 }
 
-function SubPageShell({ title, onBack, children }) {
+function SubPageShell({ title, onBack, children, t }) {
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
       <div style={{ padding:"20px 28px 0", display:"flex", alignItems:"center", gap:12, borderBottom:`1px solid ${T.border}`, paddingBottom:16 }}>
         <div onClick={onBack} style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", color:T.textMuted, fontSize:13, padding:"5px 10px", borderRadius:T.radiusSm, background:"rgba(255,255,255,0.04)", border:`1px solid ${T.border}`, userSelect:"none" }}>
-          <Icon.ChevronLeft/> Back
+          <Icon.ChevronLeft/> {t?.backToProfile || "Back"}
         </div>
         <div style={{ fontSize:17, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.2px" }}>{title}</div>
       </div>
@@ -3474,21 +3570,91 @@ function SubPageShell({ title, onBack, children }) {
   );
 }
 
-function AccountDetailsPage({ user, onBack }) {
+const COUNTRY_OPTIONS = [
+  { code:"BE", label:"Belgique" }, { code:"FR", label:"France" }, { code:"NL", label:"Nederland" },
+  { code:"DE", label:"Deutschland" }, { code:"LU", label:"Luxembourg" }, { code:"CH", label:"Suisse" },
+  { code:"OTHER", label:"Other / Autre" },
+];
+
+function DisplayNameField({ label, value, fallback, t }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || fallback || "");
+
+  const startEdit = () => { setDraft(value || fallback || ""); setEditing(true); };
+  const save = () => { setPlayerDisplayName(draft); setEditing(false); };
+  const cancel = () => setEditing(false);
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontSize:11.5, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.07em" }}>{label}</div>
+      {editing ? (
+        <div style={{ display:"flex", gap:8 }}>
+          <input
+            autoFocus value={draft} maxLength={32}
+            onChange={(e)=>setDraft(e.target.value)}
+            onKeyDown={(e)=>{ if (e.key==="Enter") save(); if (e.key==="Escape") cancel(); }}
+            style={{ flex:1, padding:"11px 14px", borderRadius:T.radiusSm, background:"rgba(255,255,255,0.06)", border:`1px solid ${T.borderBrand}`, fontSize:13.5, color:T.text, fontFamily:T.fontBody }}
+          />
+          <button onClick={save} style={{ padding:"0 16px", borderRadius:T.radiusSm, border:"none", background:T.brandGrad, color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+            {t.saveLabel || "Save"}
+          </button>
+          <button onClick={cancel} style={{ padding:"0 16px", borderRadius:T.radiusSm, border:`1px solid ${T.border}`, background:"transparent", color:T.textMuted, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+            {t.cancelLabel || "Cancel"}
+          </button>
+        </div>
+      ) : (
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ flex:1, padding:"11px 14px", borderRadius:T.radiusSm, background:"rgba(255,255,255,0.04)", border:`1px solid ${T.border}`, fontSize:13.5, color:T.text }}>{value || fallback || "—"}</div>
+          <button onClick={startEdit} style={{ padding:"0 16px", height:"100%", borderRadius:T.radiusSm, border:`1px solid ${T.border}`, background:"rgba(255,255,255,0.04)", color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, flexShrink:0 }}>
+            {t.editLabel || "Edit"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfileDetailsPage({ user, profile, lang, subscriptionLabel, memberSinceLabel, t, onBack }) {
   const field = (label, value) => (
     <div style={{ marginBottom:16 }}>
       <div style={{ fontSize:11.5, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.07em" }}>{label}</div>
       <div style={{ padding:"11px 14px", borderRadius:T.radiusSm, background:"rgba(255,255,255,0.04)", border:`1px solid ${T.border}`, fontSize:13.5, color:T.text }}>{value||"—"}</div>
     </div>
   );
+  const avatar = findAvatar(profile.avatarId);
+  const banner = findBanner(profile.bannerId);
+  const badge  = profile.activeBadgeId ? findBadge(profile.activeBadgeId) : null;
+  const langLabel = { en:"English", fr:"Français", nl:"Nederlands" }[lang] || lang;
+  const thumb = (src, name, round) => (
+    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{ width:32, height:32, borderRadius: round ? "50%" : 6, overflow:"hidden", border:`1px solid ${T.borderBrand}`, flexShrink:0 }}>
+        <img src={src} alt={name} style={{ width:"100%", height:"100%", objectFit:"cover" }}/>
+      </div>
+      <span>{name}</span>
+    </div>
+  );
   return (
-    <SubPageShell title="Account Details" onBack={onBack}>
+    <SubPageShell title={t.profileDetails || "Profile Details"} onBack={onBack} t={t}>
       <div style={{ maxWidth:420 }}>
-        {field("Username", user?.name||user?.email?.split("@")[0]||"User")}
+        <DisplayNameField label={t.displayNameLabel || "Display Name"} value={profile.displayName} fallback={user?.name||user?.email?.split("@")[0]||"User"} t={t}/>
         {field("Email", user?.email)}
-        {field("User ID", user?.sub?.split("|").pop()?.substring(0,16))}
-        {field("Auth Provider", user?.sub?.includes("google")?"Google":user?.sub?.includes("auth0")?"Email / Password":"Auth0")}
-        {field("Launcher Version", "v1.0.0")}
+        {field(t.avatarLabel || "Avatar", avatar ? thumb(avatar.asset, avatar.name, true) : "—")}
+        {field(t.bannerLabel || "Banner", banner ? thumb(banner.asset, banner.name || banner.title, false) : "—")}
+        {field(t.badgeLabel || "Badge", badge ? thumb(badge.asset, badge.name, true) : (t.noneLabel || "None"))}
+        {field(t.language, langLabel)}
+        {field(t.memberSinceStat || "Member Since", memberSinceLabel)}
+        {field(t.subscriptionStat || "Subscription", subscriptionLabel)}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11.5, fontWeight:600, color:T.textMuted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.07em" }}>{t.countryLabel || "Country"}</div>
+          <select
+            value={profile.country || ""}
+            onChange={(e)=>setPlayerCountry(e.target.value || undefined)}
+            style={{ width:"100%", padding:"11px 14px", borderRadius:T.radiusSm, background:"rgba(255,255,255,0.04)", border:`1px solid ${T.border}`, fontSize:13.5, color:T.text, fontFamily:T.fontBody, cursor:"pointer" }}
+          >
+            <option value="" style={{ background:T.bgMid }}>—</option>
+            {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code} style={{ background:T.bgMid }}>{c.label}</option>)}
+          </select>
+        </div>
       </div>
     </SubPageShell>
   );
@@ -3512,31 +3678,53 @@ function NotifRow({ label, desc, on, setOn }) {
     </div>
   );
 }
-function NotificationsPage({ onBack }) {
-  const [push, setPush]   = useState(true);
-  const [email, setEmail] = useState(false);
-  const [newRel, setNewRel] = useState(true);
+const NOTIFICATION_DEFAULTS = { push: true, email: false, newReleases: true };
+
+function NotificationsPage({ onBack, t }) {
+  const [prefs, setPrefs] = useState(null); // null while loading — avoids flashing defaults then flipping
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const saved = await window.rload?.settings?.get?.();
+        if (alive) setPrefs({ ...NOTIFICATION_DEFAULTS, ...(saved?.notifications || {}) });
+      } catch { if (alive) setPrefs(NOTIFICATION_DEFAULTS); }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const update = (key, value) => {
+    setPrefs(prev => {
+      const next = { ...prev, [key]: value };
+      window.rload?.settings?.set?.({ notifications: next }).catch(() => {});
+      return next;
+    });
+  };
+
+  if (!prefs) return <SubPageShell title={t.notifications} onBack={onBack} t={t}><div/></SubPageShell>;
+
   return (
-    <SubPageShell title="Notifications" onBack={onBack}>
+    <SubPageShell title={t.notifications} onBack={onBack} t={t}>
       <div style={{ maxWidth:420 }}>
-        <NotifRow label="Push notifications"  desc="Receive desktop alerts from Rload"  on={push}   setOn={setPush}/>
-        <NotifRow label="Email notifications" desc="Get updates via email"               on={email}  setOn={setEmail}/>
-        <NotifRow label="New releases"        desc="Notify me when new games are added"  on={newRel} setOn={setNewRel}/>
+        <NotifRow label={t.pushNotifications}  desc={t.receiveAlerts}   on={prefs.push}        setOn={(v)=>update("push", v)}/>
+        <NotifRow label={t.emailNotifications} desc={t.getUpdatesEmail} on={prefs.email}       setOn={(v)=>update("email", v)}/>
+        <NotifRow label={t.newReleases}        desc={t.notifyNewGames}  on={prefs.newReleases} setOn={(v)=>update("newReleases", v)}/>
       </div>
     </SubPageShell>
   );
 }
 
-function LanguagePage({ lang, changeLang, onBack }) {
+function LanguagePage({ lang, changeLang, onBack, t }) {
   const LANGS_LIST = [
     { code:"en", label:"English",    native:"English"    },
     { code:"fr", label:"French",     native:"Français"   },
     { code:"nl", label:"Dutch",      native:"Nederlands" },
   ];
   return (
-    <SubPageShell title="Language" onBack={onBack}>
+    <SubPageShell title={t.language} onBack={onBack} t={t}>
       <div style={{ maxWidth:380 }}>
-        <div style={{ fontSize:12, color:T.textDim, marginBottom:16 }}>Choose your preferred language for the launcher interface.</div>
+        <div style={{ fontSize:12, color:T.textDim, marginBottom:16 }}>{t.chooseLanguage}</div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {LANGS_LIST.map(l => {
             const active = lang === l.code;
@@ -3561,17 +3749,17 @@ function LanguagePage({ lang, changeLang, onBack }) {
   );
 }
 
-function PrivacyPage({ onBack }) {
+function PrivacyPage({ onBack, t }) {
   return (
-    <SubPageShell title="Privacy & Security" onBack={onBack}>
+    <SubPageShell title={t.privacy} onBack={onBack} t={t}>
       <div style={{ maxWidth:420 }}>
         <div style={{ padding:"18px 16px", borderRadius:T.radius, background:"rgba(255,255,255,0.03)", border:`1px solid ${T.border}`, marginBottom:14 }}>
-          <div style={{ fontSize:13.5, fontWeight:600, color:T.text, marginBottom:8 }}>Data & Privacy</div>
-          <div style={{ fontSize:12.5, color:T.textMuted, lineHeight:1.65 }}>Rload collects minimal data required to operate the launcher. Your game install paths and preferences are stored locally on your device only. Authentication is handled securely via Auth0.</div>
+          <div style={{ fontSize:13.5, fontWeight:600, color:T.text, marginBottom:8 }}>{t.dataPrivacy}</div>
+          <div style={{ fontSize:12.5, color:T.textMuted, lineHeight:1.65 }}>{t.dataPrivacyBody}</div>
         </div>
         <div style={{ padding:"18px 16px", borderRadius:T.radius, background:"rgba(255,255,255,0.03)", border:`1px solid ${T.border}` }}>
-          <div style={{ fontSize:13.5, fontWeight:600, color:T.text, marginBottom:8 }}>Security</div>
-          <div style={{ fontSize:12.5, color:T.textMuted, lineHeight:1.65 }}>All connections to Rload services use HTTPS. Tokens are stored securely using the OS credential store. You can sign out at any time to revoke access.</div>
+          <div style={{ fontSize:13.5, fontWeight:600, color:T.text, marginBottom:8 }}>{t.security}</div>
+          <div style={{ fontSize:12.5, color:T.textMuted, lineHeight:1.65 }}>{t.securityBody}</div>
         </div>
       </div>
     </SubPageShell>
@@ -3594,7 +3782,7 @@ function InfoActionBtn({ label, onClick, color, disabled }) {
     </button>
   );
 }
-function LauncherInfoPage({ onBack }) {
+function LauncherInfoPage({ onBack, user, t }) {
   const [info, setInfo]         = useState(null);
   const [copied, setCopied]     = useState(false);
   const [checking, setChecking] = useState(false);
@@ -3665,7 +3853,7 @@ function LauncherInfoPage({ onBack }) {
   const statusLabel = STATUS_LABEL[statusKey] || statusKey;
 
   return (
-    <SubPageShell title="Launcher Information" onBack={onBack}>
+    <SubPageShell title={t.launcherInformation || "Launcher Information"} onBack={onBack} t={t}>
       <div style={{ maxWidth: 420 }}>
         {/* Primary actions */}
         <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
@@ -3694,6 +3882,11 @@ function LauncherInfoPage({ onBack }) {
             <InfoField label="Last Update Check"  value={info.lastCheckedAt ? new Date(info.lastCheckedAt).toLocaleString() : "Not yet"}/>
             <InfoField label="Installation Type"  value="Standard Windows installer"/>
             <InfoField label="Platform"           value={`Windows · ${osLabel}`}/>
+
+            {/* Diagnostics — moved here from Profile Details (technical, not identity) */}
+            <div style={{ fontSize: 10, fontWeight: 700, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.08em", margin: "20px 0 10px" }}>Diagnostics</div>
+            <InfoField label="User ID"       value={user?.sub?.split("|").pop()?.substring(0,16)}/>
+            <InfoField label="Auth Provider" value={user?.sub?.includes("google")?"Google":user?.sub?.includes("auth0")?"Email / Password":"Auth0"}/>
           </>
         ) : (
           <div style={{ padding: 32, textAlign: "center", color: T.textDim, fontSize: 13 }}>Loading…</div>
@@ -3703,7 +3896,30 @@ function LauncherInfoPage({ onBack }) {
   );
 }
 
-function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLang }) {
+function MembershipPage({ onBack, t, subscriptionLabel, subscriptionStatus, demoMode }) {
+  const periodEnd = subscriptionStatus?.currentPeriodEnd
+    ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString()
+    : null;
+  return (
+    <SubPageShell title={t.membership || "Membership"} onBack={onBack} t={t}>
+      <div style={{ maxWidth:420 }}>
+        <div style={{ padding:"18px 16px", borderRadius:T.radius, background:"rgba(128,74,240,0.08)", border:`1px solid ${T.borderBrand}`, marginBottom:14 }}>
+          <div style={{ fontSize:11, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{t.subscriptionStat || "Subscription"}</div>
+          <div style={{ fontSize:17, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{subscriptionLabel}</div>
+          {periodEnd && <div style={{ fontSize:12, color:T.textMuted, marginTop:6 }}>Renews {periodEnd}</div>}
+          {demoMode && <div style={{ fontSize:11, color:T.orange, marginTop:6 }}>Demo build — subscription gates bypassed locally.</div>}
+        </div>
+        <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")}
+          style={{ width:"100%", padding:"12px 16px", borderRadius:T.radius, border:`1px solid ${T.borderBrand}`,
+            background:T.brandGrad, boxShadow:T.brandGlow, color:"#fff", fontSize:13.5, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody }}>
+          Manage Subscription
+        </button>
+      </div>
+    </SubPageShell>
+  );
+}
+
+function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLang, subscriptionStatus, demoMode }) {
   const [subPage, setSubPage] = useState(null);
   const [displayMode, setDisplayMode] = useState("dark");
   // Hooks must run unconditionally on every render — declared before the sub-page early returns below.
@@ -3713,16 +3929,19 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
   });
   const INSTALLED_SET = new Set([UI.INSTALLED,UI.RUNNING,UI.UPDATE_AVAILABLE,UI.INSTALLED_NO_EXE]);
   const installed = games.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId]||UI.IDLE));
+  const [cosmeticsTab, setCosmeticsTab] = useState(null); // "avatar" | "banner" | "badge" | null
+  const [profile, setProfile] = useState(null);
   const t = LANGS[lang] || LANGS.en;
 
-  if (subPage === "account")        return <AccountDetailsPage user={user} onBack={()=>setSubPage(null)}/>;
-  if (subPage === "notifications")  return <NotificationsPage onBack={()=>setSubPage(null)}/>;
-  if (subPage === "language")       return <LanguagePage lang={lang} changeLang={changeLang} onBack={()=>setSubPage(null)}/>;
-  if (subPage === "privacy")        return <PrivacyPage onBack={()=>setSubPage(null)}/>;
-  if (subPage === "launcher-info")  return <LauncherInfoPage onBack={()=>setSubPage(null)}/>;
+  const username = profile?.displayName || user?.name || user?.email?.split("@")[0] || "User";
 
-  const username = user?.name || user?.email?.split("@")[0] || "User";
-  const userInitial = username[0]?.toUpperCase() || "U";
+  useEffect(() => {
+    let unsub = () => {};
+    getPlayerProfile(user?.sub).then(() => {
+      unsub = subscribePlayerProfile(setProfile);
+    });
+    return () => unsub();
+  }, [user?.sub]);
 
   const profileWeeklyMins = parseInt(localStorage.getItem(getWeekKey())||"0", 10);
   const overviewStats = [
@@ -3731,64 +3950,59 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
     { icon:"./images/games/icons/noto_star.png",     label:"Favorites",          value: profileFavorites.size    },
     { icon:"./images/games/icons/hourglass.png",     label:"This Week",          value: formatPlaytime(profileWeeklyMins) },
   ];
+  const subscriptionLabel = demoMode
+    ? (t.subscriptionDemo || "Demo Mode")
+    : subscriptionStatus?.hasAccess
+      ? (subscriptionStatus.planName || t.subscriptionPremium || "Premium")
+      : (t.subscriptionFree || "Free");
 
-  const actionTiles = [
-    { icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.11"/></svg>, label:"Achievements" },
-    { icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, label:t.favorites||"Favorites" },
-    { icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>, label:"Purchase History" },
-    { icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>, label:"Help & Support" },
-  ];
+  const memberSinceLabel = profile
+    ? new Date(profile.memberSince).toLocaleDateString(lang === "en" ? "en-US" : lang, { year: "numeric", month: "short" })
+    : "—";
+
+  if (subPage === "profile-details" && profile) {
+    return <ProfileDetailsPage user={user} profile={profile} lang={lang} subscriptionLabel={subscriptionLabel} memberSinceLabel={memberSinceLabel} t={t} onBack={()=>setSubPage(null)}/>;
+  }
+  if (subPage === "achievements" && profile) {
+    return <AchievementsPage profile={profile} t={t} onBack={()=>setSubPage(null)}/>;
+  }
+  if (subPage === "membership") {
+    return <MembershipPage t={t} subscriptionLabel={subscriptionLabel} subscriptionStatus={subscriptionStatus} demoMode={demoMode} onBack={()=>setSubPage(null)}/>;
+  }
+  if (subPage === "notifications")  return <NotificationsPage t={t} onBack={()=>setSubPage(null)}/>;
+  if (subPage === "language")       return <LanguagePage lang={lang} changeLang={changeLang} t={t} onBack={()=>setSubPage(null)}/>;
+  if (subPage === "privacy")        return <PrivacyPage t={t} onBack={()=>setSubPage(null)}/>;
+  if (subPage === "launcher-info")  return <LauncherInfoPage user={user} t={t} onBack={()=>setSubPage(null)}/>;
+
+  if (!profile) {
+    return <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", color:T.textDim, fontSize:13 }}>Loading…</div>;
+  }
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
-      {/* Profile header */}
-      <div style={{ background:"linear-gradient(180deg, rgba(128,74,240,0.22) 0%, rgba(128,74,240,0.04) 100%)", borderBottom:`1px solid ${T.border}`, padding:"24px 20px 20px" }}>
+      <ProfileHeader
+        profile={profile} username={username}
+        subscriptionLabel={subscriptionLabel} memberSinceLabel={memberSinceLabel}
+        t={t} onOpenCosmetics={(tab)=>setCosmeticsTab(tab || "avatar")}
+        onOpenAchievements={()=>setSubPage("achievements")}
+      />
 
-        {/* Top row: identity + cog */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <div style={{ width:46, height:46, borderRadius:"0.85rem", background:T.brandGrad, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, fontWeight:800, color:"#fff", fontFamily:T.fontHead, boxShadow:T.brandGlow, flexShrink:0 }}>
-              {userInitial}
+      {/* Membership — the only remaining "tile" outside Settings, since it's
+          the one thing a player checks often (renewal date, plan). */}
+      <div style={{ padding:"0 20px 16px" }}>
+        <div onClick={()=>setSubPage("membership")} style={{ padding:"13px 16px", borderRadius:T.radiusSm,
+          background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`,
+          display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ width:32, height:32, borderRadius:"0.6rem", background:"rgba(128,74,240,0.15)", border:`1px solid ${T.borderBrand}`, display:"flex", alignItems:"center", justifyContent:"center", color:T.brandLight }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             </div>
-            <div>
-              <div style={{ fontSize:17, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.2px" }}>{username}</div>
-              <div style={{ fontSize:11, color:T.textDim, marginTop:2 }}>Rload Member</div>
-            </div>
+            <span style={{ fontSize:13, fontWeight:600, color:T.text }}>{t.membership || "Membership"}</span>
           </div>
-          <div style={{ width:38, height:38, borderRadius:T.radiusSm, background:"rgba(255,255,255,0.06)", border:`1px solid ${T.border}`,
-            display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:T.textMuted }}>
-            <Icon.Settings/>
+          <div style={{ display:"flex", alignItems:"center", gap:8, color:T.textMuted }}>
+            <span style={{ fontSize:12 }}>{subscriptionLabel}</span>
+            <Icon.ChevronRight/>
           </div>
-        </div>
-
-        {/* Overview stats */}
-        <div style={{ background:"rgba(128,74,240,0.08)", borderRadius:"0.85rem", border:`1px solid ${T.borderBrand}`, padding:10, marginBottom:14 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8 }}>
-            {overviewStats.map(({icon,label,value})=>(
-              <div key={label} style={{ background:"rgba(128,74,240,0.14)", borderRadius:"0.65rem", border:`1px solid ${T.borderBrand}`, padding:"12px 6px", display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                <img src={icon} alt="" style={{ width:18, height:18 }} onError={e=>e.currentTarget.style.display="none"}/>
-                <div style={{ fontSize:9.5, color:T.textSub, textAlign:"center", lineHeight:1.2 }}>{label}</div>
-                <div style={{ fontSize:13, fontWeight:700, color:T.text, textAlign:"center" }}>{value}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 4 action tiles */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-          {actionTiles.map(({icon,label}) => (
-            <div key={label} style={{ padding:"13px 12px", borderRadius:T.radiusSm,
-              background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`,
-              display:"flex", flexDirection:"column", alignItems:"center", gap:8,
-              cursor:"pointer", transition:"background 0.18s ease-out, color 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out" }}
-              onMouseEnter={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor=T.borderBrand; }}
-              onMouseLeave={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor=T.border; }}>
-              <div style={{ width:34, height:34, borderRadius:"0.6rem", background:"rgba(128,74,240,0.15)", border:`1px solid ${T.borderBrand}`, display:"flex", alignItems:"center", justifyContent:"center", color:T.brandLight }}>
-                {icon}
-              </div>
-              <span style={{ fontSize:11.5, fontWeight:500, color:T.text, textAlign:"center" }}>{label}</span>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -3796,40 +4010,15 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
       <div style={{ padding:"16px 20px" }}>
         <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, paddingLeft:6 }}>{t.settings}</div>
         <div style={{ borderRadius:T.radius, background:T.bgCard, border:`1px solid ${T.border}`, overflow:"hidden" }}>
-          <SettingsRow icon={Icon.Profile}   label={t.accountDetails}  onClick={()=>setSubPage("account")}/>
+          <SettingsRow icon={Icon.Profile}   label={t.profileDetails || "Profile Details"}  onClick={()=>setSubPage("profile-details")}/>
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
           <SettingsRow icon={Icon.Bell}      label={t.notifications}   onClick={()=>setSubPage("notifications")}/>
-          <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
-
-          {/* Display Mode row (inline toggle, no sub-page) */}
-          <div style={{ display:"flex", alignItems:"center", gap:13, padding:"13px 16px" }}>
-            <div style={{ width:32, height:32, borderRadius:"0.6rem", background:"rgba(255,255,255,0.06)", border:`1px solid ${T.border}`,
-              display:"flex", alignItems:"center", justifyContent:"center", color:T.textMuted, flexShrink:0 }}>
-              <Icon.Monitor/>
-            </div>
-            <span style={{ flex:1, fontSize:13.5, fontWeight:500, color:T.text, fontFamily:T.fontBody }}>Display Mode</span>
-            <div style={{ display:"flex", gap:0, background:"rgba(255,255,255,0.06)", borderRadius:"0.5rem", padding:"3px" }}>
-              <div onClick={()=>setDisplayMode("light")}
-                style={{ padding:"4px 10px", borderRadius:"0.4rem", cursor:"pointer", transition:"background 0.14s",
-                  background:displayMode==="light"?T.brand:"transparent",
-                  color:displayMode==="light"?"#fff":T.textMuted, fontSize:13 }}>
-                ☀
-              </div>
-              <div onClick={()=>setDisplayMode("dark")}
-                style={{ padding:"4px 10px", borderRadius:"0.4rem", cursor:"pointer", transition:"background 0.14s",
-                  background:displayMode==="dark"?T.brand:"transparent",
-                  color:displayMode==="dark"?"#fff":T.textMuted, fontSize:13 }}>
-                🌙
-              </div>
-            </div>
-          </div>
-
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
           <SettingsRow icon={Icon.Globe}     label={t.language}           onClick={()=>setSubPage("language")}/>
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
           <SettingsRow icon={Icon.Shield}    label={t.privacy}            onClick={()=>setSubPage("privacy")}/>
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
-          <SettingsRow icon={Icon.About}     label="Launcher Information" onClick={()=>setSubPage("launcher-info")}/>
+          <SettingsRow icon={Icon.About}     label={t.launcherInformation || "Launcher Information"} onClick={()=>setSubPage("launcher-info")}/>
         </div>
 
         {/* Sign out of all devices */}
@@ -3842,6 +4031,10 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
           <Icon.Logout/> {authBusy ? t.signingOut : t.signOut}
         </button>
       </div>
+
+      {cosmeticsTab && (
+        <CosmeticsPickerModal profile={profile} t={t} initialTab={cosmeticsTab} onClose={()=>setCosmeticsTab(null)}/>
+      )}
     </div>
   );
 }
@@ -3872,6 +4065,7 @@ export default function LauncherGames() {
   const [demoMode, setDemoMode] = useState(false); // safe default: gates enforced until IPC responds
   const unsubRef    = useRef(null);
   const unsubRunRef = useRef(null);
+  const sessionStartRef = useRef({}); // gameId -> Date.now() at session start, for real playtime tracking
 
   // Fetch demoMode from main process — RLOAD_DEMO_MODE env var is the single source of truth
   useEffect(() => {
@@ -3932,6 +4126,15 @@ export default function LauncherGames() {
     });
     return () => { alive=false; unsub(); unsubErr(); };
   }, []);
+
+  // ── Player Identity — load/init the profile as soon as we know who's
+  // signed in, so install/launch/session events can be recorded even if the
+  // user never opens the Profile tab this session. ProfilePage re-reads the
+  // same cached profile via subscribeProfile() for its own rendering.
+  useEffect(() => {
+    if (authSession === undefined) return; // still resolving initial session
+    getPlayerProfile(authSession?.user?.sub);
+  }, [authSession]);
 
   // ── Subscription refresh via rload://subscription-activated deep link ─────
   useEffect(() => {
@@ -4053,12 +4256,31 @@ export default function LauncherGames() {
     if (!desktop) return;
     const unsub = subscribeRunning(r => {
       if (!r?.gameId) return;
-      if (r.running) setUiByGame(p => ({ ...p, [r.gameId]: UI.RUNNING }));
-      else setUiByGame(p => { if (p[r.gameId]===UI.RUNNING) return { ...p, [r.gameId]: UI.INSTALLED }; return p; });
+      if (r.running) {
+        sessionStartRef.current[r.gameId] = Date.now();
+        setUiByGame(p => ({ ...p, [r.gameId]: UI.RUNNING }));
+      }
+      else setUiByGame(p => {
+        if (p[r.gameId]!==UI.RUNNING) return p;
+        // Process exited after a real running session — counts as a completed
+        // play session for achievement tracking (Explorer/Studio Hopper/etc)
+        // and feeds real Hours Played (Player Identity ProfileHeader stat).
+        const startedAt = sessionStartRef.current[r.gameId];
+        const durationMinutes = startedAt ? Math.round((Date.now() - startedAt) / 60000) : 0;
+        delete sessionStartRef.current[r.gameId];
+        const playedGame = games.find(g => g.gameId === r.gameId);
+        const isWeekend = [0, 6].includes(new Date().getDay());
+        recordGameEvent({
+          type: "session_completed", gameId: r.gameId, durationMinutes,
+          studio: playedGame?.studio, country: playedGame?.country, isHiddenGem: playedGame?.isHiddenGem,
+          isWeekend, weekKey: isWeekend ? getWeekKey() : undefined,
+        });
+        return { ...p, [r.gameId]: UI.INSTALLED };
+      });
     });
     unsubRunRef.current = unsub;
     return () => { try { unsubRunRef.current?.(); } catch {} unsubRunRef.current = null; };
-  }, [desktop]);
+  }, [desktop, games]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleInstall = useCallback(async game => {
@@ -4098,8 +4320,10 @@ export default function LauncherGames() {
       setInstalledVersionByGame(p=>({...p,[id]:res.installedVersion||game.version}));
       setUiByGame(p=>({...p,[id]:UI.INSTALLED}));
       setDlByGame(p=>({...p,[id]:{...(p[id]||{}),percent:100}}));
+      recordGameEvent({ type:"installed", gameId:id });
     } else {
       setUiByGame(p=>({...p,[id]:UI.INSTALLED_NO_EXE}));
+      recordGameEvent({ type:"installed", gameId:id });
     }
   }, [lang, subscriptionStatus, demoMode]);
 
@@ -4165,7 +4389,10 @@ export default function LauncherGames() {
     try {
       const res = await launchGame(game);
       const tl = LANGS[lang] || LANGS.en;
-      if (res?.ok||res?.code==="ALREADY_RUNNING") setUiByGame(p=>({...p,[id]:UI.RUNNING}));
+      if (res?.ok||res?.code==="ALREADY_RUNNING") {
+        setUiByGame(p=>({...p,[id]:UI.RUNNING}));
+        recordGameEvent({ type:"launched", gameId:id });
+      }
       else if (res?.code==="SUBSCRIPTION_REQUIRED") {
         if (!demoMode) { openExternal("https://rload.be/pricing?source=launcher"); }
         else { console.warn("[RLOAD DEMO MODE] SUBSCRIPTION_REQUIRED from backend bypassed."); setUiByGame(p=>({...p,[id]:UI.INSTALLED})); }
@@ -4269,6 +4496,9 @@ export default function LauncherGames() {
       {/* Launch overlay */}
       {launchingGame && <LaunchOverlay game={launchingGame}/>}
 
+      {/* Player Identity — achievement/unlock/level-up toasts, stacked top-right */}
+      <NotificationToastHost t={t}/>
+
       {/* Top navigation bar */}
       <TopNavBar
         tab={activeTab === "game" ? "games" : activeTab}
@@ -4312,7 +4542,8 @@ export default function LauncherGames() {
         {activeTab==="profile"   && (
           <ProfilePage user={authSession?.user} authBusy={authBusy}
             onLogout={handleSignOut} games={games} uiByGame={uiByGame}
-            lang={lang} changeLang={changeLang}/>
+            lang={lang} changeLang={changeLang}
+            subscriptionStatus={subscriptionStatus} demoMode={demoMode}/>
         )}
       </div>
     </div>

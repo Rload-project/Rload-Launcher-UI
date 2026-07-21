@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+
+    <defs>
+      <linearGradient id="bg-signal_field" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1c1836"/>
+        <stop offset="100%" stop-color="#100d24"/>
+      </linearGradient>
+      <linearGradient id="vig-signal_field" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+      </linearGradient>
+      <radialGradient id="focus-signal_field" cx="70%" cy="45%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1600" height="500" fill="url(#bg-signal_field)"/>
+    <rect width="1600" height="500" fill="url(#focus-signal_field)"/>
+  
+<path d="M550 140 Q900 95 1250 140 T1600 130" stroke="#3B82F6" stroke-width="2.5" fill="none" opacity="0.5"/><path d="M550 212 Q900 167 1250 212 T1600 202" stroke="#3B82F6" stroke-width="2.5" fill="none" opacity="0.43"/><path d="M550 284 Q900 239 1250 284 T1600 274" stroke="#3B82F6" stroke-width="2.5" fill="none" opacity="0.36"/><path d="M550 356 Q900 311 1250 356 T1600 346" stroke="#3B82F6" stroke-width="2.5" fill="none" opacity="0.29"/><ellipse cx="1300" cy="250" rx="200" ry="100" fill="#3B82F6" opacity="0.07"/>
+<rect width="1600" height="500" fill="url(#vig-signal_field)"/>
+</svg>

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+
+    <defs>
+      <linearGradient id="bg-neon_grid" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1c1836"/>
+        <stop offset="100%" stop-color="#100d24"/>
+      </linearGradient>
+      <linearGradient id="vig-neon_grid" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+      </linearGradient>
+      <radialGradient id="focus-neon_grid" cx="70%" cy="45%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1600" height="500" fill="url(#bg-neon_grid)"/>
+    <rect width="1600" height="500" fill="url(#focus-neon_grid)"/>
+  
+<line x1="700" y1="500" x2="700" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.25"/><line x1="790" y1="500" x2="740" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.235"/><line x1="880" y1="500" x2="780" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.22"/><line x1="970" y1="500" x2="820" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.20500000000000002"/><line x1="1060" y1="500" x2="860" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.19"/><line x1="1150" y1="500" x2="900" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.175"/><line x1="1240" y1="500" x2="940" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.16"/><line x1="1330" y1="500" x2="980" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.14500000000000002"/><line x1="1420" y1="500" x2="1020" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.13"/><line x1="1510" y1="500" x2="1060" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.11499999999999999"/><line x1="1600" y1="500" x2="1100" y2="180" stroke="#22D3EE" stroke-width="1.2" opacity="0.1"/><line x1="600" y1="260" x2="1600" y2="260" stroke="#22D3EE" stroke-width="1" opacity="0.18"/><line x1="600" y1="305" x2="1600" y2="297" stroke="#22D3EE" stroke-width="1" opacity="0.16"/><line x1="600" y1="350" x2="1600" y2="334" stroke="#22D3EE" stroke-width="1" opacity="0.13999999999999999"/><line x1="600" y1="395" x2="1600" y2="371" stroke="#22D3EE" stroke-width="1" opacity="0.12"/><line x1="600" y1="440" x2="1600" y2="408" stroke="#22D3EE" stroke-width="1" opacity="0.09999999999999999"/><ellipse cx="1180" cy="230" rx="220" ry="60" fill="#22D3EE" opacity="0.06"/>
+<rect width="1600" height="500" fill="url(#vig-neon_grid)"/>
+</svg>

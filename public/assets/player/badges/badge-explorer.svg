@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+
+    <defs>
+      <linearGradient id="metal-badge-explorer" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1f4a6e"/>
+        <stop offset="100%" stop-color="#152c40"/>
+      </linearGradient>
+      <radialGradient id="core-badge-explorer" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <filter id="shadow-badge-explorer" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.4"/>
+      </filter>
+    </defs>
+    <path d="M100 150 L82 232 L108 218 L128 236 L148 218 L174 232 L156 150 Z" fill="#152c40" opacity="0.85"/>
+    <g filter="url(#shadow-badge-explorer)">
+      <circle cx="128" cy="112" r="88" fill="url(#metal-badge-explorer)"/>
+    </g>
+    <circle cx="128" cy="112" r="88" fill="none" stroke="#22D3EE" stroke-width="2.5"/>
+    <circle cx="128" cy="112" r="78" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <circle cx="128" cy="112" r="70" fill="url(#core-badge-explorer)"/>
+    <circle cx="128" cy="112" r="70" fill="none" stroke="#22D3EE" stroke-opacity="0.5" stroke-width="1.2"/>
+  
+<circle cx="128" cy="112" r="42" fill="none" stroke="#22D3EE" stroke-width="4"/><path d="M112 128 L136 96 L144 96 L120 128 Z" fill="#22D3EE"/><circle cx="128" cy="112" r="4" fill="#22D3EE"/>
+</svg>

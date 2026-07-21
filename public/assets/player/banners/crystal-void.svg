@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+
+    <defs>
+      <linearGradient id="bg-crystal_void" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1a2340"/>
+        <stop offset="100%" stop-color="#0e1128"/>
+      </linearGradient>
+      <linearGradient id="vig-crystal_void" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+      </linearGradient>
+      <radialGradient id="focus-crystal_void" cx="70%" cy="45%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1600" height="500" fill="url(#bg-crystal_void)"/>
+    <rect width="1600" height="500" fill="url(#focus-crystal_void)"/>
+  
+<circle cx="1302" cy="420" r="1.6" fill="#22D3EE" opacity="0.35"/><circle cx="944" cy="359" r="1.4" fill="#22D3EE" opacity="0.46"/><circle cx="1432" cy="182" r="2.2" fill="#22D3EE" opacity="0.72"/><circle cx="1560" cy="258" r="1.6" fill="#22D3EE" opacity="0.53"/><circle cx="1128" cy="285" r="1.5" fill="#22D3EE" opacity="0.71"/><circle cx="850" cy="368" r="1.1" fill="#22D3EE" opacity="0.46"/><circle cx="1125" cy="267" r="2.2" fill="#22D3EE" opacity="0.63"/><circle cx="1375" cy="196" r="2.7" fill="#22D3EE" opacity="0.32"/><circle cx="803" cy="211" r="2.7" fill="#22D3EE" opacity="0.34"/><circle cx="1414" cy="308" r="2.7" fill="#22D3EE" opacity="0.49"/><circle cx="1401" cy="371" r="2.2" fill="#22D3EE" opacity="0.64"/><circle cx="1008" cy="412" r="2.5" fill="#22D3EE" opacity="0.71"/><circle cx="1293" cy="239" r="2.5" fill="#22D3EE" opacity="0.44"/><circle cx="924" cy="251" r="1.4" fill="#22D3EE" opacity="0.49"/><circle cx="1181" cy="411" r="1.8" fill="#22D3EE" opacity="0.39"/><circle cx="1330" cy="342" r="2.9" fill="#22D3EE" opacity="0.32"/><circle cx="1360" cy="115" r="1.7" fill="#22D3EE" opacity="0.71"/><circle cx="1040" cy="68" r="1.9" fill="#22D3EE" opacity="0.72"/><circle cx="1241" cy="55" r="1.2" fill="#22D3EE" opacity="0.45"/><circle cx="1575" cy="243" r="2.4" fill="#22D3EE" opacity="0.64"/><circle cx="1151" cy="82" r="2.2" fill="#22D3EE" opacity="0.53"/><circle cx="1593" cy="80" r="2.7" fill="#22D3EE" opacity="0.69"/><circle cx="1287" cy="76" r="2.7" fill="#22D3EE" opacity="0.61"/><circle cx="1230" cy="314" r="1.9" fill="#22D3EE" opacity="0.65"/><circle cx="1252" cy="276" r="2.9" fill="#22D3EE" opacity="0.34"/><circle cx="1062" cy="314" r="2.1" fill="#22D3EE" opacity="0.44"/><circle cx="994" cy="204" r="2.4" fill="#22D3EE" opacity="0.43"/><circle cx="786" cy="83" r="2.9" fill="#22D3EE" opacity="0.76"/><circle cx="1466" cy="395" r="1.8" fill="#22D3EE" opacity="0.48"/><circle cx="1010" cy="452" r="1.1" fill="#22D3EE" opacity="0.68"/><path d="M1150 240 L1186 300 L1150 360 L1114 300 Z" fill="#22D3EE" opacity="0.5"/>
+        <path d="M1150 240 L1186 300 L1150 360" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/><path d="M1280 180 L1304 220 L1280 260 L1256 220 Z" fill="#22D3EE" opacity="0.5"/>
+        <path d="M1280 180 L1304 220 L1280 260" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/><path d="M1380 308 L1399.2 340 L1380 372 L1360.8 340 Z" fill="#3B82F6" opacity="0.5"/>
+        <path d="M1380 308 L1399.2 340 L1380 372" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/><path d="M1050 174 L1065.6 200 L1050 226 L1034.4 200 Z" fill="#3B82F6" opacity="0.5"/>
+        <path d="M1050 174 L1065.6 200 L1050 226" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/>
+<rect width="1600" height="500" fill="url(#vig-crystal_void)"/>
+</svg>

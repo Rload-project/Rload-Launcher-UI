@@ -1,0 +1,242 @@
+[
+  {
+    "id": "rload-core-01",
+    "name": "Core 1",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-01.svg",
+    "asset": "./assets/player/avatars/rload-core-01.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-02",
+    "name": "Core 2",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-02.svg",
+    "asset": "./assets/player/avatars/rload-core-02.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-03",
+    "name": "Core 3",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-03.svg",
+    "asset": "./assets/player/avatars/rload-core-03.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-04",
+    "name": "Core 4",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-04.svg",
+    "asset": "./assets/player/avatars/rload-core-04.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-05",
+    "name": "Core 5",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-05.svg",
+    "asset": "./assets/player/avatars/rload-core-05.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-06",
+    "name": "Core 6",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-06.svg",
+    "asset": "./assets/player/avatars/rload-core-06.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-07",
+    "name": "Core 7",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-07.svg",
+    "asset": "./assets/player/avatars/rload-core-07.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-08",
+    "name": "Core 8",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-08.svg",
+    "asset": "./assets/player/avatars/rload-core-08.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-09",
+    "name": "Core 9",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-09.svg",
+    "asset": "./assets/player/avatars/rload-core-09.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-10",
+    "name": "Core 10",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-10.svg",
+    "asset": "./assets/player/avatars/rload-core-10.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-11",
+    "name": "Core 11",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-11.svg",
+    "asset": "./assets/player/avatars/rload-core-11.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-12",
+    "name": "Core 12",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-12.svg",
+    "asset": "./assets/player/avatars/rload-core-12.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-13",
+    "name": "Core 13",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-13.svg",
+    "asset": "./assets/player/avatars/rload-core-13.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-14",
+    "name": "Core 14",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-14.svg",
+    "asset": "./assets/player/avatars/rload-core-14.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-15",
+    "name": "Core 15",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-15.svg",
+    "asset": "./assets/player/avatars/rload-core-15.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-16",
+    "name": "Core 16",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-16.svg",
+    "asset": "./assets/player/avatars/rload-core-16.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-17",
+    "name": "Core 17",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-17.svg",
+    "asset": "./assets/player/avatars/rload-core-17.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-18",
+    "name": "Core 18",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-18.svg",
+    "asset": "./assets/player/avatars/rload-core-18.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-19",
+    "name": "Core 19",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-19.svg",
+    "asset": "./assets/player/avatars/rload-core-19.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-core-20",
+    "name": "Core 20",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/avatars/rload-core-20.svg",
+    "asset": "./assets/player/avatars/rload-core-20.svg",
+    "locked": false
+  },
+  {
+    "id": "rload-founder-01",
+    "name": "Founder's Crest",
+    "rarity": "legendary",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/avatars/rload-founder-01.svg",
+    "asset": "./assets/player/avatars/rload-founder-01.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-founder-02",
+    "name": "Founder's Sigil",
+    "rarity": "legendary",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/avatars/rload-founder-02.svg",
+    "asset": "./assets/player/avatars/rload-founder-02.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-founder-03",
+    "name": "Founder's Mark",
+    "rarity": "legendary",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/avatars/rload-founder-03.svg",
+    "asset": "./assets/player/avatars/rload-founder-03.svg",
+    "locked": true
+  },
+  {
+    "id": "rload-founder-04",
+    "name": "Founder's Aegis",
+    "rarity": "legendary",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/avatars/rload-founder-04.svg",
+    "asset": "./assets/player/avatars/rload-founder-04.svg",
+    "locked": true
+  }
+]

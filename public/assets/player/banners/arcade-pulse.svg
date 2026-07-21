@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500">
+
+    <defs>
+      <linearGradient id="bg-arcade_pulse" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#1c1836"/>
+        <stop offset="100%" stop-color="#100d24"/>
+      </linearGradient>
+      <linearGradient id="vig-arcade_pulse" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.25)"/>
+        <stop offset="50%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.4)"/>
+      </linearGradient>
+      <radialGradient id="focus-arcade_pulse" cx="70%" cy="45%" r="60%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.05)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+    </defs>
+    <rect width="1600" height="500" fill="url(#bg-arcade_pulse)"/>
+    <rect width="1600" height="500" fill="url(#focus-arcade_pulse)"/>
+  
+<path d="M880 90 Q1200 55 1580 115" stroke="#EC4899" stroke-width="4" fill="none" opacity="0.55" stroke-linecap="round"/><path d="M900 148 Q1200 113 1580 173" stroke="#22D3EE" stroke-width="4" fill="none" opacity="0.51" stroke-linecap="round"/><path d="M920 206 Q1200 171 1580 231" stroke="#EC4899" stroke-width="4" fill="none" opacity="0.47000000000000003" stroke-linecap="round"/><path d="M940 264 Q1200 229 1580 289" stroke="#22D3EE" stroke-width="4" fill="none" opacity="0.43000000000000005" stroke-linecap="round"/><path d="M960 322 Q1200 287 1580 347" stroke="#EC4899" stroke-width="4" fill="none" opacity="0.39" stroke-linecap="round"/><path d="M980 380 Q1200 345 1580 405" stroke="#22D3EE" stroke-width="4" fill="none" opacity="0.35000000000000003" stroke-linecap="round"/><ellipse cx="1350" cy="230" rx="180" ry="90" fill="#EC4899" opacity="0.08"/>
+<rect width="1600" height="500" fill="url(#vig-arcade_pulse)"/>
+</svg>

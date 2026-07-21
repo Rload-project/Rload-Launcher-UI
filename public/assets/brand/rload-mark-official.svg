@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Official Rload "R" mark — extracted from public/images/common/Logo-couleur.svg
+  (the same source as launcher/assets/taskbar-icon.ico), isolated to its own
+  tight viewBox so it can be reused as a standalone asset (Player Identity
+  achievement badges, etc.) without re-deriving or approximating the glyph.
+  Do not redraw or regenerate this shape — always re-extract from the source
+  logo if it ever changes.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="52 58 118 115">
+  <defs>
+    <linearGradient id="rload-mark-grad" x1="112.15" y1="52.26" x2="111.19" y2="173.45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#231d45"/>
+      <stop offset=".48" stop-color="#2a2b65"/>
+      <stop offset="1" stop-color="#442c75"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#rload-mark-grad)">
+    <path d="M131.09,145.81c14.69-19.11,41.29-33.91,29.06-62.04-3.13-7.2-10.53-14.75-17.97-17.45-.62-.22-6.23-1.74-6.57-1.74H58.88v101.02c0,.43.56,1.06,0,1.74h21.52v-81.23h51.72c.36,0,3.13,1.41,3.77,1.78,6.39,3.66,7.16,11.63,2.82,17.31l-20.82,22.57v-28.47h-21.52v68.04h68.04v-21.52h-33.32Z"/>
+    <path d="M131.09,145.81h33.32v21.52h-68.04v-68.04h21.52v28.47l20.82-22.57c4.34-5.68,3.58-13.65-2.82-17.31-.65-.37-3.42-1.78-3.77-1.78h-51.72v81.23h-21.52c.56-.67,0-1.31,0-1.74v-101.02h76.71c.34,0,5.95,1.52,6.57,1.74,7.45,2.7,14.84,10.25,17.97,17.45,12.23,28.13-14.37,42.93-29.06,62.04Z"/>
+  </g>
+</svg>

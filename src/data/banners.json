@@ -1,0 +1,134 @@
+[
+  {
+    "id": "neon_grid",
+    "name": "Neon Grid",
+    "asset": "./assets/player/banners/neon-grid.svg",
+    "preview": "./assets/player/banners/neon-grid.svg",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "category": "digital",
+    "description": "A quiet digital horizon illuminated by the first Rload signal."
+  },
+  {
+    "id": "violet_horizon",
+    "name": "Violet Horizon",
+    "asset": "./assets/player/banners/violet-horizon.svg",
+    "preview": "./assets/player/banners/violet-horizon.svg",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "category": "landscape",
+    "description": "A deep indigo landscape beneath a glowing violet sky."
+  },
+  {
+    "id": "arcade_pulse",
+    "name": "Arcade Pulse",
+    "asset": "./assets/player/banners/arcade-pulse.svg",
+    "preview": "./assets/player/banners/arcade-pulse.svg",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "category": "digital",
+    "description": "Retro-futuristic light trails moving through a dark digital space."
+  },
+  {
+    "id": "signal_field",
+    "name": "Signal Field",
+    "asset": "./assets/player/banners/signal-field.svg",
+    "preview": "./assets/player/banners/signal-field.svg",
+    "rarity": "common",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "category": "digital",
+    "description": "Soft waves of data travelling across the Rload network."
+  },
+  {
+    "id": "crystal_void",
+    "name": "Crystal Void",
+    "asset": "./assets/player/banners/crystal-void.svg",
+    "preview": "./assets/player/banners/crystal-void.svg",
+    "rarity": "rare",
+    "unlockType": "points",
+    "unlockRequirement": "500 points",
+    "category": "cosmic",
+    "description": "Luminous crystals floating inside a dark cosmic cavern."
+  },
+  {
+    "id": "aurora_circuit",
+    "name": "Aurora Circuit",
+    "asset": "./assets/player/banners/aurora-circuit.svg",
+    "preview": "./assets/player/banners/aurora-circuit.svg",
+    "rarity": "rare",
+    "unlockType": "points",
+    "unlockRequirement": "600 points",
+    "category": "digital",
+    "description": "An electric aurora flowing above a futuristic circuit landscape."
+  },
+  {
+    "id": "pixel_nebula",
+    "name": "Pixel Nebula",
+    "asset": "./assets/player/banners/pixel-nebula.svg",
+    "preview": "./assets/player/banners/pixel-nebula.svg",
+    "rarity": "rare",
+    "unlockType": "points",
+    "unlockRequirement": "700 points",
+    "category": "cosmic",
+    "description": "A cloud of fragmented light forming inside deep space."
+  },
+  {
+    "id": "indie_constellation",
+    "name": "Indie Constellation",
+    "asset": "./assets/player/banners/indie-constellation.svg",
+    "preview": "./assets/player/banners/indie-constellation.svg",
+    "rarity": "rare",
+    "unlockType": "achievement",
+    "unlockRequirement": "studio_hopper",
+    "category": "cosmic",
+    "description": "A field of connected stars representing hidden creative worlds."
+  },
+  {
+    "id": "rift_horizon",
+    "name": "Rift Horizon",
+    "asset": "./assets/player/banners/rift-horizon.svg",
+    "preview": "./assets/player/banners/rift-horizon.svg",
+    "rarity": "epic",
+    "unlockType": "points",
+    "unlockRequirement": "900 points",
+    "category": "cosmic",
+    "description": "A radiant dimensional rift opening above an unknown world."
+  },
+  {
+    "id": "celestial_engine",
+    "name": "Celestial Engine",
+    "asset": "./assets/player/banners/celestial-engine.svg",
+    "preview": "./assets/player/banners/celestial-engine.svg",
+    "rarity": "epic",
+    "unlockType": "points",
+    "unlockRequirement": "1000 points",
+    "category": "tech",
+    "description": "A colossal energy core powering the distant Rload network."
+  },
+  {
+    "id": "infinite_library",
+    "name": "Infinite Library",
+    "asset": "./assets/player/banners/infinite-library.svg",
+    "preview": "./assets/player/banners/infinite-library.svg",
+    "rarity": "epic",
+    "unlockType": "points",
+    "unlockRequirement": "1100 points",
+    "category": "archive",
+    "description": "An endless archive of glowing indie worlds waiting to be discovered."
+  },
+  {
+    "id": "day_zero",
+    "name": "Day Zero",
+    "asset": "./assets/player/banners/day-zero.svg",
+    "preview": "./assets/player/banners/day-zero.svg",
+    "rarity": "founder",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "category": "founder",
+    "description": "The original Rload signal emerging at the beginning of the journey."
+  }
+]

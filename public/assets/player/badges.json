@@ -1,0 +1,242 @@
+[
+  {
+    "id": "badge-rising-star",
+    "name": "Rising Star",
+    "description": "Just getting started on Rload.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/badges/badge-rising-star.svg",
+    "asset": "./assets/player/badges/badge-rising-star.svg",
+    "locked": false
+  },
+  {
+    "id": "badge-newcomer",
+    "name": "Newcomer",
+    "description": "Welcome to the Rload community.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/badges/badge-newcomer.svg",
+    "asset": "./assets/player/badges/badge-newcomer.svg",
+    "locked": false
+  },
+  {
+    "id": "badge-supporter",
+    "name": "Supporter",
+    "description": "Supports indie games and the studios behind them.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/badges/badge-supporter.svg",
+    "asset": "./assets/player/badges/badge-supporter.svg",
+    "locked": false
+  },
+  {
+    "id": "badge-enthusiast",
+    "name": "Enthusiast",
+    "description": "Genuinely into discovering new indie games.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/badges/badge-enthusiast.svg",
+    "asset": "./assets/player/badges/badge-enthusiast.svg",
+    "locked": false
+  },
+  {
+    "id": "badge-pioneer-spirit",
+    "name": "Pioneer Spirit",
+    "description": "Ready to explore whatever Rload has to offer.",
+    "unlockType": "default",
+    "unlockRequirement": null,
+    "preview": "./assets/player/badges/badge-pioneer-spirit.svg",
+    "asset": "./assets/player/badges/badge-pioneer-spirit.svg",
+    "locked": false
+  },
+  {
+    "id": "badge-first-steps",
+    "name": "First Steps",
+    "description": "Installed your first game.",
+    "unlockType": "achievement",
+    "unlockRequirement": "first_step",
+    "preview": "./assets/player/badges/badge-first-steps.svg",
+    "asset": "./assets/player/badges/badge-first-steps.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-dedicated",
+    "name": "Dedicated",
+    "description": "Launched your first game.",
+    "unlockType": "achievement",
+    "unlockRequirement": "first_launch",
+    "preview": "./assets/player/badges/badge-dedicated.svg",
+    "asset": "./assets/player/badges/badge-dedicated.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-trailblazer",
+    "name": "Trailblazer",
+    "description": "Played your first game to completion.",
+    "unlockType": "achievement",
+    "unlockRequirement": "first_discovery",
+    "preview": "./assets/player/badges/badge-trailblazer.svg",
+    "asset": "./assets/player/badges/badge-trailblazer.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-collector",
+    "name": "Collector",
+    "description": "Played 3 different games.",
+    "unlockType": "achievement",
+    "unlockRequirement": "explorer_i",
+    "preview": "./assets/player/badges/badge-collector.svg",
+    "asset": "./assets/player/badges/badge-collector.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-weekend-warrior",
+    "name": "Weekend Warrior",
+    "description": "Played across 3 different weekends.",
+    "unlockType": "achievement",
+    "unlockRequirement": "weekend_player",
+    "preview": "./assets/player/badges/badge-weekend-warrior.svg",
+    "asset": "./assets/player/badges/badge-weekend-warrior.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-explorer",
+    "name": "Explorer",
+    "description": "Played games from 10 different titles.",
+    "unlockType": "achievement",
+    "unlockRequirement": "explorer_ii",
+    "preview": "./assets/player/badges/badge-explorer.svg",
+    "asset": "./assets/player/badges/badge-explorer.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-belgian-gamer",
+    "name": "Belgian Gamer",
+    "description": "Played Belgian-made indie games.",
+    "unlockType": "achievement",
+    "unlockRequirement": "belgian_explorer",
+    "preview": "./assets/player/badges/badge-belgian-gamer.svg",
+    "asset": "./assets/player/badges/badge-belgian-gamer.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-achievement-hunter",
+    "name": "Achievement Hunter",
+    "description": "Unlocked 5 achievements.",
+    "unlockType": "achievement",
+    "unlockRequirement": "completion_starter",
+    "preview": "./assets/player/badges/badge-achievement-hunter.svg",
+    "asset": "./assets/player/badges/badge-achievement-hunter.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-hidden-gem-seeker",
+    "name": "Hidden Gem Seeker",
+    "description": "Found unknown indie games worth playing.",
+    "unlockType": "achievement",
+    "unlockRequirement": "hidden_gem_hunter",
+    "preview": "./assets/player/badges/badge-hidden-gem-seeker.svg",
+    "asset": "./assets/player/badges/badge-hidden-gem-seeker.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-early-supporter",
+    "name": "Early Supporter",
+    "description": "Subscribed to Rload in its first season.",
+    "unlockType": "points",
+    "unlockRequirement": "300 points",
+    "preview": "./assets/player/badges/badge-early-supporter.svg",
+    "asset": "./assets/player/badges/badge-early-supporter.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-indie-lover",
+    "name": "Indie Lover",
+    "description": "Shown consistent love for indie discovery.",
+    "unlockType": "points",
+    "unlockRequirement": "450 points",
+    "preview": "./assets/player/badges/badge-indie-lover.svg",
+    "asset": "./assets/player/badges/badge-indie-lover.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-developer-friend",
+    "name": "Developer Friend",
+    "description": "Recognized supporter of indie studios.",
+    "unlockType": "points",
+    "unlockRequirement": "600 points",
+    "preview": "./assets/player/badges/badge-developer-friend.svg",
+    "asset": "./assets/player/badges/badge-developer-friend.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-speedrunner",
+    "name": "Speedrunner",
+    "description": "Moves fast — always among the first to play.",
+    "unlockType": "points",
+    "unlockRequirement": "700 points",
+    "preview": "./assets/player/badges/badge-speedrunner.svg",
+    "asset": "./assets/player/badges/badge-speedrunner.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-night-owl",
+    "name": "Night Owl",
+    "description": "Often found playing late into the night.",
+    "unlockType": "points",
+    "unlockRequirement": "800 points",
+    "preview": "./assets/player/badges/badge-night-owl.svg",
+    "asset": "./assets/player/badges/badge-night-owl.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-veteran",
+    "name": "Veteran",
+    "description": "A long-time, seasoned member of Rload.",
+    "unlockType": "points",
+    "unlockRequirement": "1200 points",
+    "preview": "./assets/player/badges/badge-veteran.svg",
+    "asset": "./assets/player/badges/badge-veteran.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-founder",
+    "name": "Founder",
+    "description": "Joined Rload during its founding era.",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/badges/badge-founder.svg",
+    "asset": "./assets/player/badges/badge-founder.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-community-pioneer",
+    "name": "Community Pioneer",
+    "description": "Among the first voices in the Rload community.",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/badges/badge-community-pioneer.svg",
+    "asset": "./assets/player/badges/badge-community-pioneer.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-tester",
+    "name": "Tester",
+    "description": "Helped test Rload before public launch.",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/badges/badge-tester.svg",
+    "asset": "./assets/player/badges/badge-tester.svg",
+    "locked": true
+  },
+  {
+    "id": "badge-perfectionist",
+    "name": "Perfectionist",
+    "description": "Founding-era member with an eye for detail.",
+    "unlockType": "founder",
+    "unlockRequirement": "Founding Member",
+    "preview": "./assets/player/badges/badge-perfectionist.svg",
+    "asset": "./assets/player/badges/badge-perfectionist.svg",
+    "locked": true
+  }
+]
