@@ -135,8 +135,11 @@ const GlobeIcon = () => (
 );
 
 // ── CTA configuration ─────────────────────────────────────────────────────────
-function ctaConfig(uiState, hasAccess, game, dl, busy) {
+function ctaConfig(uiState, hasAccess, game, dl, busy, platformUnsupported) {
   if (game?.comingSoon) return { label: "Coming Soon on Rload", variant: "comingsoon", action: null, icon: null, disabled: true };
+  // macOS Designer Preview — this game is a Windows-only build. No download, no crash,
+  // no raw error code: a plain disabled state with a professional message.
+  if (platformUnsupported) return { label: "Windows Only", variant: "comingsoon", action: null, icon: null, disabled: true };
   if (!hasAccess) return { label: "Subscribe to Play", variant: "subscribe", action: "subscribe", icon: null, disabled: false };
   switch (uiState) {
     case UI.DOWNLOADING: {
@@ -212,11 +215,11 @@ function SectionHeading({ children, tight }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. GAME HERO — cover art left, banner background, all key metadata
 // ═══════════════════════════════════════════════════════════════════════════════
-function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, installedVersion,
+function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, installedVersion, platformUnsupported,
   onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onBack, onRefreshAccess, onUninstall }) {
 
   const hasAccess = demoMode ? true : (subscriptionStatus?.hasAccess ?? false);
-  const cfg       = ctaConfig(uiState, hasAccess, game, dl, busy);
+  const cfg       = ctaConfig(uiState, hasAccess, game, dl, busy, platformUnsupported);
   const ctaStyle  = CTA_STYLES[cfg.variant] || CTA_STYLES.install;
   const [refreshing, setRefreshing] = useState(false);
   async function doRefresh() {
@@ -307,6 +310,15 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
             fontSize: 11, fontWeight: 600, color: T.orange, letterSpacing: "0.04em",
           }}>
             Coming Soon
+          </div>
+        ) : platformUnsupported ? (
+          <div style={{
+            padding: "5px 14px", borderRadius: T.radiusPill,
+            background: "rgba(255,255,255,0.06)", backdropFilter: "blur(12px)",
+            border: `1px solid ${T.border}`,
+            fontSize: 11, fontWeight: 600, color: T.textMuted, letterSpacing: "0.04em",
+          }}>
+            Windows Only
           </div>
         ) : (
           <div style={{
@@ -496,6 +508,12 @@ function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, insta
               </button>
             )}
           </div>
+
+          {platformUnsupported && !game?.comingSoon && (
+            <div style={{ marginTop: 10, fontSize: 12.5, color: T.textMuted, lineHeight: 1.5, maxWidth: 480 }}>
+              This game is currently available only on Windows.
+            </div>
+          )}
 
           <ProgressBar dl={dl} uiState={uiState}/>
 
@@ -1009,7 +1027,7 @@ function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame, onViewAll 
 // ═══════════════════════════════════════════════════════════════════════════════
 export function GameSinglePage({
   game, uiState, dl, resolvedExe, installedVersion,
-  subscriptionStatus, demoMode, busy, error,
+  subscriptionStatus, demoMode, busy, error, platformUnsupported,
   onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onUninstall,
   onBack, allGames, uiByGame, onSelectGame, onRefreshAccess, onViewAllGames,
 }) {
@@ -1063,6 +1081,7 @@ export function GameSinglePage({
         subscriptionStatus={subscriptionStatus}
         demoMode={demoMode}
         busy={busy}
+        platformUnsupported={platformUnsupported}
         onInstall={onInstall}
         onPlay={onPlay}
         onUpdate={onUpdate}

@@ -91,6 +91,15 @@ function mapBackendStateToUI(s) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// macOS Designer Preview — the whole catalog is Windows-only builds today. `platform` is
+// the value from rload:app:getConfig ("win32" | "darwin" | "linux" | null-while-loading).
+function isWindowsOnlyGame(game, platform) {
+  if (!platform || platform === "win32") return false; // on Windows, or unknown yet — never gate
+  const plats = (game?.platforms?.length ? game.platforms : ["windows"]).map(p => String(p).toLowerCase());
+  return !plats.some(p => p === "mac" || p === "macos" || p === "darwin");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Badge config
 // ─────────────────────────────────────────────────────────────────────────────
 function getStateBadge(uiState) {
@@ -176,20 +185,16 @@ const FEATURED_THIS_WEEK = {
     "One of this week's standout discoveries",
   ],
 };
-// ── Studio Spotlight — real studio, real data only. No testimonial: none has been verified, so none is shown.
-// Bio verified against the studio's own listing on Walga (Wallonia Games Association) — real studio,
-// real other titles, not invented. See sources in the M4.6 follow-up summary. ──
+// ── Kakudo Feature Banner — real game data only, sourced from catalog.json.
+// Description/tagline copied verbatim from the live catalog entry, not invented. ──
 const KAKUDO_SPOTLIGHT = {
-  gameId:    "kakudo",
-  studio:    "Bad Weather Studios",
-  game:      "KAKUDO",
-  bioParagraphs: [
-    "Bad Weather Studios is an independent game studio focused on strong identities and memorable experiences. The studio creates games with tight gameplay, strange atmospheres, and distinctive worlds. As the creators of «KAKUDO», «The Strange Laboratory», and «Invasion», Bad Weather Studios moves freely between action-driven and experimental projects, always prioritizing player feel and artistic coherence.",
-    "The studio has also contributed as a support team on well-known fan-projects such as Rayman 2 Redreamed and TimeSplitters Rewind, showcasing solid technical expertise and the ability to collaborate on ambitious productions.",
-  ],
-  bgImage:   "./images/games/kakudo/screenshots/ss_3.jpg",
-  collage:   ["./images/games/kakudo/banner.jpg", "./images/games/kakudo/screenshots/ss_5.jpg", "./images/games/kakudo/cover.jpg"],
-  stats:     ["1 game on Rload", "Belgium", "Independent Studio"],
+  gameId:      "kakudo",
+  studio:      "Bad Weather Studios",
+  game:        "KAKUDO",
+  tagline:     "Meditative labyrinth adventure",
+  description: "Guide Tamashi through 50 unique labyrinths in this meditative exploration adventure. No enemies, no timers, no pressure — just you and the maze. Uncover a mysterious story told through haiku poetry as you collect coins and chart unexplored paths.",
+  bgImage:     "./images/games/kakudo/screenshots/ss_5.jpg",
+  comingSoon:  true,
 };
 
 const COMING_SOON_ITEMS = [
@@ -927,7 +932,7 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // GameDetailPanel — right panel
 // ─────────────────────────────────────────────────────────────────────────────
-function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose, onRefreshAccess }) {
+function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, platformUnsupported, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose, onRefreshAccess }) {
   const pct      = clamp(dl?.percent??0, 0, 100);
   const [refreshing, setRefreshing] = useState(false);
   async function doRefresh() {
@@ -1009,24 +1014,25 @@ function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, err
         {showRunning && <div style={{ fontSize:12.5, color:T.green, fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:"50%", background:T.green, display:"inline-block" }}/> Running</div>}
         {showUpdate && <div style={{ fontSize:12, color:T.blue2Light, fontWeight:500, marginBottom:12, padding:"8px 12px", background:T.blue2Bg, borderRadius:T.radiusSm, border:`1px solid ${T.blue2Border}` }}>Update available — v{installedVersion} → v{game.version}</div>}
         {showInstall&&!hasUrl && <div style={{ fontSize:12, color:T.orange, marginBottom:12 }}>No download URL configured.</div>}
+        {platformUnsupported && <div style={{ fontSize:12, color:T.textMuted, marginBottom:12, lineHeight:1.5, padding:"8px 12px", background:"rgba(255,255,255,0.04)", borderRadius:T.radiusSm, border:`1px solid ${T.border}` }}>This game is currently available only on Windows.</div>}
         {/* Actions */}
         <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
-          {!hasAccess && (showPlay || showInstall || showUpdate) && (
+          {!hasAccess && !platformUnsupported && (showPlay || showInstall || showUpdate) && (
             <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               Subscribe to Play
             </button>
           )}
-          {showPlay && hasAccess && (
+          {showPlay && hasAccess && !platformUnsupported && (
             <button onClick={onPlay} disabled={busy} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:busy?"not-allowed":"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Play/> Play Now
             </button>
           )}
-          {showInstall && hasAccess && (
+          {showInstall && hasAccess && !platformUnsupported && (
             <button onClick={onInstall} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.borderBrand}`, background:"rgba(128,74,240,0.12)", color:T.text, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Download/> Install Game
             </button>
           )}
-          {showUpdate && hasAccess && (
+          {showUpdate && hasAccess && !platformUnsupported && (
             <button onClick={onUpdate} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.blue2Border}`, background:T.blue2Bg, color:T.blue2Light, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
               <Icon.Update/> Update
             </button>
@@ -1441,105 +1447,104 @@ function HeroPlayButton({ onClick }) {
   );
 }
 
-// Studio Spotlight — one real studio, one real (unreleased) game. Right side is a small
-// overlapping collage of actual Kakudo screenshots rather than a single flat background.
-// Bolds «Quoted Titles» within a bio paragraph — a "press kit" convention (game names as the
-// visual anchor points a reader's eye catches first), without hardcoding JSX into the data.
-function renderStudioBio(text) {
-  return text.split(/(«[^»]+»)/g).map((part, i) =>
-    part.startsWith("«") ? <strong key={i} style={{ color:T.text, fontWeight:700 }}>{part}</strong> : part
+// Secondary hero action — white outline pill, same height as HeroPlayButton so the pair reads
+// as one deliberate primary/secondary group rather than a button next to a stray text link.
+function HeroSecondaryButton({ onClick, label }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ height:54, padding:"0 26px", borderRadius:T.radiusPill, background: hov ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)",
+        color:"#fff", border:"1.5px solid rgba(255,255,255,0.85)", fontSize:14, fontWeight:700, cursor:"pointer",
+        fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:8, transition:T.transitionBase }}>
+      {label} <Icon.ArrowRight/>
+    </button>
   );
 }
 
-function StudioSpotlight({ games, onSelectGame, onTabChange }) {
+// Kakudo Feature Banner — gray info panel (real facts: catalog description, studio, coming-soon
+// status) on the left, a carved 3D wordmark on the right. Built entirely in CSS (gradient fill +
+// stacked text-shadow "extrusion" + per-letter tilt) — no external logo asset exists for Kakudo.
+function KakudoFeatureBanner({ games, onSelectGame, onTabChange }) {
   const kakudoGame = games.find(g => g.gameId === KAKUDO_SPOTLIGHT.gameId);
   const openKakudo = () => kakudoGame ? onSelectGame(kakudoGame) : onTabChange("games");
   return (
     <div style={{ padding:"0 32px", marginBottom:32 }}>
-      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400,
-        border:`1px solid ${T.borderBrand}`, display:"flex", background:T.bgDeep }}>
+      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:440,
+        border:`1px solid ${T.borderBrand}`, background:T.bgDeep }}>
         <img src={KAKUDO_SPOTLIGHT.bgImage} alt=""
-          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", opacity:0.55 }}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%" }}
           onError={e=>e.currentTarget.style.display="none"}/>
-        {/* Masking overlay kept light (~15%) so the real screenshot reads through, not a flat violet block */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(20,16,42,0.55) 0%, rgba(20,16,42,0.30) 45%, rgba(20,16,42,0.15) 100%)" }}/>
-        {/* Faint violet halo behind the CTA zone */}
-        <div style={{ position:"absolute", left:-60, bottom:-100, width:380, height:380, borderRadius:"50%",
-          background:"radial-gradient(circle, rgba(128,74,240,0.28) 0%, transparent 70%)", pointerEvents:"none" }}/>
+        {/* Just enough of a fade for the panel text to stay legible — the art itself stays at full brightness, matching the reference banner */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(20,16,42,0.28) 0%, rgba(20,16,42,0.12) 46%, rgba(20,16,42,0.0) 100%)" }}/>
 
-        {/* Left — studio text. Light: identity + bio + CTA, nothing else (no genre/category chips). */}
-        <div style={{ position:"relative", flex:"0 0 62%", padding:"32px 40px 32px 40px", display:"flex", flexDirection:"column", justifyContent:"center" }}>
-          <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight, marginBottom:12, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
-            Studio Spotlight
-          </div>
-          <div style={{ fontSize:30, fontWeight:800, color:T.text, fontFamily:T.fontHead, marginBottom:8, letterSpacing:"-0.3px", textShadow:"0 2px 16px rgba(0,0,0,0.65)" }}>
-            {KAKUDO_SPOTLIGHT.studio}
-          </div>
-          <div style={{ fontSize:14, color:"rgba(255,255,255,0.9)", fontWeight:600, marginBottom:14, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
-            Meet the team behind Kakudo.
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:20 }}>
-            {KAKUDO_SPOTLIGHT.bioParagraphs.map((p,i)=>(
-              <div key={i} style={{ fontSize:15.5, fontWeight:500, color:"rgba(255,255,255,0.86)", lineHeight:1.65, maxWidth:900, textShadow:"0 1px 10px rgba(0,0,0,0.55)" }}>
-                {renderStudioBio(p)}
-              </div>
-            ))}
-          </div>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
-            {KAKUDO_SPOTLIGHT.stats.map(s=>(
-              <span key={s} style={{ fontSize:11, padding:"5px 12px", borderRadius:T.radiusPill,
-                background:"rgba(20,16,42,0.55)", border:"1px solid rgba(255,255,255,0.16)", color:T.textMuted, backdropFilter:"blur(6px)" }}>
-                {s}
-              </span>
-            ))}
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:22 }}>
-            {/* No dedicated studio page exists yet — routes to the Games tab as the closest
-                available destination rather than duplicating the Play Kakudo button below. */}
-            <button onClick={()=>onTabChange("games")}
-              style={{ padding:"11px 24px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
-                border:"none", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody, transition:T.transitionBase }}>
-              Explore Bad Weather Studios
-            </button>
+        <div style={{ position:"relative", display:"flex", alignItems:"center", minHeight:440, padding:"44px 44px", gap:28 }}>
+          {/* Left — gray info panel. Real facts only: catalog description, studio, coming-soon status. */}
+          <div style={{ flex:"0 0 auto", width:340, padding:"28px 26px", borderRadius:T.radius,
+            background:"rgba(90,86,108,0.52)", border:"1px solid rgba(255,255,255,0.16)", backdropFilter:"blur(10px)" }}>
+            <div style={{ fontSize:23, fontWeight:800, color:"#fff", fontFamily:T.fontHead, letterSpacing:"0.02em", marginBottom:10, textShadow:"0 1px 8px rgba(0,0,0,0.5)" }}>
+              {KAKUDO_SPOTLIGHT.game}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
+              <span style={{ flex:1, height:1, background:"rgba(255,255,255,0.3)" }}/>
+              <span style={{ width:4, height:4, borderRadius:"50%", background:T.brandLight, flexShrink:0 }}/>
+              <span style={{ flex:1, height:1, background:"rgba(255,255,255,0.3)" }}/>
+            </div>
+            <div style={{ fontSize:13, color:"rgba(255,255,255,0.92)", lineHeight:1.7, marginBottom:20, textShadow:"0 1px 6px rgba(0,0,0,0.45)" }}>
+              {KAKUDO_SPOTLIGHT.description}
+            </div>
+            <div style={{ fontSize:10.5, fontWeight:600, color:T.textMuted, marginBottom:18, letterSpacing:"0.02em" }}>
+              {KAKUDO_SPOTLIGHT.studio} — Belgium{KAKUDO_SPOTLIGHT.comingSoon ? " · Coming Soon" : ""}
+            </div>
             <button onClick={openKakudo}
-              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12.5,
-                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
-              <Icon.Play/> Play Kakudo
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", padding:"11px 18px",
+                borderRadius:T.radiusPill, background:"transparent", border:`1px solid ${T.brandLight}`, color:T.brandLight,
+                fontSize:11.5, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", cursor:"pointer", fontFamily:T.fontBody, transition:T.transitionBase }}
+              onMouseEnter={e=>{ e.currentTarget.style.background="rgba(128,74,240,0.16)"; }}
+              onMouseLeave={e=>{ e.currentTarget.style.background="transparent"; }}>
+              <span style={{ fontSize:9 }}>▪</span> Découvrir Kakudo <span style={{ fontSize:9 }}>▪</span>
             </button>
           </div>
-        </div>
 
-        {/* Right — overlapping collage of real Kakudo screenshots, 16:9 and ~1.3x bigger than the
-            first pass. Interactive: hover straightens + enlarges + brings to front, no click needed. */}
-        <div style={{ position:"relative", flex:"0 0 38%" }}>
-          <KakudoCollage images={KAKUDO_SPOTLIGHT.collage}
-            imgW={260} imgH={146} tilts={[-4,3,-2]} rights={[10,50,90]} tops={[50,150,250]}/>
+          {/* Right — carved KAKUDO wordmark, echoing the game's own logo treatment. */}
+          <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"flex-end", justifyContent:"center", gap:16, paddingRight:12, minWidth:0 }}>
+            <KakudoWordmark/>
+            {KAKUDO_SPOTLIGHT.comingSoon && (
+              <span style={{ fontSize:10.5, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight,
+                background:"rgba(20,16,42,0.55)", padding:"6px 16px", borderRadius:T.radiusPill, border:"1px solid rgba(255,255,255,0.2)" }}>
+                Coming Soon
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Hover: straighten to 0deg, scale up slightly, and jump in front of its siblings — no click needed.
-function KakudoCollage({ images, imgW=190, imgH=120, tilts=[-5,4,-3], rights=[130,70,10], tops=[70,70,70] }) {
-  const [hovIdx, setHovIdx] = useState(null);
+// Carved/extruded wordmark built from stacked text-shadow "layers" + a dark stroke, no image asset.
+// Letters get a small alternating tilt so the logotype reads as hand-placed, not a straight typed line.
+function KakudoWordmark() {
+  const letters = [
+    { ch:"K", rotate:-7, y:3  },
+    { ch:"A", rotate:5,  y:-7 },
+    { ch:"K", rotate:-4, y:5  },
+    { ch:"U", rotate:6,  y:-5 },
+    { ch:"D", rotate:-6, y:4  },
+    { ch:"O", rotate:4,  y:-4 },
+  ];
   return (
-    <>
-      {images.map((src, i)=>{
-        const isHov = hovIdx === i;
-        return (
-          <img key={src} src={src} alt="" onMouseEnter={()=>setHovIdx(i)} onMouseLeave={()=>setHovIdx(null)}
-            style={{ position:"absolute", width:imgW, height:imgH, objectFit:"cover", clipPath:cutCorner(14),
-              boxShadow: isHov ? "0 16px 40px rgba(0,0,0,0.55)" : T.shadowHoverLg,
-              border:"1px solid rgba(255,255,255,0.16)", cursor:"pointer",
-              right: rights[i], top: tops[i],
-              zIndex: isHov ? 10 : i,
-              transform: isHov ? "rotate(0deg) scale(1.08)" : `rotate(${tilts[i]}deg) scale(1)`,
-              transition:"transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease-out" }}
-            onError={e=>{ e.currentTarget.style.display="none"; }}/>
-        );
-      })}
-    </>
+    <div style={{ display:"flex", alignItems:"center" }}>
+      {letters.map((l,i)=>(
+        <span key={i} style={{
+          fontFamily:"'Baloo 2', 'Poppins', sans-serif", fontWeight:800, fontSize:"clamp(48px, 6vw, 92px)", lineHeight:1,
+          display:"inline-block", transform:`rotate(${l.rotate}deg) translateY(${l.y}px)`,
+          color:"transparent", backgroundImage:"linear-gradient(180deg, #F3ECFF 0%, #C9AEFB 42%, #804af0 100%)",
+          WebkitBackgroundClip:"text", backgroundClip:"text",
+          WebkitTextStroke:"2.5px #221c46",
+          textShadow:"2px 3px 0 #442c75, 4px 6px 0 #302861, 6px 9px 0 #221c46, 8px 14px 22px rgba(0,0,0,0.55)",
+        }}>{l.ch}</span>
+      ))}
+    </div>
   );
 }
 
@@ -1580,6 +1585,74 @@ function CommunityFavoriteCard({ item }) {
   );
 }
 
+// Real genres pulled from the live catalog (catalog.json) — not invented category names.
+const HOME_CATEGORIES = ["Action", "Adventure", "FPS", "Racing", "Platformer", "Casual", "Indie"];
+
+// Horizontal category browser — cards + prev/next handles, same pattern as a classic
+// streaming-site "stripe" (scroll track with edge-aware nav arrows), scoped to Rload's
+// real genres. Clicking a category jumps to Games filtered to that genre.
+function CategoriesStripe({ onSelectGenre, padding = "24px 32px 4px" }) {
+  const trackRef = useRef(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+
+  const updateEdges = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateEdges();
+    const el = trackRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateEdges, { passive:true });
+    window.addEventListener("resize", updateEdges);
+    return () => { el.removeEventListener("scroll", updateEdges); window.removeEventListener("resize", updateEdges); };
+  }, [updateEdges]);
+
+  const scrollByPage = (dir) => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.7), behavior:"smooth" });
+  };
+
+  return (
+    <div style={{ position:"relative", padding }}>
+      <div ref={trackRef} style={{ display:"flex", gap:10, overflowX:"auto", scrollBehavior:"smooth" }} className="hide-scrollbar">
+        {HOME_CATEGORIES.map(label=>(
+          <button key={label} onClick={()=>onSelectGenre(label)}
+            style={{ flex:"0 0 auto", padding:"14px 30px", borderRadius:T.radius,
+              background:"rgba(255,255,255,0.06)", border:`1px solid ${T.border}`,
+              color:T.text, fontSize:14, fontWeight:700, fontFamily:T.fontHead, cursor:"pointer",
+              transition:T.transitionFast, whiteSpace:"nowrap" }}
+            onMouseEnter={e=>{ e.currentTarget.style.background="rgba(128,74,240,0.16)"; e.currentTarget.style.borderColor=T.borderBrand; }}
+            onMouseLeave={e=>{ e.currentTarget.style.background="rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor=T.border; }}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {canPrev && (
+        <button aria-label="Previous" onClick={()=>scrollByPage(-1)}
+          style={{ position:"absolute", left:6, top:"50%", transform:"translateY(-50%)", width:36, height:36, borderRadius:"50%",
+            background:"rgba(20,16,42,0.85)", border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", fontSize:16,
+            display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)", boxShadow:T.shadowCard }}>
+          ‹
+        </button>
+      )}
+      {canNext && (
+        <button aria-label="Next" onClick={()=>scrollByPage(1)}
+          style={{ position:"absolute", right:6, top:"50%", transform:"translateY(-50%)", width:36, height:36, borderRadius:"50%",
+            background:"rgba(20,16,42,0.85)", border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", fontSize:16,
+            display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(6px)", boxShadow:T.shadowCard }}>
+          ›
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // HomePage — premium redesign with 12+ sections and varied card families
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1598,7 +1671,7 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
 
       {/* ── Cinematic Hero — one game, full commitment. Atmosphere → identity → invitation. ── */}
-      <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:520, maxHeight:720, background:coverGradient("ravenfield"), overflow:"hidden", flexShrink:0 }}>
+      <div style={{ position:"relative", height:"calc(100vh - 62px)", minHeight:640, background:coverGradient("ravenfield"), overflow:"hidden", flexShrink:0 }}>
         {/* Video (primary) */}
         {heroMode === "video" && (
           <video src="./videos/ravenfield_highlight.mp4" autoPlay muted loop playsInline preload="auto"
@@ -1616,31 +1689,28 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(14,12,31,0.62) 0%, rgba(14,12,31,0.34) 45%, rgba(14,12,31,0.0) 100%)" }}/>
         <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.68) 0%, rgba(14,12,31,0.37) 22%, transparent 65%)" }}/>
         {/* Content overlay — left side */}
-        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 48px 48px", maxWidth:520 }}>
-          {/* A quiet label, not a glowing badge — the CTA below is the only bright element on this screen */}
-          <div style={{ fontSize:10.5, fontWeight:600, color:"rgba(255,255,255,0.55)", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:14 }}>
-            This Week on Rload
+        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", paddingBottom:40 }}>
+          <div style={{ padding:"0 48px", maxWidth:520 }}>
+            {/* A quiet label, not a glowing badge — the CTA below is the only bright element on this screen */}
+            <div style={{ fontSize:10.5, fontWeight:600, color:"rgba(255,255,255,0.55)", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:14 }}>
+              This Week on Rload
+            </div>
+            <div style={{ fontSize:36, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.7px", lineHeight:1.1, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
+              Ravenfield
+            </div>
+            <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:10 }}>by SteelRaven7</div>
+            <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:24, lineHeight:1.6, maxWidth:420 }}>
+              Solo battle against an AI-controlled enemy army. Take to the skies, drive tanks, and command your troops to victory across vast, dynamic battlefields.
+            </div>
+            {/* One invitation, one secondary — both pills, same height, secondary in white outline */}
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <HeroPlayButton onClick={()=>onTabChange("games")}/>
+              <HeroSecondaryButton onClick={()=>onTabChange("games")} label="View Details"/>
+            </div>
           </div>
-          <div style={{ fontSize:36, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.7px", lineHeight:1.1, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
-            Ravenfield
-          </div>
-          <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:10 }}>by SteelRaven7</div>
-          <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:24, lineHeight:1.6, maxWidth:420 }}>
-            Solo battle against an AI-controlled enemy army. Take to the skies, drive tanks, and command your troops to victory across vast, dynamic battlefields.
-          </div>
-          {/* One invitation, not three — a single dominant action, one quiet secondary link */}
-          <div style={{ display:"flex", alignItems:"center", gap:22, marginBottom:16 }}>
-            <HeroPlayButton onClick={()=>onTabChange("games")}/>
-            <button onClick={()=>onTabChange("games")}
-              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6, transition:T.transitionFast }}>
-              View Details <Icon.ArrowRight/>
-            </button>
-          </div>
-          {/* Genre row — plain neutral chips, no competing color */}
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {["Action","Sandbox","PC"].map(tag=>(
-              <span key={tag} style={{ fontSize:9.5, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.08)", border:`1px solid rgba(255,255,255,0.15)`, color:T.textMuted }}>{tag}</span>
-            ))}
+          {/* Categories — replaces the old static genre-tag row, now a real genre browser. */}
+          <div style={{ marginTop:26 }}>
+            <CategoriesStripe onSelectGenre={(genre)=>onTabChange("games", genre)} padding="0 48px"/>
           </div>
         </div>
       </div>
@@ -1671,8 +1741,8 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
         <ThisWeekFeature featured={FEATURED_THIS_WEEK} onSelect={()=>onTabChange("games")}/>
       </div>
 
-      {/* ── Studio Spotlight — real studio, real game (Bad Weather Studios / KAKUDO). No invented quote. ── */}
-      <StudioSpotlight games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
+      {/* ── Kakudo Feature Banner — real game (Bad Weather Studios / KAKUDO), catalog data only. ── */}
+      <KakudoFeatureBanner games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
 
       {/* ── Your Library — one calm row, not a grid. Installed / continue-playing first. ───── */}
       {installed.length > 0 && (
@@ -2508,9 +2578,11 @@ function formatPlaytime(mins) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, gameDetailProps, gamesLoading, onTabChange }) {
+function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, gameDetailProps, gamesLoading, onTabChange, initialGenre }) {
   const [sidebarView, setSidebarView] = useState("all"); // all|installed|updates|favorites|recent|downloads|queue|tag:X
   const [search, setSearch]           = useState("");
+  // Seeded from the Home categories stripe (onTabChange("games", genre)) — cleared by any sidebar nav click.
+  const [genreFilter, setGenreFilter] = useState(initialGenre || null);
   const [online, setOnline]           = useState(navigator.onLine);
   useEffect(() => {
     const on  = () => setOnline(true);
@@ -2595,15 +2667,18 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
 
   // ── Grid games based on sidebar view ─────────────────────────────────────
   const getGridGames = () => {
-    if (sidebarView==="installed")    return search ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : installed;
-    if (sidebarView==="updates")      return withUpdates;
-    if (sidebarView==="favorites")    return search ? searchBase.filter(g=>favorites.has(g.gameId)) : favorited;
-    if (sidebarView==="recent")       return installed.length ? installed : realGames;
-    if (sidebarView==="downloads")    return activeDownloads;
-    if (sidebarView==="queue")        return [];
-    return searchBase; // "all"
+    let base;
+    if (sidebarView==="installed")    base = search ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : installed;
+    else if (sidebarView==="updates")      base = withUpdates;
+    else if (sidebarView==="favorites")    base = search ? searchBase.filter(g=>favorites.has(g.gameId)) : favorited;
+    else if (sidebarView==="recent")       base = installed.length ? installed : realGames;
+    else if (sidebarView==="downloads")    base = activeDownloads;
+    else if (sidebarView==="queue")        base = [];
+    else base = searchBase; // "all"
+    return genreFilter ? base.filter(g => (g.genres||[]).includes(genreFilter)) : base;
   };
   const gridGames    = getGridGames();
+  const clearGenreFilter = () => setGenreFilter(null);
   const selectedGame = selectedGameId ? games.find(g=>g.gameId===selectedGameId) : null;
 
   // Placeholder slots — visual padding when real library is small (all view only)
@@ -2640,15 +2715,15 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
 
           {/* LIBRARY */}
           <SidebarSectionLabel label="Library"/>
-          <SidebarNavItem icon="🎮" label="All Games"       active={sidebarView==="all"}       onClick={()=>{ setSidebarView("all"); setSearch(""); }} badge={counts.all}/>
-          <SidebarNavItem icon="📥" label="Installed"       active={sidebarView==="installed"} onClick={()=>{ setSidebarView("installed"); setSearch(""); }} badge={counts.installed}/>
-          <SidebarNavItem icon="🔄" label="Updates"         active={sidebarView==="updates"}   onClick={()=>{ setSidebarView("updates"); setSearch(""); }} badge={counts.updates}/>
-          <SidebarNavItem icon="⭐" label="Favorites"       active={sidebarView==="favorites"} onClick={()=>{ setSidebarView("favorites"); setSearch(""); }} badge={counts.favorites}/>
-          <SidebarNavItem icon="🕐" label="Recently Played" active={sidebarView==="recent"}    onClick={()=>{ setSidebarView("recent"); setSearch(""); }}/>
+          <SidebarNavItem icon="🎮" label="All Games"       active={sidebarView==="all"}       onClick={()=>{ setSidebarView("all"); setSearch(""); clearGenreFilter(); }} badge={counts.all}/>
+          <SidebarNavItem icon="📥" label="Installed"       active={sidebarView==="installed"} onClick={()=>{ setSidebarView("installed"); setSearch(""); clearGenreFilter(); }} badge={counts.installed}/>
+          <SidebarNavItem icon="🔄" label="Updates"         active={sidebarView==="updates"}   onClick={()=>{ setSidebarView("updates"); setSearch(""); clearGenreFilter(); }} badge={counts.updates}/>
+          <SidebarNavItem icon="⭐" label="Favorites"       active={sidebarView==="favorites"} onClick={()=>{ setSidebarView("favorites"); setSearch(""); clearGenreFilter(); }} badge={counts.favorites}/>
+          <SidebarNavItem icon="🕐" label="Recently Played" active={sidebarView==="recent"}    onClick={()=>{ setSidebarView("recent"); setSearch(""); clearGenreFilter(); }}/>
 
           {/* DOWNLOADS */}
           <SidebarSectionLabel label="Downloads"/>
-          <SidebarNavItem icon="⬇" label="Active Downloads" active={sidebarView==="downloads"} onClick={()=>{ setSidebarView("downloads"); setSearch(""); }} badge={counts.downloads}/>
+          <SidebarNavItem icon="⬇" label="Active Downloads" active={sidebarView==="downloads"} onClick={()=>{ setSidebarView("downloads"); setSearch(""); clearGenreFilter(); }} badge={counts.downloads}/>
           <SidebarNavItem icon="☰" label="Queue"             active={sidebarView==="queue"}     onClick={()=>setSidebarView("queue")} disabled={true}/>
 
           {/* SYSTEM */}
@@ -2785,8 +2860,18 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
             ═══════════════════════════════════════════════════════ */}
             <div style={{ padding:"22px 22px 0" }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                marginBottom:14 }}>
-                <SectionHeading title={gridTitle} noMargin/>
+                marginBottom:14, gap:12, flexWrap:"wrap" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <SectionHeading title={gridTitle} noMargin/>
+                  {genreFilter && (
+                    <button onClick={clearGenreFilter}
+                      style={{ display:"flex", alignItems:"center", gap:6, padding:"3px 10px", borderRadius:T.radiusPill,
+                        background:"rgba(128,74,240,0.16)", border:`1px solid ${T.borderBrand}`, color:T.brandLight,
+                        fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+                      {genreFilter} ✕
+                    </button>
+                  )}
+                </div>
                 {(sidebarView==="all"||sidebarView==="recent") && (
                   <span style={{ fontSize:11, color:T.textDim }}>{gridGames.length} games</span>
                 )}
@@ -2805,7 +2890,8 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
                   justifyContent:"center", padding:"52px 0", gap:12 }}>
                   <span style={{ fontSize:28, opacity:0.35 }}>🎮</span>
                   <div style={{ fontSize:14, color:T.textMuted, fontWeight:500 }}>
-                    {sidebarView.startsWith("tag:") ? "No games with this tag yet"
+                    {genreFilter ? `No ${genreFilter} games yet`
+                      : sidebarView.startsWith("tag:") ? "No games with this tag yet"
                       : search ? `No results for "${search}"`
                       : "No games in this category"}
                   </div>
@@ -4059,21 +4145,30 @@ export default function LauncherGames() {
   const [errByGame, setErrByGame]                           = useState({});
   const [busyByGame, setBusyByGame]                         = useState({});
   const [activeTab, setActiveTab]                           = useState("home");
+  const [gamesGenreFilter, setGamesGenreFilter]             = useState(null);
   const [selectedGameId, setSelectedGameId]                 = useState(null);
   const [prevGameTab, setPrevGameTab]                       = useState("home");
   const [launchingGame, setLaunchingGame]                   = useState(null);
   const [lang, setLang]                                     = useState(() => localStorage.getItem("rload-lang") || "en");
   const [demoMode, setDemoMode] = useState(false); // safe default: gates enforced until IPC responds
+  const [platform, setPlatform] = useState(null);  // "win32" | "darwin" | "linux" — null until IPC responds
   const unsubRef    = useRef(null);
   const unsubRunRef = useRef(null);
   const sessionStartRef = useRef({}); // gameId -> Date.now() at session start, for real playtime tracking
 
-  // Fetch demoMode from main process — RLOAD_DEMO_MODE env var is the single source of truth
+  // Fetch demoMode + platform from main process — single source of truth for both
   useEffect(() => {
     window.rload?.app?.getConfig?.()
-      .then(c => { if (c?.demoMode) setDemoMode(true); })
-      .catch(() => {}); // stays false — subscription gates enforced on error
+      .then(c => {
+        if (c?.demoMode) setDemoMode(true);
+        if (c?.platform) setPlatform(c.platform);
+      })
+      .catch(() => {}); // stays false/null — subscription gates enforced, platform gating skipped on error
   }, []);
+
+  // macOS Designer Preview: true once we know we're not on win32. Every catalog game is a
+  // Windows build today (game.platforms defaults to ["windows"]) — see gameSupportsPlatform.
+  const isMacPreview = platform != null && platform !== "win32";
 
   const changeLang = useCallback((l) => {
     localStorage.setItem("rload-lang", l);
@@ -4098,9 +4193,11 @@ export default function LauncherGames() {
   }, []);
 
   // handleTabChange MUST be declared before the auth gate (Rules of Hooks)
-  const handleTabChange = useCallback((tab) => {
+  // Optional `genre` arg (from the Home categories stripe) seeds MyGamesPage's genre filter.
+  const handleTabChange = useCallback((tab, genre) => {
     setActiveTab(tab);
     if (tab !== "games") setSelectedGameId(null);
+    setGamesGenreFilter(genre || null);
   }, []);
 
   const desktop = rloadAvailable();
@@ -4193,6 +4290,9 @@ export default function LauncherGames() {
         trailer:        g.trailer || null,
         tags:           Array.isArray(g.tags) ? g.tags : [],
         genres:         Array.isArray(g.genres) ? g.genres : [],
+        // Defaults to ["windows"] to match reality: every catalog entry today is a Windows
+        // build even where the field is missing. Drives the macOS Designer Preview gating.
+        platforms:      Array.isArray(g.platforms) && g.platforms.length ? g.platforms : ["windows"],
         // M4 fields
         comingSoon:         !!g.comingSoon,
         releaseDate:        g.releaseDate || null,
@@ -4477,6 +4577,7 @@ export default function LauncherGames() {
     error:            errByGame[selId],
     busy:             !!busyByGame[selId],
     hasAccess:        demoMode ? true : (subscriptionStatus?.hasAccess ?? false),
+    platformUnsupported: isWindowsOnlyGame(selGame, platform),
     onInstall:  ()=>handleInstall(selGame),
     onUpdate:   ()=>handleUpdate(selGame, installedVersionByGame[selId]||null),
     onPlay:     ()=>handlePlay(selGame),
@@ -4534,6 +4635,7 @@ export default function LauncherGames() {
           <MyGamesPage games={games} uiByGame={uiByGame} dlByGame={dlByGame}
             selectedGameId={selectedGameId} onSelectGame={handleSelectGame}
             gameDetailProps={gameDetailProps} gamesLoading={gamesLoading}
+            initialGenre={gamesGenreFilter}
             onTabChange={handleTabChange}/>
         )}
         {activeTab==="events"    && <EventsPage onTabChange={handleTabChange}/>}
