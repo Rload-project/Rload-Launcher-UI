@@ -1744,6 +1744,12 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
       {/* ── Kakudo Feature Banner — real game (Bad Weather Studios / KAKUDO), catalog data only. ── */}
       <KakudoFeatureBanner games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
 
+      {/* ── Founding Studios — real studios from the live catalog, not invented bios. ── */}
+      <FoundingStudiosRow games={games} onSelectGame={onSelectGame}/>
+
+      {/* ── Catalog Highlights — our own placeholder pool (never real CDN games), dimmed + "Soon". ── */}
+      <CatalogHighlightsGrid/>
+
       {/* ── Your Library — one calm row, not a grid. Installed / continue-playing first. ───── */}
       {installed.length > 0 && (
         <div style={{ padding:"0 32px", marginBottom:28 }}>
@@ -1755,7 +1761,7 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
       {/* ── Community Favorites — three wide editorial cards, not a leaderboard. No medals, no gold. ── */}
       <div style={{ padding:"0 32px", marginBottom:32 }}>
         <SectionHeader title="Community Favorites" subtitle="Most played by Rload members this month" onMore={()=>onTabChange("games")}/>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1.3fr 1fr 1fr", gap:14 }}>
           {PC_RANKED_ITEMS.slice(0,3).map(item=>(
             <CommunityFavoriteCard key={item.rank} item={item}/>
           ))}
@@ -1998,6 +2004,110 @@ function PlaceholderCard({ p }) {
           fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {p.title}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FoundingStudiosRow — real studios from the live catalog, not invented bios.
+// One card per distinct studio (first game found), capped to 4. Game count is
+// computed from the real games array — no fabricated taglines or review scores.
+// ─────────────────────────────────────────────────────────────────────────────
+function FoundingStudiosRow({ games, onSelectGame }) {
+  const realGames = games.filter(g => g.gameId !== "smoke");
+  const seen = new Set();
+  const studioGames = [];
+  for (const g of realGames) {
+    if (!g.studio || seen.has(g.studio)) continue;
+    seen.add(g.studio);
+    studioGames.push(g);
+    if (studioGames.length >= 4) break;
+  }
+  if (studioGames.length === 0) return null;
+  const countFor = (studio) => realGames.filter(g => g.studio === studio).length;
+
+  return (
+    <div style={{ padding:"0 32px", marginBottom:32 }}>
+      <SectionHeader title="Founding Studios" subtitle="The studios that joined Rload first"/>
+      <div style={{ display:"grid", gridTemplateColumns:`repeat(${studioGames.length}, 1fr)`, gap:14 }}>
+        {studioGames.map(g=>(
+          <FoundingStudioCard key={g.studio} game={g} gameCount={countFor(g.studio)}
+            onSelect={()=>onSelectGame(g)}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+function FoundingStudioCard({ game, gameCount, onSelect }) {
+  const [hov, setHov] = useState(false);
+  const initials = (game.studio||"?").split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+  return (
+    <div onClick={onSelect} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:T.bgCard, border:`1px solid ${hov?T.borderBrand:T.border}`, borderRadius:T.radius,
+        padding:16, cursor:"pointer", transition:T.transitionFast,
+        transform:hov?"translateY(-2px)":"none" }}>
+      <div style={{ width:40, height:40, borderRadius:10, marginBottom:12, display:"flex", alignItems:"center", justifyContent:"center",
+        fontWeight:800, fontSize:15, color:"#fff", background:coverGradient(game.studio) }}>
+        {initials}
+      </div>
+      <div style={{ fontSize:14, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginBottom:2,
+        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{game.studio}</div>
+      {game.studioCountry && <div style={{ fontSize:11, color:T.textDim, marginBottom:8 }}>{game.studioCountry}</div>}
+      <div style={{ fontSize:11.5, color:T.brandLight, marginTop: game.studioCountry?0:8 }}>
+        {gameCount} game{gameCount>1?"s":""} on Rload
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CatalogHighlightsGrid — uses the existing PLACEHOLDER_GAMES pool (isPlaceholder:true,
+// never enters CDN flows), not invented catalog entries. Dimmed + "Soon" tag, same
+// honesty convention as PlaceholderCard, so it never reads as real live inventory.
+// ─────────────────────────────────────────────────────────────────────────────
+function CatalogHighlightsGrid() {
+  return (
+    <div style={{ padding:"0 32px", marginBottom:32 }}>
+      <SectionHeader title="Catalog Highlights" subtitle="More flavors on the way to Rload"/>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:14 }}>
+        {PLACEHOLDER_GAMES.slice(0,8).map(p=>(
+          <CatalogHighlightCard key={p.id} p={p}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+function CatalogHighlightCard({ p }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ borderRadius:T.radius, overflow:"hidden", position:"relative", cursor:"default", userSelect:"none",
+        border:"1px solid rgba(255,255,255,0.06)", transform:hov?"translateY(-2px)":"none", transition:"transform 0.18s ease-out" }}>
+      <div style={{ position:"relative", width:"100%", paddingTop:"58%", background:"#0a0914" }}>
+        <img src={p.imageUrl} alt={p.title}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover",
+            filter:"brightness(0.75) saturate(0.8)",
+            transform:hov?"scale(1.04)":"scale(1)", transition:"transform 0.2s ease-out" }}
+          onError={e=>e.currentTarget.style.display="none"}/>
+        <span style={{ position:"absolute", top:8, right:8, width:24, height:24, borderRadius:"50%",
+          background:"rgba(0,0,0,0.45)", color:"rgba(255,255,255,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:12 }}>
+          &#9825;
+        </span>
+        <span style={{ position:"absolute", bottom:8, left:8, padding:"2px 8px", borderRadius:T.radiusPill,
+          fontSize:8.5, fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase",
+          color:"rgba(255,255,255,0.65)", background:"rgba(0,0,0,0.5)" }}>
+          Soon
+        </span>
+      </div>
+      <div style={{ padding:"10px 12px 12px" }}>
+        <div style={{ fontSize:12.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, marginBottom:5,
+          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.title}</div>
+        <span style={{ fontSize:9.5, padding:"2px 8px", borderRadius:T.radiusPill,
+          background:"rgba(128,74,240,0.12)", border:"1px solid rgba(128,74,240,0.22)", color:T.brandLight }}>
+          {p.genre}
+        </span>
       </div>
     </div>
   );
