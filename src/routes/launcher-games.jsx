@@ -161,21 +161,6 @@ function eventCategoryColor(cat) {
 // ─────────────────────────────────────────────────────────────────────────────
 const HERO_IMAGE = "https://cdn.rload.be/covers/ravenfield.jpg";
 
-// ── This Week on Rload (M4.6) — one story, not four cards. A single featured game with editorial
-// copy, plus three quiet secondary picks that never compete with it. ──
-const FEATURED_THIS_WEEK = {
-  title: "Blackline Protocol",
-  studio: "Iron Forge Dev",
-  imageUrl: "./images/streaming/blackline_protocol.png",
-  imagePosition: "center 48%",
-  tagline: "Tactical FPS where every move has weight.",
-  paragraph: "Discipline over chaos. In Blackline Protocol, tight environments, realistic firefights, and limited intel turn every mission into a test of judgment. Think. Coordinate. Execute. There's no room for mistakes.",
-  whyWePickedIt: [
-    "Outstanding atmosphere and environmental storytelling",
-    "Tactical gameplay where every decision matters",
-    "One of this week's standout discoveries",
-  ],
-};
 // ── Studio Spotlight — real studio, real data only. No testimonial: none has been verified, so none is shown.
 // Bio verified against the studio's own listing on Walga (Wallonia Games Association) — real studio,
 // real other titles, not invented. See sources in the M4.6 follow-up summary. ──
@@ -781,6 +766,7 @@ const NAV_ITEMS = [
   { id:"home",      label:"Home"      },
   { id:"games",     label:"Games"     },
   { id:"events",    label:"Events"    },
+  { id:"myrload",   label:"My Rload"  },
   { id:"about",     label:"About"     },
 ];
 
@@ -1494,9 +1480,7 @@ function StudioSpotlight({ games, onSelectGame, onTabChange }) {
             ))}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:22 }}>
-            {/* No dedicated studio page exists yet — routes to the Games tab as the closest
-                available destination rather than duplicating the Play Kakudo button below. */}
-            <button onClick={()=>onTabChange("games")}
+            <button onClick={()=>onTabChange("studios")}
               style={{ padding:"11px 24px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
                 border:"none", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody, transition:T.transitionBase }}>
               Explore Bad Weather Studios
@@ -1583,123 +1567,212 @@ function CommunityFavoriteCard({ item }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // HomePage — premium redesign with 12+ sections and varied card families
 // ─────────────────────────────────────────────────────────────────────────────
-function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }) {
-  const [heroMode, setHeroMode] = useState("video"); // "video" | "img" | "gone"
-  const installed = games.filter(g=>[UI.INSTALLED,UI.RUNNING,UI.UPDATE_AVAILABLE,UI.INSTALLED_NO_EXE].includes(uiByGame[g.gameId]||UI.IDLE));
-  const running   = games.filter(g=>uiByGame[g.gameId]===UI.RUNNING);
-  // Only ever show events that haven't happened yet — a past date on the Home page reads as neglect.
+// ─────────────────────────────────────────────────────────────────────────────
+// HomePage — Figma "Home_Rload" layout: hero carousel, category filters, two
+// game-grid rows, an upgrade banner, the studio spotlight, upcoming events,
+// and the shared footer.
+// ─────────────────────────────────────────────────────────────────────────────
+const HERO_SLIDES = [
+  { gameId:"ravenfield",  title:"Ravenfield",  studio:"SteelRaven7", rating:"4.8", video:"./videos/ravenfield_highlight.mp4", image:HERO_IMAGE, tags:["FPS","Action","Solo"],
+    description:"Solo battle against an AI enemy that always wins. Help the Blue side win, and singlehandedly fight your way to victory across the battlefield." },
+  { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:LOCAL_COVERS["jelly-drift"], tags:["Racing","Arcade","Party"],
+    description:"An arcade racing game on ever-sliding jelly. Take impossible turns and stay in one piece." },
+  { gameId:"karlson",     title:"Karlson",     studio:"DANIDEV",      rating:"4.6", image:LOCAL_COVERS["karlson"], tags:["FPS","Movement","Speedrun"],
+    description:"An ultra-fast movement-first FPS where parkour matters as much as aim. Find your flow, chain the levels." },
+];
+
+function HeroCarousel({ games, onSelectGame, onTabChange }) {
+  const [index, setIndex] = useState(0);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const slide = HERO_SLIDES[index];
+  const go = (i) => { setIndex((i + HERO_SLIDES.length) % HERO_SLIDES.length); setVideoFailed(false); };
+  const openSlide = () => {
+    const matched = games.find(g => g.gameId === slide.gameId);
+    matched ? onSelectGame(matched) : onTabChange("games");
+  };
+
+  return (
+    <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:520, maxHeight:720, overflow:"hidden", flexShrink:0, background:coverGradient(slide.gameId) }}>
+      {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
+      {slide.video && !videoFailed ? (
+        <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
+          onError={()=>setVideoFailed(true)}/>
+      ) : (
+        <img key={slide.gameId} src={slide.image} alt={slide.title}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
+          onError={e=>{ e.currentTarget.style.display="none"; }}/>
+      )}
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(14,12,31,0.62) 0%, rgba(14,12,31,0.34) 45%, rgba(14,12,31,0.0) 100%)" }}/>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.68) 0%, rgba(14,12,31,0.37) 22%, transparent 65%)" }}/>
+
+      <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 48px 48px", maxWidth:560 }}>
+        <div style={{ fontSize:44, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1px", lineHeight:1.05, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
+          {slide.title}
+        </div>
+        <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
+          by {slide.studio} <span style={{ opacity:0.4 }}>·</span> <span style={{ color:"#ffffa6" }}>★ {slide.rating}</span>
+        </div>
+        <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:20, lineHeight:1.6, maxWidth:460 }}>
+          {slide.description}
+        </div>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:22 }}>
+          {slide.tags.map(tag=>(
+            <span key={tag} style={{ fontSize:11, padding:"3px 10px", borderRadius:8, background:"rgba(255,255,255,0.08)", color:T.textMuted }}>{tag}</span>
+          ))}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <button onClick={openSlide}
+            style={{ height:48, padding:"0 26px", borderRadius:14, background:T.brandGrad, color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:9, boxShadow:T.brandGlow }}>
+            <Icon.Play/> Play Now
+          </button>
+          <button onClick={openSlide}
+            style={{ height:48, padding:"0 26px", borderRadius:14, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+            View Details
+          </button>
+        </div>
+      </div>
+
+      {/* Prev / next + dots */}
+      <div style={{ position:"absolute", right:48, bottom:32, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:14 }}>
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={()=>go(index-1)} aria-label="Previous slide"
+            style={{ width:36, height:36, borderRadius:14, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <Icon.ChevronLeft/>
+          </button>
+          <button onClick={()=>go(index+1)} aria-label="Next slide"
+            style={{ width:36, height:36, borderRadius:14, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <Icon.ChevronRight/>
+          </button>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          {HERO_SLIDES.map((s,i)=>(
+            <button key={s.gameId} onClick={()=>go(i)} aria-label={`Go to slide ${i+1}`}
+              style={{ width:i===index?24:6, height:6, borderRadius:999, border:"none", cursor:"pointer",
+                background:i===index?"#fff":"rgba(255,255,255,0.35)", transition:"width 0.2s ease" }}/>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Category filter chips — a browse aid; selecting one jumps to the Games tab. ──
+const HOME_CATEGORIES = ["All","Action","Adventure","FPS","Racing","Platformer","Casual","Indie","RPG","Sports"];
+function CategoryFilterBar({ onTabChange }) {
+  const [active, setActive] = useState("All");
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"20px 32px", background:"rgba(26,7,55,0.77)" }}>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+        {HOME_CATEGORIES.map(cat=>(
+          <button key={cat} onClick={()=>{ setActive(cat); onTabChange("games"); }}
+            style={{ padding:"7px 16px", borderRadius:999, border:"none", cursor:"pointer", fontSize:13.5, fontWeight:500, fontFamily:T.fontBody,
+              background:active===cat ? T.brand : T.bgMid, color:active===cat ? "#fff" : T.textMuted,
+              boxShadow:active===cat ? "0 2px 12px rgba(124,92,252,0.35)" : "none", whiteSpace:"nowrap" }}>
+            {cat}
+          </button>
+        ))}
+      </div>
+      <button onClick={()=>onTabChange("search")} aria-label="Search games"
+        style={{ width:44, height:44, borderRadius:999, background:"rgba(255,255,255,0.08)", border:`1px solid ${T.textDim}`, color:T.textMuted, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        <Icon.Search/>
+      </button>
+    </div>
+  );
+}
+
+// ── Deterministic ~3.8–4.9 rating per title — same fabricated-mockup-rating convention the hero already used (a hardcoded "★ 4.8"). ──
+function mockRating(title) {
+  const n = (title||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+  return (3.8 + (n % 12) / 10).toFixed(1);
+}
+
+// ── HomeGameCard — full-bleed portrait cover, gradient title block, genre pill + rating, like toggle. ──
+function HomeGameCard({ title, imageUrl, imagePosition, genre, onSelect }) {
+  const [liked, setLiked] = useState(false);
+  return (
+    <div onClick={onSelect} role="button" tabIndex={0} onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&onSelect()}
+      style={{ position:"relative", borderRadius:16, overflow:"hidden", cursor:"pointer", aspectRatio:"259/353", background:coverGradient(title) }}>
+      <img src={imageUrl} alt={title} style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:imagePosition||"center" }}
+        onError={e=>{ e.currentTarget.style.display="none"; }}/>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(38,38,38,0.1) 0%, rgba(38,38,38,0.39) 49%, rgba(0,0,0,0.75) 100%)" }}/>
+      <button onClick={e=>{ e.stopPropagation(); setLiked(v=>!v); }} aria-label="Like"
+        style={{ position:"absolute", top:12, right:12, width:32, height:32, borderRadius:16, background:"rgba(0,0,0,0.35)", border:"1px solid rgba(255,255,255,0.14)", color:liked?T.brandLight:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>
+        {liked ? "♥" : "♡"}
+      </button>
+      <div style={{ position:"absolute", left:0, right:0, bottom:0, padding:16 }}>
+        <div style={{ fontSize:22, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{title}</div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ padding:"5px 14px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:12, fontWeight:500 }}>{genre}</span>
+          <span style={{ fontSize:12, fontWeight:600, color:"#ffffa6" }}>★ {mockRating(title)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeGameGrid({ items, onTabChange }) {
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:14 }}>
+      {items.map(item=>(
+        <HomeGameCard key={item.title} title={item.title} imageUrl={item.imageUrl} imagePosition={item.imagePosition}
+          genre={Array.isArray(item.genre) ? item.genre[0] : item.genre}
+          onSelect={()=>onTabChange("games")}/>
+      ))}
+    </div>
+  );
+}
+
+// ── Upgrade banner — routes to Profile/Membership, the closest existing destination. ──
+function UpgradeBanner({ onTabChange }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:24, padding:"22px 24px", background:"linear-gradient(90deg, #4306a6 0%, #33077e 100%)" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FFC24B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7Z"/>
+        </svg>
+        <span style={{ fontSize:20, fontWeight:700, color:"#fff", fontFamily:T.fontHead, letterSpacing:"0.3px" }}>Upgrade your plan</span>
+      </div>
+      <button onClick={()=>onTabChange("profile")}
+        style={{ padding:"10px 24px", borderRadius:14, border:"none", cursor:"pointer", fontSize:14, fontWeight:600, fontFamily:T.fontBody, color:"#fff",
+          background:"linear-gradient(163deg, rgba(124,92,252,1) 0%, rgba(124,92,252,0.8) 100%)", boxShadow:"0 4px 24px rgba(124,92,252,0.4)" }}>
+        Upgrade
+      </button>
+    </div>
+  );
+}
+
+function HomePage({ games, onSelectGame, onTabChange }) {
   const now = new Date();
   const nextEvents = UPCOMING_EVENTS
     .filter(ev => new Date(`${ev.day} ${ev.month} 2026`) >= now)
     .sort((a,b)=> new Date(`${a.day} ${a.month} 2026`) - new Date(`${b.day} ${b.month} 2026`))
     .slice(0,2);
 
+  const gamesRow     = PC_RANKED_ITEMS.slice(0,5);
+  const communityRow = [...PC_RANKED_ITEMS].reverse().slice(0,5);
+
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
+      <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
 
-      {/* ── Cinematic Hero — one game, full commitment. Atmosphere → identity → invitation. ── */}
-      <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:520, maxHeight:720, background:coverGradient("ravenfield"), overflow:"hidden", flexShrink:0 }}>
-        {/* Video (primary) */}
-        {heroMode === "video" && (
-          <video src="./videos/ravenfield_highlight.mp4" autoPlay muted loop playsInline preload="auto"
-            style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
-            onError={()=>setHeroMode("img")}/>
-        )}
-        {/* Static image fallback */}
-        {heroMode === "img" && (
-          <img src={HERO_IMAGE} alt="Ravenfield"
-            style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
-            onError={()=>setHeroMode("gone")}/>
-        )}
-        {/* Dark overlays — left fade for readability, bottom fade. Restored to the pre-M4.5 neutral
-            dark navy treatment (no purple wash over the video). */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(14,12,31,0.62) 0%, rgba(14,12,31,0.34) 45%, rgba(14,12,31,0.0) 100%)" }}/>
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.68) 0%, rgba(14,12,31,0.37) 22%, transparent 65%)" }}/>
-        {/* Content overlay — left side */}
-        <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 48px 48px", maxWidth:520 }}>
-          {/* A quiet label, not a glowing badge — the CTA below is the only bright element on this screen */}
-          <div style={{ fontSize:10.5, fontWeight:600, color:"rgba(255,255,255,0.55)", letterSpacing:"0.14em", textTransform:"uppercase", marginBottom:14 }}>
-            This Week on Rload
-          </div>
-          <div style={{ fontSize:36, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.7px", lineHeight:1.1, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
-            Ravenfield
-          </div>
-          <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:10 }}>by SteelRaven7</div>
-          <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:24, lineHeight:1.6, maxWidth:420 }}>
-            Solo battle against an AI-controlled enemy army. Take to the skies, drive tanks, and command your troops to victory across vast, dynamic battlefields.
-          </div>
-          {/* One invitation, not three — a single dominant action, one quiet secondary link */}
-          <div style={{ display:"flex", alignItems:"center", gap:22, marginBottom:16 }}>
-            <HeroPlayButton onClick={()=>onTabChange("games")}/>
-            <button onClick={()=>onTabChange("games")}
-              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6, transition:T.transitionFast }}>
-              View Details <Icon.ArrowRight/>
-            </button>
-          </div>
-          {/* Genre row — plain neutral chips, no competing color */}
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {["Action","Sandbox","PC"].map(tag=>(
-              <span key={tag} style={{ fontSize:9.5, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.08)", border:`1px solid rgba(255,255,255,0.15)`, color:T.textMuted }}>{tag}</span>
-            ))}
-          </div>
-        </div>
+      <CategoryFilterBar onTabChange={onTabChange}/>
+
+      <div style={{ padding:"40px 32px 0" }}>
+        <SectionHeader title="Games" onMore={()=>onTabChange("games")}/>
+        <HomeGameGrid items={gamesRow} onTabChange={onTabChange}/>
       </div>
 
-      {/* ── Continue Playing (live running games) ───────────────────────────── */}
-      {running.length > 0 && (
-        <div style={{ padding:"28px 32px 0", marginBottom:28 }}>
-          <SectionHeader title="Continue Playing"/>
-          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-            {running.map(g=>(
-              <div key={g.gameId} onClick={()=>onSelectGame(g)}
-                style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", borderRadius:T.radius, background:"linear-gradient(135deg, rgba(192,132,252,0.1) 0%, rgba(128,74,240,0.07) 100%)", border:`1px solid ${T.purpleBorder}`, cursor:"pointer", minWidth:200 }}>
-                <div style={{ width:40, height:40, borderRadius:"0.5rem", overflow:"hidden", background:coverGradient(g.gameId), flexShrink:0 }}>
-                  {(g.thumbnail||g.coverUrl)&&<img src={g.thumbnail||g.coverUrl} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} onError={e=>e.currentTarget.style.display="none"}/>}
-                </div>
-                <div>
-                  <div style={{ fontSize:13.5, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{g.title}</div>
-                  <div style={{ fontSize:11, color:T.purple, display:"flex", alignItems:"center", gap:4 }}><span style={{ width:6, height:6, borderRadius:"50%", background:T.purple, display:"inline-block" }}/> Playing now</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── This Week on Rload (M4.6) — one story, not a grid. See ThisWeekFeature. ── */}
-      <div style={{ padding:"28px 40px 0", maxWidth:1700, margin:"0 auto 32px" }}>
-        <ThisWeekFeature featured={FEATURED_THIS_WEEK} onSelect={()=>onTabChange("games")}/>
+      <div style={{ margin:"40px 0" }}>
+        <UpgradeBanner onTabChange={onTabChange}/>
       </div>
 
       {/* ── Studio Spotlight — real studio, real game (Bad Weather Studios / KAKUDO). No invented quote. ── */}
       <StudioSpotlight games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
 
-      {/* ── Your Library — one calm row, not a grid. Installed / continue-playing first. ───── */}
-      {installed.length > 0 && (
-        <div style={{ padding:"0 32px", marginBottom:28 }}>
-          <SectionHeader title="Your Library" count={installed.length} onMore={()=>onTabChange("games")}/>
-          <LibraryRow games={installed.slice(0,9)} uiByGame={uiByGame} onSelectGame={onSelectGame}/>
-        </div>
-      )}
-
-      {/* ── Community Favorites — three wide editorial cards, not a leaderboard. No medals, no gold. ── */}
-      <div style={{ padding:"0 32px", marginBottom:32 }}>
-        <SectionHeader title="Community Favorites" subtitle="Most played by Rload members this month" onMore={()=>onTabChange("games")}/>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:14 }}>
-          {PC_RANKED_ITEMS.slice(0,3).map(item=>(
-            <CommunityFavoriteCard key={item.rank} item={item}/>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Coming Soon — no decorative watermark, just the games themselves. ── */}
-      <div style={{ padding:"0 32px", marginBottom:28 }}>
-        <SectionHeader title="Coming Soon" subtitle="Games arriving on Rload soon"/>
-        <div style={{ display:"flex", gap:12, overflowX:"auto", paddingBottom:8 }} className="hide-scrollbar">
-          {COMING_SOON_ITEMS.map(item=>(
-            <ComingSoonCard key={item.id} title={item.title} imageUrl={item.imageUrl}/>
-          ))}
-        </div>
+      <div style={{ padding:"8px 32px 0", marginBottom:40 }}>
+        <SectionHeader title="Community Favorite" onMore={()=>onTabChange("games")}/>
+        <HomeGameGrid items={communityRow} onTabChange={onTabChange}/>
       </div>
 
       {/* ── Events — sober, editorial, 2 max on Home; the rest lives on the Events tab ── */}
@@ -1710,159 +1783,8 @@ function HomePage({ games, uiByGame, dlByGame, onSelectGame, user, onTabChange }
         </div>
       </div>
 
-      {/* ── Footer — same footer as Developers/Events, per explicit request to make it consistent. ── */}
+      {/* ── Footer — same footer as every other page, kept for cross-page consistency. ── */}
       <AppFooter onTabChange={onTabChange}/>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ThisWeekFeature (M4.6) — one composition, one story. No card borders, no boxed
-// layout, no visible subdivisions: the artwork is masked directly into the
-// section background rather than sitting inside a bordered panel. A single
-// featured game gets full editorial treatment; three quiet secondary picks sit
-// below in a low-weight strip so they never compete with the hero above them.
-// ─────────────────────────────────────────────────────────────────────────────
-// Reuses T.bgDeep (not a custom near-black) so the section blends seamlessly into the Hero above
-// and Studio Spotlight below instead of showing a visible brightness seam at its edges.
-const WEEK_BG = T.bgDeep;
-function ThisWeekFeature({ featured, onSelect }) {
-  const [parallax, setParallax] = useState({ x:0, y:0 });
-  const handleMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width - 0.5;
-    const py = (e.clientY - rect.top) / rect.height - 0.5;
-    setParallax({ x: px * -5, y: py * -4 }); // capped ~2-3px net after the transform's own scale
-  };
-  const resetParallax = () => setParallax({ x:0, y:0 });
-
-  return (
-    <div style={{ position:"relative", height:430, overflow:"hidden", background:WEEK_BG }}>
-      {/* Featured artwork fills the whole left panel edge-to-edge (cover, not contain — contain
-          left empty letterbox bars, which read as unfinished rather than "full frame"). The crop
-          position is tuned so the subject and title text stay in frame. No color wash over the
-          artwork — it renders at full clarity, exactly as shot. */}
-      <div onMouseMove={handleMove} onMouseLeave={resetParallax}
-        style={{ position:"absolute", left:0, top:0, width:"68%", height:"100%", overflow:"hidden" }}>
-        <img src={featured.imageUrl} alt={featured.title}
-          style={{ position:"absolute", inset:-8, width:"calc(100% + 16px)", height:"calc(100% + 16px)", objectFit:"cover",
-            objectPosition: featured.imagePosition || "center",
-            transform:`translate(${parallax.x}px, ${parallax.y}px)`, transition:"transform 1.1s cubic-bezier(0.16,1,0.3,1)" }}
-          onError={e=>e.currentTarget.style.display="none"}/>
-      </div>
-
-      {/* Editorial column fills the remaining right side. */}
-      <div style={{ position:"relative", zIndex:1, display:"flex", height:"100%" }}>
-        <div style={{ width:"68%", flexShrink:0 }}/>
-        <div style={{ flex:1, minWidth:0, padding:"36px 48px", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"flex-start", boxSizing:"border-box" }}>
-          <div style={{ fontSize:11, fontWeight:600, letterSpacing:"3px", textTransform:"uppercase", color:"rgba(180,168,214,0.6)", marginBottom:10 }}>
-            This Week on Rload
-          </div>
-          <div style={{ fontSize:46, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1.02, letterSpacing:"-0.5px", marginBottom:8 }}>
-            {featured.title}
-          </div>
-          <div style={{ fontSize:13.5, fontWeight:500, color:T.brandLight, marginBottom:14, cursor:"pointer" }}>
-            {featured.studio}
-          </div>
-          <div style={{ fontSize:14.5, fontWeight:600, color:"rgba(255,255,255,0.92)", lineHeight:1.4, marginBottom:8 }}>
-            {featured.tagline}
-          </div>
-          <div style={{ fontSize:12.5, color:"rgba(216,210,232,0.7)", lineHeight:1.55, marginBottom:16 }}>
-            {featured.paragraph}
-          </div>
-          <div style={{ display:"flex", gap:30, marginBottom:18 }}>
-            {featured.whyWePickedIt.map((reason,i)=>(
-              <div key={reason} style={{ display:"flex", alignItems:"flex-start", gap:8, maxWidth:170 }}>
-                <span style={{ color:T.brand, flexShrink:0, marginTop:1 }}>{WHY_ICONS[i]}</span>
-                <span style={{ fontSize:11, color:"rgba(216,210,232,0.72)", lineHeight:1.4 }}>{reason}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:22 }}>
-            <PlayNowFeatured onClick={onSelect}/>
-            <button onClick={onSelect}
-              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:13,
-                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
-              View Details <Icon.ArrowRight/>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-const WHY_ICONS = [
-  <svg key="a" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>,
-  <svg key="b" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="4" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="20"/><line x1="4" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="20" y2="12"/></svg>,
-  <Icon.Star key="c"/>,
-];
-
-function PlayNowFeatured({ onClick }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ alignSelf:"flex-start", height:52, padding:"0 34px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
-        border:"none", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody,
-        display:"flex", alignItems:"center", gap:9,
-        transform: hov ? "translateY(-2px)" : "none",
-        boxShadow: hov ? T.brandGlow : "none",
-        transition:"transform 0.2s ease-out, box-shadow 0.2s ease-out" }}>
-      <Icon.Play/> Play Now
-    </button>
-  );
-}
-
-// Secondary pick — artwork, title, studio, nothing else. No genre, no badge, no CTA:
-// its only job is to say "here are three more," never to compete with the hero above.
-// ─────────────────────────────────────────────────────────────────────────────
-// Vercel-style game row card (Recently Played / Updates Available)
-// ─────────────────────────────────────────────────────────────────────────────
-// Fake game arrays removed — all sections use real CDN games from the `games` prop.
-
-function HScrollCard({ item }) {
-  const [hov, setHov] = useState(false);
-  const [err, setErr]  = useState(false);
-  return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ minWidth:240, flex:1, height:200, borderRadius:"0.85rem", position:"relative", cursor:"pointer", flexShrink:0,
-        overflow:"hidden", background:coverGradient(item.title),
-        transform:hov?"scale(1.05)":"scale(1)", transition:"transform 0.2s ease-out",
-      }}>
-      <img src={item.imageUrl||"./images/games/default_game_cover.png"} alt={item.title} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", position:"absolute", inset:0 }} onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(255,255,255,0.02), rgba(255,255,255,0.02)), linear-gradient(270deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.9) 100%)", borderRadius:"0.85rem" }}/>
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:14 }}>
-        <div style={{ fontSize:15, fontWeight:600, color:"#fff", fontFamily:T.fontHead }}>{item.title}</div>
-      </div>
-    </div>
-  );
-}
-
-function LibraryGridCard({ g }) {
-  const [hov, setHov] = useState(false);
-  const [err, setErr]  = useState(false);
-  const statusColor = g.status==="installed"||g.status==="Installed" ? { bg:T.brand, text:"white" }
-    : g.status==="Update" ? { bg:T.blue2, text:"white" }
-    : g.status==="Favorite" ? { bg:"transparent", text:T.brand }
-    : { bg:T.brand, text:"white" };
-  return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      className="group"
-      style={{ minWidth:140, flex:1, height:200, borderRadius:"0.85rem", position:"relative", cursor:"pointer", flexShrink:0,
-        overflow:"hidden", background:coverGradient(g.game),
-        transform:hov?"scale(1.05)":"scale(1)", transition:"transform 0.2s ease-out", padding:"8px 16px",
-      }}>
-      {!err && <img src={g.imageUrl} alt={g.game} style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", position:"absolute", inset:0 }} onError={()=>setErr(true)}/>}
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(252,252,252,0.02), rgba(252,252,252,0.02)), linear-gradient(270deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.9) 100%)", borderRadius:"0.85rem" }}/>
-      {/* Status badge */}
-      <div style={{ position:"relative", display:"inline-block", padding:"2px 14px", borderRadius:T.radiusPill, background:statusColor.bg, color:statusColor.text, fontSize:11, fontWeight:500, marginTop:4 }}>
-        {g.status}
-      </div>
-      {/* Title */}
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"6px 14px 8px" }}>
-        <div style={{ background:"rgba(252,252,252,0.12)", backdropFilter:"blur(32px)", borderRadius:T.radiusPill, padding:"4px 14px", display:"inline-block", maxWidth:"100%" }}>
-          <div style={{ fontSize:11, fontWeight:600, color:"white", fontFamily:T.fontHead, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{g.game}</div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -4041,6 +3963,500 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Studios, My Rload, Search — Figma "Wireframes" pages with no prior
+// implementation. Reuses T tokens, Icon set, coverGradient, EventCard,
+// SectionHeader, HomeGameCard, AppFooter, and the games/UPCOMING_EVENTS data
+// already used elsewhere in this file.
+// ─────────────────────────────────────────────────────────────────────────────
+const STUDIOS = [
+  { id:"new-blood",      name:"New Blood Interactive",   initial:"N", country:"États-Unis",     founded:2016, genre:"Action",     games:1, gameTitle:"ULTRAKILL",
+    location:"Los Angeles, USA", tagline:"Loud games, made by people who mean it.",
+    bio:"New Blood Interactive started as a scrappy publishing label for games that were too loud, too fast, or too strange for anyone else to take a chance on. What began as prototypes traded in Discord DMs has grown into a home for retro-inspired shooters and cult classics, built by solo developers and small teams who'd rather ship something weird than safe. The philosophy hasn't changed since day one: back the games that make noise.",
+    team:[ {initials:"AP", name:'Arsi "Hakita" Patala', role:"Founder & Creative Director"}, {initials:"DR", name:"Dillon Rogers", role:"Community Lead"}, {initials:"LW", name:"Leo Wolfe", role:"Art Director"}, {initials:"SE", name:"Sam Ecoff", role:"Composer"} ] },
+  { id:"kakudo",         name:"Studio Kakoudo",          initial:"K", country:"Japon",          founded:2018, genre:"Aventure",   games:2 },
+  { id:"nightshift",     name:"Nightshift Interactive",  initial:"N", country:"Canada",         founded:2019, genre:"Horreur",    games:1 },
+  { id:"pale-horse",     name:"Pale Horse Games",        initial:"P", country:"Royaume-Uni",    founded:2020, genre:"Horreur",    games:1 },
+  { id:"steelraven7",    name:"SteelRaven7",             initial:"S", country:"Pays-Bas",       founded:2014, genre:"Action",     games:1 },
+  { id:"klei-vale",      name:"Klei Vale Studio",        initial:"K", country:"Suède",          founded:2017, genre:"Puzzle",     games:2 },
+  { id:"copper-fox",     name:"Copper Fox Games",        initial:"C", country:"France",         founded:2015, genre:"Aventure",   games:3 },
+  { id:"voltpixel",      name:"Voltpixel",               initial:"V", country:"Allemagne",      founded:2019, genre:"Course",     games:1 },
+  { id:"moonlit-owl",    name:"Moonlit Owl Interactive",  initial:"M", country:"Pologne",        founded:2021, genre:"Aventure",   games:1 },
+  { id:"redline",        name:"Redline Motorsport Devs", initial:"R", country:"Italie",         founded:2018, genre:"Course",     games:2 },
+  { id:"static-bloom",   name:"Static Bloom",            initial:"S", country:"États-Unis",     founded:2022, genre:"Puzzle",     games:1 },
+  { id:"hollow-circuit", name:"Hollow Circuit Studio",   initial:"H", country:"Corée du Sud",   founded:2017, genre:"Action",     games:2 },
+  { id:"driftwood",      name:"Driftwood Collective",    initial:"D", country:"Australie",      founded:2016, genre:"Simulation", games:1 },
+  { id:"nine-lanterns",  name:"Nine Lanterns",           initial:"N", country:"Vietnam",        founded:2020, genre:"Aventure",   games:1 },
+  { id:"ferrous-kingdom",name:"Ferrous Kingdom",         initial:"F", country:"Espagne",        founded:2019, genre:"Action",     games:2 },
+  { id:"glasswing",      name:"Glasswing Studio",        initial:"G", country:"Portugal",       founded:2021, genre:"Puzzle",     games:1 },
+  { id:"blackout",       name:"Blackout Interactive",    initial:"B", country:"Finlande",       founded:2018, genre:"Horreur",    games:1 },
+  { id:"tidepool",       name:"Tidepool Games",          initial:"T", country:"Norvège",        founded:2022, genre:"Simulation", games:1 },
+  { id:"rustbelt",       name:"Rustbelt Devs",           initial:"R", country:"Tchéquie",       founded:2015, genre:"Action",     games:3 },
+  { id:"wandermoss",     name:"Wandermoss",              initial:"W", country:"Irlande",        founded:2023, genre:"Aventure",   games:1 },
+];
+const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo","nightshift","pale-horse"];
+// New Blood's own devlog history, shown on its studio_single page only.
+const NEW_BLOOD_DEVLOGS = [
+  { time:"il y a 2 jours",    title:"Patch 1.3 — équilibrage des armes",             text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
+  { time:"il y a 1 semaine",  title:"Pourquoi on a mis 8 mois sur l'écran-titre",    text:"Un petit post un peu long sur l'itération artistique et pourquoi le perfectionnisme n'est pas toujours un défaut." },
+  { time:"il y a 3 semaines", title:"ULTRAKILL sur consoles : où on en est",         text:"Spoiler : ça avance, mais on ne donne pas de date tant que ce n'est pas irréprochable." },
+];
+// Cross-studio feed shown on the My Rload page ("Devlogs des studios suivis").
+const FOLLOWED_DEVLOG_FEED = [
+  { studioId:"kakudo",     studio:"Studio Kakoudo",        initial:"K", time:"Il y a 2 jours",   title:"Aperçu du niveau 4 : le marais empoisonné",  text:"On teste un nouveau système de brouillard dynamique qui réagit à vos pas. Encore expérimental, mais ça change tout l'ambiance du niveau." },
+  { studioId:"new-blood",  studio:"New Blood Interactive", initial:"N", time:"Il y a 5 jours",   title:"Patch 1.3 — équilibrage des armes",          text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
+  { studioId:"nightshift", studio:"Nightshift Interactive",initial:"N", time:"Il y a 1 semaine", title:"Pourquoi on a mis 8 mois sur l'écran-titre", text:"Un petit post un peu long sur l'itération artistique et pourquoi le perfectionnisme n'est pas toujours un défaut." },
+];
+const GAME_HISTORY = [
+  { title:"Ravenfield",  imageUrl:HERO_IMAGE,                  meta:"Il y a 2h" },
+  { title:"ULTRAKILL",   imageUrl:"./images/games/default_game_cover.png", meta:"Hier" },
+  { title:"Jelly Drift", imageUrl:LOCAL_COVERS["jelly-drift"], meta:"La semaine dernière" },
+  { title:"Karlson",     imageUrl:LOCAL_COVERS["karlson"],     meta:"Il y a 5 jours" },
+  { title:"Machinarium", imageUrl:"./images/games/default_game_cover.png", meta:"Il y a 3 jours" },
+];
+const LIKED_GAMES = [
+  { title:"ULTRAKILL",   imageUrl:"./images/games/default_game_cover.png", meta:"Hier" },
+  { title:"Ravenfield",  imageUrl:HERO_IMAGE,                  meta:"Il y a 2h" },
+  { title:"Karlson",     imageUrl:LOCAL_COVERS["karlson"],     meta:"Il y a 5 jours" },
+  { title:"Machinarium", imageUrl:"./images/games/default_game_cover.png", meta:"Il y a 3 jours" },
+  { title:"Jelly Drift", imageUrl:LOCAL_COVERS["jelly-drift"], meta:"La semaine dernière" },
+];
+const SAVED_EVENTS = [
+  { id:"gamescom-2026",  day:"19", month:"AUG", category:"Games Launches",  title:"Gamescom 2026",                        lieu:"Cologne, Allemagne" },
+  { id:"devcom-2026",    day:"17", month:"AUG", category:"Creator Events",  title:"devcom Developer Conference",          lieu:"Cologne, Allemagne" },
+  { id:"pgw-2026",       day:"29", month:"OCT", category:"Games Launches",  title:"Paris Games Week 2026",                lieu:"Paris, France" },
+  { id:"gameawards-2026",day:"10", month:"DEC", category:"Lives & streams", title:"The Game Awards — Watch Party",        lieu:"En ligne" },
+  { id:"igds-2026",      day:"19", month:"AUG", category:"Workshops & Panels", title:"Indie Game Developer Summit",       lieu:"Berlin, Allemagne" },
+];
+const PLAN_TIERS = [
+  { id:"free",    name:"Gratuit",  price:"0 €",     period:"toujours", features:["Accès à la bibliothèque","1 slot de téléchargement","Support communautaire"], cta:"Passer à ce plan", active:false },
+  { id:"premium", name:"Premium",  price:"9,99 €",  period:"/ mois",   features:["Tout Gratuit, plus :","Téléchargements illimités","Badges & bannières exclusifs"], cta:"Plan actuel", active:true },
+  { id:"ultimate",name:"Ultimate", price:"19,99 €", period:"/ mois",   features:["Tout Premium, plus :","Accès anticipé aux jeux","Support prioritaire"], cta:"Passer à ce plan", active:false },
+];
+
+function FollowButton({ following=false, onToggle }) {
+  const [isFollowing, setIsFollowing] = useState(following);
+  return (
+    <button onClick={e=>{ e.stopPropagation(); setIsFollowing(v=>!v); onToggle?.(!isFollowing); }}
+      style={{ padding:"10px 20px", borderRadius:999, cursor:"pointer", fontSize:13.5, fontWeight:600, fontFamily:T.fontBody, width:"100%",
+        background:isFollowing ? "rgba(255,255,255,0.08)" : T.brand,
+        border:isFollowing ? `1px solid ${T.border}` : "none", color:"#fff" }}>
+      {isFollowing ? "✓ Suivi" : "+ Suivre"}
+    </button>
+  );
+}
+
+function StudioLogo({ initial, size=48, fontSize=18 }) {
+  return (
+    <div style={{ width:size, height:size, borderRadius:size/2, background:"linear-gradient(90deg, #7255e5 0%, #261a40 100%)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+      <span style={{ fontSize, fontWeight:700, color:"#fff", fontFamily:T.fontHead }}>{initial}</span>
+    </div>
+  );
+}
+
+function StudioCard({ studio, onSelect }) {
+  return (
+    <div onClick={onSelect} role="button" tabIndex={0} onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&onSelect()}
+      style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:20, cursor:"pointer", display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+        <StudioLogo initial={studio.initial}/>
+        <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:4 }}>
+          <div style={{ fontSize:14.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{studio.name}</div>
+          <span style={{ alignSelf:"flex-start", padding:"2px 9px", borderRadius:999, background:"rgba(114,85,229,0.14)", color:"#c2b5fa", fontSize:10.5, fontWeight:500 }}>{studio.genre}</span>
+        </div>
+      </div>
+      <div style={{ fontSize:12, color:T.textMuted }}>🌍 {studio.country} · Fondé en {studio.founded}</div>
+      <div style={{ fontSize:12, color:T.textMuted }}>🎮 {studio.games} jeu{studio.games>1?"x":""} sur Rload</div>
+      <FollowButton/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StudiosPage — listing of the 20 studios that publish on Rload.
+// ─────────────────────────────────────────────────────────────────────────────
+function StudiosPage({ onSelectStudio, onTabChange }) {
+  const [query, setQuery] = useState("");
+  const filtered = query.trim()
+    ? STUDIOS.filter(s => s.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : STUDIOS;
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
+      <div style={{ padding:"48px 24px 0" }}>
+        <div style={{ fontSize:34, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginBottom:8 }}>Studios</div>
+        <div style={{ fontSize:14, color:T.textMuted, marginBottom:32 }}>Découvre les studios indépendants qui font vivre Rload — 20 équipes, leurs jeux, et leurs univers.</div>
+        <div style={{ display:"flex", gap:12, marginBottom:32, maxWidth:560 }}>
+          <div style={{ flex:1, display:"flex", alignItems:"center", gap:12, padding:"10px 24px", borderRadius:999, background:"rgba(255,255,255,0.05)", border:`1.5px solid ${T.borderBrand}` }}>
+            <span style={{ color:T.textMuted, fontSize:18 }}>⌕</span>
+            <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un studio..."
+              style={{ flex:1, background:"none", border:"none", outline:"none", color:T.text, fontSize:14, fontFamily:T.fontBody }}/>
+          </div>
+          <button style={{ padding:"10px 24px", borderRadius:999, background:T.brand, border:"none", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+            Rechercher
+          </button>
+        </div>
+        <div style={{ fontSize:12, color:T.textDim, marginBottom:16 }}>{filtered.length} studio{filtered.length>1?"s":""}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:20, paddingBottom:40 }}>
+          {filtered.map(studio=>(
+            <StudioCard key={studio.id} studio={studio} onSelect={()=>onSelectStudio(studio.id)}/>
+          ))}
+        </div>
+      </div>
+      <AppFooter onTabChange={onTabChange}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StudioSinglePage — one studio's profile. Full fidelity for New Blood
+// Interactive (the studio Figma fully specified: bio, team, own devlogs);
+// other studios get the same structure using only the data the listing has.
+// ─────────────────────────────────────────────────────────────────────────────
+function StudioSinglePage({ studioId, onBack, onTabChange }) {
+  const studio = STUDIOS.find(s=>s.id===studioId) || STUDIOS[0];
+  const nextEvents = UPCOMING_EVENTS.slice(0,2);
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
+      <div style={{ padding:"48px 24px 40px", display:"flex", flexDirection:"column", gap:40 }}>
+        <button onClick={onBack} style={{ alignSelf:"flex-start", background:"none", border:"none", color:T.textMuted, fontSize:13, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:6, fontFamily:T.fontBody }}>
+          <Icon.ChevronLeft/> Retour aux studios
+        </button>
+
+        {/* Studio hero */}
+        <div style={{ background:"linear-gradient(90deg, #291a47 0%, #170f2e 100%)", border:`1px solid ${T.border}`, borderRadius:20, padding:32, display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", gap:24, alignItems:"center" }}>
+            <StudioLogo initial={studio.initial} size={88} fontSize={34}/>
+            <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
+              <div style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{studio.name}</div>
+              <div style={{ fontSize:14.5, color:T.textMuted }}>{studio.tagline || `${studio.genre} · ${studio.country}`}</div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10, alignItems:"flex-end" }}>
+              <div style={{ display:"flex", gap:8 }}>
+                {["🌐","𝕏","▶","◆"].map((ic,i)=>(
+                  <div key={i} style={{ width:36, height:36, borderRadius:999, background:"rgba(255,255,255,0.06)", border:`1px solid ${T.border}`, display:"flex", alignItems:"center", justifyContent:"center", color:"rgba(255,255,255,0.7)", fontSize:13 }}>{ic}</div>
+                ))}
+              </div>
+              <div style={{ width:94 }}><FollowButton/></div>
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center", fontSize:13, color:T.textMuted, flexWrap:"wrap" }}>
+            <span>📍 {studio.location || studio.country}</span><span style={{ opacity:0.4 }}>·</span>
+            <span>📅 Fondé en {studio.founded}</span><span style={{ opacity:0.4 }}>·</span>
+            {studio.team && <><span>👥 {studio.team.length * 3} personnes</span><span style={{ opacity:0.4 }}>·</span></>}
+            <span>🎮 {studio.games} jeu{studio.games>1?"x":""} sur Rload</span>
+          </div>
+        </div>
+
+        {/* About */}
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>À propos</div>
+          <div style={{ fontSize:15, color:T.textSub, lineHeight:1.65, maxWidth:1100 }}>
+            {studio.bio || `${studio.name} est un studio indépendant basé en ${studio.country}, actif depuis ${studio.founded}, connu pour ses jeux du genre ${studio.genre}.`}
+          </div>
+        </div>
+
+        {/* Team */}
+        {studio.team && (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>L'équipe</div>
+            <div style={{ display:"grid", gridTemplateColumns:`repeat(${studio.team.length}, 1fr)`, gap:16 }}>
+              {studio.team.map(member=>(
+                <div key={member.name} style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:"20px 18px", display:"flex", flexDirection:"column", gap:12 }}>
+                  <div style={{ width:44, height:44, borderRadius:22, background:"rgba(114,85,229,0.35)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <span style={{ fontSize:14, fontWeight:600, color:"#fff" }}>{member.initials}</span>
+                  </div>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{member.name}</div>
+                  <div style={{ fontSize:12, color:T.textMuted }}>{member.role}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Games */}
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Jeux du studio</div>
+          <div style={{ display:"flex", gap:14 }}>
+            <div style={{ width:259 }}>
+              <HomeGameCard title={studio.gameTitle || studio.name} imageUrl={"./images/games/default_game_cover.png"} genre={studio.genre} onSelect={()=>onTabChange("games")}/>
+            </div>
+          </div>
+        </div>
+
+        {/* Devlogs — only where Figma specified real content (New Blood). */}
+        {studioId==="new-blood" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Devlogs & news</div>
+            {NEW_BLOOD_DEVLOGS.map(d=>(
+              <div key={d.title} style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:18, display:"flex", gap:16, alignItems:"center" }}>
+                <StudioLogo initial={studio.initial} size={40} fontSize={15}/>
+                <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:4 }}>
+                  <div style={{ fontSize:11.5, color:T.textDim }}>{d.time}</div>
+                  <div style={{ fontSize:15, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{d.title}</div>
+                  <div style={{ fontSize:13, color:T.textMuted }}>{d.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Events */}
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Événements à venir</div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+            {nextEvents.map(ev=><EventCard key={ev.id} ev={ev}/>)}
+          </div>
+        </div>
+      </div>
+      <AppFooter onTabChange={onTabChange}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MyRloadPage — personal hub: history, likes, followed studios + their
+// devlogs, saved events, and subscription/billing.
+// ─────────────────────────────────────────────────────────────────────────────
+function MyRloadGameRow({ items, onTabChange }) {
+  return (
+    <div style={{ display:"flex", gap:24, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+      {items.map((g,i)=>(
+        <div key={g.title+i} style={{ width:259, flexShrink:0 }}>
+          <HomeGameCard title={g.title} imageUrl={g.imageUrl} genre={g.meta} onSelect={()=>onTabChange("games")}/>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SavedEventCard({ ev }) {
+  return (
+    <div style={{ width:280, flexShrink:0, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, overflow:"hidden" }}>
+      <div style={{ position:"relative", height:120, background:coverGradient(ev.title) }}>
+        <div style={{ position:"absolute", top:10, left:10, background:"#fff", borderRadius:10, padding:"6px 8px", textAlign:"center", minWidth:36 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:"#140f24", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
+          <div style={{ fontSize:10, fontWeight:600, color:"rgba(20,15,36,0.6)" }}>{ev.month}</div>
+        </div>
+      </div>
+      <div style={{ padding:"12px 14px 14px", display:"flex", flexDirection:"column", gap:6 }}>
+        <span style={{ alignSelf:"flex-start", padding:"4px 10px", borderRadius:999, background:"rgba(114,85,229,0.18)", color:"#c2b5fa", fontSize:10 }}>{ev.category}</span>
+        <div style={{ fontSize:14, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{ev.title}</div>
+        <div style={{ fontSize:12, color:T.textMuted }}>{ev.lieu}</div>
+      </div>
+    </div>
+  );
+}
+
+function PlanTierCard({ tier }) {
+  return (
+    <div style={{ flex:1, background:tier.active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
+      border:tier.active ? `1.5px solid ${T.borderBrand}` : `1px solid ${T.border}`, borderRadius:16, padding:24, display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ fontSize:18, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{tier.name}</div>
+        {tier.active && <span style={{ padding:"4px 10px", borderRadius:999, background:"rgba(114,85,229,0.22)", color:T.brandLight, fontSize:11, fontWeight:600 }}>Actif</span>}
+      </div>
+      <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+        <span style={{ fontSize:28, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
+        <span style={{ fontSize:13, color:T.textMuted }}>{tier.period}</span>
+      </div>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8, fontSize:13, color:T.textSub }}>
+        {tier.features.map(f=><div key={f}>✓ {f}</div>)}
+      </div>
+      <button style={{ padding:"10px 0", borderRadius:999, border:tier.active?`1px solid ${T.border}`:"none",
+        background:tier.active ? "rgba(255,255,255,0.06)" : T.brand, color:tier.active ? T.textMuted : "#fff",
+        fontSize:13, fontWeight:600, cursor:tier.active?"default":"pointer", fontFamily:T.fontBody }} disabled={tier.active}>
+        {tier.cta}
+      </button>
+    </div>
+  );
+}
+
+function MyRloadPage({ games, onTabChange, onSelectStudio }) {
+  const followedStudios = STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
+      <div style={{ position:"relative", height:272, display:"flex", alignItems:"flex-end", padding:"0 24px 32px", overflow:"hidden", background:coverGradient("myrload") }}>
+        <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.35)" }}/>
+        <div style={{ position:"relative", fontSize:44, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1px" }}>My Rload</div>
+      </div>
+
+      <div style={{ padding:"32px 24px 40px", display:"flex", flexDirection:"column", gap:32 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Historique de jeu</div>
+          <MyRloadGameRow items={GAME_HISTORY} onTabChange={onTabChange}/>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Jeux aimés</div>
+          <MyRloadGameRow items={LIKED_GAMES} onTabChange={onTabChange}/>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Studios suivis</div>
+          <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+            {followedStudios.map(s=>(
+              <div key={s.id} onClick={()=>onSelectStudio(s.id)} role="button" tabIndex={0}
+                style={{ width:310, height:80, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:16, display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
+                <StudioLogo initial={s.initial}/>
+                <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:4 }}>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
+                  <div style={{ fontSize:12, color:T.textMuted }}>{s.games} jeu{s.games>1?"x":""} sur Rload</div>
+                </div>
+                <span style={{ padding:"6px 12px", borderRadius:999, background:"rgba(114,85,229,0.18)", color:"#7255e5", fontSize:12, flexShrink:0 }}>Suivi</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Devlogs des studios suivis</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            {FOLLOWED_DEVLOG_FEED.map(d=>(
+              <div key={d.title} onClick={()=>onSelectStudio(d.studioId)} role="button" tabIndex={0}
+                style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:16, display:"flex", gap:14, cursor:"pointer" }}>
+                <StudioLogo initial={d.initial} size={40} fontSize={15}/>
+                <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
+                  <div style={{ display:"flex", gap:6, alignItems:"center", fontSize:13 }}>
+                    <span style={{ fontWeight:600, color:T.text }}>{d.studio}</span>
+                    <span style={{ color:T.textDim }}>·</span>
+                    <span style={{ color:T.textDim }}>{d.time}</span>
+                  </div>
+                  <div style={{ fontSize:15, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{d.title}</div>
+                  <div style={{ fontSize:13, color:T.textMuted }}>{d.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Événements enregistrés</div>
+          <div style={{ display:"flex", gap:20, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+            {SAVED_EVENTS.map(ev=><SavedEventCard key={ev.id} ev={ev}/>)}
+          </div>
+        </div>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Mon abonnement</div>
+          <div style={{ background:"linear-gradient(90deg, rgba(114,85,229,0.35) 0%, rgba(38,26,64,0.35) 100%)", border:`1px solid ${T.borderBrand}`, borderRadius:16, padding:"20px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              <div style={{ fontSize:12, fontWeight:600, color:T.textMuted, letterSpacing:"0.06em" }}>PLAN ACTUEL</div>
+              <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Rload Premium</div>
+              <div style={{ fontSize:13, color:T.textSub }}>9,99 €/mois · Prochain renouvellement le 12 août 2026</div>
+            </div>
+            <button onClick={()=>onTabChange("profile")} style={{ padding:"10px 18px", borderRadius:999, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+              Gérer le paiement
+            </button>
+          </div>
+          <div style={{ display:"flex", gap:24 }}>
+            {PLAN_TIERS.map(tier=><PlanTierCard key={tier.id} tier={tier}/>)}
+          </div>
+        </div>
+      </div>
+      <AppFooter onTabChange={onTabChange}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SearchPage — hero search + category chips + genre filter chips; results
+// filter the real games/studios data locally (no backend to call).
+// ─────────────────────────────────────────────────────────────────────────────
+const SEARCH_GENRES = ["Action","Aventure","FPS","Course","Plateforme","Casual","Indie","Horreur","Puzzle","Simulation"];
+const TRENDING_SEARCHES = ["Ravenfield","ULTRAKILL","Indie","Multiplayer","Gamescom 2026"];
+
+function SearchPage({ games, onSelectGame, onTabChange, onSelectStudio }) {
+  const [query, setQuery] = useState("");
+  const [submitted, setSubmitted] = useState("");
+
+  const runSearch = (q) => setSubmitted(q.trim());
+
+  const q = submitted.toLowerCase();
+  const gameResults = q
+    ? PC_RANKED_ITEMS.filter(g=>
+        g.title.toLowerCase().includes(q) ||
+        (Array.isArray(g.genre) ? g.genre : [g.genre]).some(genre=>genre?.toLowerCase().includes(q)))
+    : [];
+  const studioResults = q
+    ? STUDIOS.filter(s=>s.name.toLowerCase().includes(q) || s.genre.toLowerCase().includes(q))
+    : [];
+
+  return (
+    <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20, padding:"56px 24px 0" }}>
+        <div style={{ fontSize:44, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1px", textAlign:"center" }}>
+          Find your next favorite game
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:12, width:"100%", maxWidth:720, padding:"10px 10px 10px 24px", borderRadius:999, background:"rgba(255,255,255,0.05)", border:`1.5px solid ${T.borderBrand}` }}>
+          <span style={{ color:T.textMuted }}>⌕</span>
+          <input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&runSearch(query)}
+            placeholder="Rechercher un jeu, un événement, un studio..."
+            style={{ flex:1, background:"none", border:"none", outline:"none", color:T.text, fontSize:16, fontFamily:T.fontBody }}/>
+          <button onClick={()=>runSearch(query)} style={{ padding:"12px 22px", borderRadius:999, background:T.brand, border:"none", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody }}>
+            Search
+          </button>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, alignItems:"center" }}>
+          <div style={{ fontSize:12, fontWeight:600, color:T.textMuted }}>Trending searches</div>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"center" }}>
+            {TRENDING_SEARCHES.map(t=>(
+              <button key={t} onClick={()=>{ setQuery(t); runSearch(t); }}
+                style={{ padding:"7px 14px", borderRadius:999, border:`1px solid ${T.border}`, background:"none", color:T.textMuted, fontSize:13, cursor:"pointer", fontFamily:T.fontBody }}>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", justifyContent:"center", maxWidth:900 }}>
+          {SEARCH_GENRES.map(g=>(
+            <button key={g} onClick={()=>{ setQuery(g); runSearch(g); }}
+              style={{ padding:"9px 16px", borderRadius:999, border:`1px solid ${T.border}`, background:"rgba(255,255,255,0.05)", color:"rgba(255,255,255,0.65)", fontSize:13.5, cursor:"pointer", fontFamily:T.fontBody }}>
+              {g}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ width:"100%", maxWidth:1312, display:"flex", flexDirection:"column", gap:20, padding:"24px 0 64px" }}>
+          {submitted && (
+            <>
+              <div style={{ display:"flex", gap:6, alignItems:"baseline" }}>
+                <span style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Games</span>
+                <span style={{ fontSize:14, color:T.textMuted }}>· {gameResults.length} results for "{submitted}"</span>
+              </div>
+              {gameResults.length > 0 ? (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:14 }}>
+                  {gameResults.map(item=>(
+                    <HomeGameCard key={item.title} title={item.title} imageUrl={item.imageUrl} imagePosition={item.imagePosition}
+                      genre={Array.isArray(item.genre)?item.genre[0]:item.genre} onSelect={()=>onTabChange("games")}/>
+                  ))}
+                </div>
+              ) : <div style={{ fontSize:13, color:T.textDim }}>Aucun jeu trouvé.</div>}
+
+              <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginTop:16 }}>
+                Studios · {studioResults.length} result{studioResults.length>1?"s":""}
+              </div>
+              {studioResults.map(s=>(
+                <div key={s.id} onClick={()=>onSelectStudio(s.id)} role="button" tabIndex={0}
+                  style={{ background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:14, padding:"16px 20px", display:"flex", alignItems:"center", gap:16, cursor:"pointer" }}>
+                  <StudioLogo initial={s.initial} size={50} fontSize={18}/>
+                  <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                    <div style={{ fontSize:16, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{s.name}</div>
+                    <div style={{ fontSize:14, color:T.textMuted }}>{s.games} jeu{s.games>1?"x":""} sur Rload{s.gameTitle?` · ${s.gameTitle}`:""}</div>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+      <AppFooter onTabChange={onTabChange}/>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // LauncherGames — main component (all state/logic unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LauncherGames() {
@@ -4060,6 +4476,7 @@ export default function LauncherGames() {
   const [busyByGame, setBusyByGame]                         = useState({});
   const [activeTab, setActiveTab]                           = useState("home");
   const [selectedGameId, setSelectedGameId]                 = useState(null);
+  const [selectedStudioId, setSelectedStudioId]             = useState(null);
   const [prevGameTab, setPrevGameTab]                       = useState("home");
   const [launchingGame, setLaunchingGame]                   = useState(null);
   const [lang, setLang]                                     = useState(() => localStorage.getItem("rload-lang") || "en");
@@ -4540,6 +4957,23 @@ export default function LauncherGames() {
         {activeTab==="streaming" && <StreamingPage/>}
         {activeTab==="community" && <CommunityPage/>}
         {activeTab==="about"     && <AboutPage onTabChange={handleTabChange}/>}
+        {activeTab==="myrload"   && (
+          <MyRloadPage games={games} onTabChange={handleTabChange}
+            onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}/>
+        )}
+        {activeTab==="studios" && (
+          selectedStudioId ? (
+            <StudioSinglePage studioId={selectedStudioId} onTabChange={handleTabChange}
+              onBack={()=>setSelectedStudioId(null)}/>
+          ) : (
+            <StudiosPage onTabChange={handleTabChange}
+              onSelectStudio={(id)=>setSelectedStudioId(id)}/>
+          )
+        )}
+        {activeTab==="search" && (
+          <SearchPage games={games} onSelectGame={handleSelectGame} onTabChange={handleTabChange}
+            onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}/>
+        )}
         {activeTab==="profile"   && (
           <ProfilePage user={authSession?.user} authBusy={authBusy}
             onLogout={handleSignOut} games={games} uiByGame={uiByGame}
