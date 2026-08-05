@@ -850,7 +850,7 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SectionHeader
 // ─────────────────────────────────────────────────────────────────────────────
-function SectionHeader({ title, count, onMore, subtitle }) {
+function SectionHeader({ title, count, onMore, subtitle, moreLabel="See all" }) {
   return (
     <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:14 }}>
       <div>
@@ -863,7 +863,7 @@ function SectionHeader({ title, count, onMore, subtitle }) {
       </div>
       {onMore && (
         <button onClick={onMore} style={{ fontSize:12, color:T.brand, background:"none", border:"none", cursor:"pointer", padding:"2px 0", display:"flex", alignItems:"center", gap:4, fontFamily:T.fontBody }}>
-          See all <Icon.ArrowRight/>
+          {moreLabel} <Icon.ArrowRight/>
         </button>
       )}
     </div>
@@ -1454,12 +1454,37 @@ function renderStudioBio(text) {
   );
 }
 
-function StudioSpotlight({ games, onSelectGame, onTabChange }) {
+// "Studios à la une" — Figma pairs the spotlight card with a sidebar list of
+// featured studios. Only REAL_STUDIOS (studios the catalog actually names) go
+// in it — never padded with STUDIOS' placeholder roster, since this sidebar
+// reads as "these studios are active on Rload right now".
+function FeaturedStudiosSidebar({ onSelectStudio }) {
+  return (
+    <div style={{ flex:"0 0 300px", display:"flex", gap:24 }}>
+      <div style={{ width:3, borderRadius:999, background:T.brand, flexShrink:0 }}/>
+      <div style={{ display:"flex", flexDirection:"column", gap:20, paddingTop:2 }}>
+        <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.3px" }}>Studios à la une</div>
+        {REAL_STUDIOS.map(s=>(
+          <div key={s.id} onClick={()=>onSelectStudio?.(s.id)} role="button" tabIndex={0}
+            style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
+            <StudioLogo initial={s.initial} size={44} fontSize={16}/>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:15, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
+              <div style={{ fontSize:12.5, color:T.textMuted }}>{s.games} jeu{s.games>1?"x":""} sur Rload</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StudioSpotlight({ games, onSelectGame, onTabChange, onSelectStudio }) {
   const kakudoGame = games.find(g => g.gameId === KAKUDO_SPOTLIGHT.gameId);
   const openKakudo = () => kakudoGame ? onSelectGame(kakudoGame) : onTabChange("games");
   return (
-    <div style={{ padding:"0 32px", marginBottom:32 }}>
-      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400,
+    <div style={{ padding:"0 32px", marginBottom:32, display:"flex", gap:32, alignItems:"stretch" }}>
+      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400, flex:1,
         border:`1px solid ${T.borderBrand}`, display:"flex", background:T.bgDeep }}>
         <img src={KAKUDO_SPOTLIGHT.bgImage} alt=""
           style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", opacity:0.55 }}
@@ -1517,6 +1542,7 @@ function StudioSpotlight({ games, onSelectGame, onTabChange }) {
             imgW={260} imgH={146} tilts={[-4,3,-2]} rights={[10,50,90]} tops={[50,150,250]}/>
         </div>
       </div>
+      <FeaturedStudiosSidebar onSelectStudio={onSelectStudio}/>
     </div>
   );
 }
@@ -1597,10 +1623,14 @@ function CommunityFavoriteCard({ item }) {
 const HERO_SLIDES = [
   { gameId:"ravenfield",  title:"Ravenfield",  studio:"SteelRaven7", rating:"4.8", video:"./videos/ravenfield_highlight.mp4", image:HERO_IMAGE, tags:["FPS","Action","Solo"],
     description:"Solo battle against an AI enemy that always wins. Help the Blue side win, and singlehandedly fight your way to victory across the battlefield." },
-  { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:"./images/home/hero_slides/jelly_drift_hero.jpg", tags:["Racing","Arcade","Party"],
+  { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:HERO_IMAGE, tags:["Racing","Arcade","Party"],
     description:"An arcade racing game on ever-sliding jelly. Take impossible turns and stay in one piece." },
-  { gameId:"karlson",     title:"Karlson",     studio:"DANIDEV",      rating:"4.6", image:"./images/home/hero_slides/karlson_hero.jpg", tags:["FPS","Movement","Speedrun"],
-    description:"An ultra-fast movement-first FPS where parkour matters as much as aim. Find your flow, chain the levels." },
+  // No hero-quality wallpaper for Below Decks — reuse its real portrait cover, object-fit:cover
+  // crops it to fill the wide banner (the "resize if you don't find one" fallback). No real studio
+  // on file for this game (catalog: studio:null), so `studio` stays unset — omitted in the UI
+  // rather than invented.
+  { gameId:"below-decks", title:"Below Decks", studio:null, rating:"4.5", image:LOCAL_COVERS["below-decks"], tags:["Indie","Unreal"],
+    description:"Below Decks is an Unreal Engine game available on Rload." },
 ];
 
 function HeroCarousel({ games, onSelectGame, onTabChange }) {
@@ -1633,7 +1663,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
           {slide.title}
         </div>
         <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
-          by {slide.studio} <span style={{ opacity:0.4 }}>·</span> <span style={{ color:"#ffffa6" }}>★ {slide.rating}</span>
+          {slide.studio && <>by {slide.studio} <span style={{ opacity:0.4 }}>·</span></>} <span style={{ color:"#ffffa6" }}>★ {slide.rating}</span>
         </div>
         <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:20, lineHeight:1.6, maxWidth:460 }}>
           {slide.description}
@@ -1764,22 +1794,26 @@ function UpgradeBanner({ onTabChange }) {
   );
 }
 
-function HomePage({ games, onSelectGame, onTabChange }) {
+function HomePage({ games, onSelectGame, onTabChange, onSelectStudio }) {
   const now = new Date();
   const nextEvents = UPCOMING_EVENTS
     .filter(ev => new Date(`${ev.day} ${ev.month} 2026`) >= now)
     .sort((a,b)=> new Date(`${a.day} ${a.month} 2026`) - new Date(`${b.day} ${b.month} 2026`))
     .slice(0,2);
 
-  // "Games": real catalog games minus whatever the hero carousel/studio spotlight
-  // already showcase on this same page. Figma's "Games" section (verified in Dev
-  // Mode) is 2 rows of 5 (10 cards), not 1 — was rendering only the first row.
-  // "Community Favorite" is a separate curation lens on the same pool, not a
-  // disjoint set (Pam's original build reused/reordered the same list for both
-  // rows too) — with a 14-game catalog there aren't 15 distinct non-featured
-  // games to fill both sections without overlap.
-  const featuredIds = new Set([...HERO_SLIDES.map(s=>s.gameId), KAKUDO_SPOTLIGHT.gameId]);
-  const remainingGames = games.filter(g=>!featuredIds.has(g.gameId));
+  // "Games": curated for cover art that actually shows the game's name/branding
+  // (per direct request) rather than pure hero/spotlight exclusion — Ravenfield
+  // and Karlson are welcome back here even though they're also the hero/were the
+  // hero, since their covers are clearly branded; UMS Quest and Balls? (generic,
+  // unbranded covers) are dropped. Jelly Drift/Below Decks (hero slides 2-3) and
+  // Kakudo (studio spotlight, same page) stay excluded to avoid repeating the
+  // exact same card twice in view. Figma's "Games" section (verified in Dev
+  // Mode) is 2 rows of 5 (10 cards) — with a 14-game catalog and this curation,
+  // there are 9 candidates, so the second row renders 4 rather than inventing a
+  // 10th.
+  const featuredIds = new Set(["jelly-drift","below-decks", KAKUDO_SPOTLIGHT.gameId]);
+  const weakCoverIds = new Set(["ums-quest","balls"]);
+  const remainingGames = games.filter(g=>!featuredIds.has(g.gameId) && !weakCoverIds.has(g.gameId));
   const gamesRow     = remainingGames.slice(0,10).map((g,i)=>gameToRankedItem(g,i+1));
   const communityRow = [...remainingGames].reverse().slice(0,5).map((g,i)=>gameToRankedItem(g,i+1));
 
@@ -1801,17 +1835,17 @@ function HomePage({ games, onSelectGame, onTabChange }) {
       </div>
 
       {/* ── Studio Spotlight — real studio, real game (Bad Weather Studios / KAKUDO). No invented quote. ── */}
-      <StudioSpotlight games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
+      <StudioSpotlight games={games} onSelectGame={onSelectGame} onTabChange={onTabChange} onSelectStudio={onSelectStudio}/>
 
       <div style={{ padding:"8px 32px 0", marginBottom:40 }}>
         <SectionHeader title="Community Favorite" onMore={()=>onTabChange("games")}/>
         <HomeGameGrid items={communityRow} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
       </div>
 
-      {/* ── Events — sober, editorial, 2 max on Home; the rest lives on the Events tab ── */}
-      <div style={{ padding:"0 32px", marginBottom:32 }}>
-        <SectionHeader title="Events" subtitle="Indie events and developer moments" onMore={()=>onTabChange("events")}/>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+      {/* ── Events — Figma: violet band background, no subtitle, "See more" — 2 max on Home; the rest lives on the Events tab ── */}
+      <div style={{ padding:"32px", marginBottom:32, background:"linear-gradient(90deg, #4306a6 0%, #33077e 100%)" }}>
+        <SectionHeader title="Events" onMore={()=>onTabChange("events")} moreLabel="See more"/>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:20 }}>
           {nextEvents.map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true} thumbSize={247}/>)}
         </div>
       </div>
@@ -4001,12 +4035,11 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
 // SectionHeader, HomeGameCard, AppFooter, and the games/UPCOMING_EVENTS data
 // already used elsewhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
-// Only studios the real catalog actually names (`game.studio` non-null) get a
-// card — 10 of the 14 catalog games have no studio on file yet, so there is
-// nothing truthful to show for them. No invented country/founding year/team
-// for entries where that isn't verified; StudioCard/StudioSinglePage render
-// those fields conditionally rather than fabricate them.
-const STUDIOS = [
+// REAL_STUDIOS — only the studios the catalog actually names (`game.studio`
+// non-null): New Blood Interactive, SteelRaven7, Dani, Bad Weather Studios.
+// Used wherever a claim of real activity is implied (Home's "Studios à la
+// une" sidebar, "Studios suivis" on My Rload) — never padded with mockups.
+const REAL_STUDIOS = [
   { id:"new-blood",   name:"New Blood Interactive", initial:"N", country:"États-Unis", founded:2016, genre:"Action",   games:1, gameTitle:"ULTRAKILL",
     location:"Los Angeles, USA", tagline:"Loud games, made by people who mean it.",
     bio:"New Blood Interactive started as a scrappy publishing label for games that were too loud, too fast, or too strange for anyone else to take a chance on. What began as prototypes traded in Discord DMs has grown into a home for retro-inspired shooters and cult classics, built by solo developers and small teams who'd rather ship something weird than safe. The philosophy hasn't changed since day one: back the games that make noise.",
@@ -4015,6 +4048,48 @@ const STUDIOS = [
     bio:KAKUDO_SPOTLIGHT.bioParagraphs.join(" ") },
   { id:"steelraven7", name:"SteelRaven7",            initial:"S",                                      genre:"Action",   games:1, gameTitle:"Ravenfield" },
   { id:"dani",        name:"Dani",                   initial:"D",                                      genre:"Action",   games:1, gameTitle:"KARLSON" },
+];
+// STUDIOS — the Studios listing/detail pages, per explicit direction: put back
+// exactly what Figma's mockup shows (same fields/style Pam used — country,
+// founding year, genre, game count), clearly as placeholder content sized for
+// ~30 studios, so it's a straight data swap once real studios onboard. Two
+// entries (new-blood, kakudo) are kept accurate since we already have the real
+// data for them; the rest are Figma's own invented roster, not fabricated here.
+const STUDIOS = [
+  { id:"new-blood",      name:"New Blood Interactive",   initial:"N", country:"États-Unis",     founded:2016, genre:"Action",     games:1, gameTitle:"ULTRAKILL",
+    location:"Los Angeles, USA", tagline:"Loud games, made by people who mean it.",
+    bio:"New Blood Interactive started as a scrappy publishing label for games that were too loud, too fast, or too strange for anyone else to take a chance on. What began as prototypes traded in Discord DMs has grown into a home for retro-inspired shooters and cult classics, built by solo developers and small teams who'd rather ship something weird than safe. The philosophy hasn't changed since day one: back the games that make noise.",
+    team:[ {initials:"AP", name:'Arsi "Hakita" Patala', role:"Founder & Creative Director"}, {initials:"DR", name:"Dillon Rogers", role:"Community Lead"}, {initials:"LW", name:"Leo Wolfe", role:"Art Director"}, {initials:"SE", name:"Sam Ecoff", role:"Composer"} ] },
+  { id:"kakudo",          name:"Bad Weather Studios",    initial:"B", country:"Belgique",       founded:2018, genre:"Aventure",   games:1, gameTitle:"KAKUDO",
+    bio:KAKUDO_SPOTLIGHT.bioParagraphs.join(" ") },
+  { id:"nightshift",      name:"Nightshift Interactive",  initial:"N", country:"Canada",         founded:2019, genre:"Horreur",    games:1 },
+  { id:"pale-horse",      name:"Pale Horse Games",        initial:"P", country:"Royaume-Uni",    founded:2020, genre:"Horreur",    games:1 },
+  { id:"steelraven7",     name:"SteelRaven7",             initial:"S", country:"Pays-Bas",       founded:2014, genre:"Action",     games:1, gameTitle:"Ravenfield" },
+  { id:"klei-vale",       name:"Klei Vale Studio",        initial:"K", country:"Suède",          founded:2017, genre:"Puzzle",     games:2 },
+  { id:"copper-fox",      name:"Copper Fox Games",        initial:"C", country:"France",         founded:2015, genre:"Aventure",   games:3 },
+  { id:"voltpixel",       name:"Voltpixel",               initial:"V", country:"Allemagne",      founded:2019, genre:"Course",     games:1 },
+  { id:"moonlit-owl",     name:"Moonlit Owl Interactive",  initial:"M", country:"Pologne",        founded:2021, genre:"Aventure",   games:1 },
+  { id:"redline",         name:"Redline Motorsport Devs", initial:"R", country:"Italie",         founded:2018, genre:"Course",     games:2 },
+  { id:"static-bloom",    name:"Static Bloom",            initial:"S", country:"États-Unis",     founded:2022, genre:"Puzzle",     games:1 },
+  { id:"hollow-circuit",  name:"Hollow Circuit Studio",   initial:"H", country:"Corée du Sud",   founded:2017, genre:"Action",     games:2 },
+  { id:"driftwood",       name:"Driftwood Collective",    initial:"D", country:"Australie",      founded:2016, genre:"Simulation", games:1 },
+  { id:"nine-lanterns",   name:"Nine Lanterns",           initial:"N", country:"Vietnam",        founded:2020, genre:"Aventure",   games:1 },
+  { id:"ferrous-kingdom", name:"Ferrous Kingdom",         initial:"F", country:"Espagne",        founded:2019, genre:"Action",     games:2 },
+  { id:"glasswing",       name:"Glasswing Studio",        initial:"G", country:"Portugal",       founded:2021, genre:"Puzzle",     games:1 },
+  { id:"blackout",        name:"Blackout Interactive",    initial:"B", country:"Finlande",       founded:2018, genre:"Horreur",    games:1 },
+  { id:"tidepool",        name:"Tidepool Games",          initial:"T", country:"Norvège",        founded:2022, genre:"Simulation", games:1 },
+  { id:"rustbelt",        name:"Rustbelt Devs",           initial:"R", country:"Tchéquie",       founded:2015, genre:"Action",     games:3 },
+  { id:"wandermoss",      name:"Wandermoss",              initial:"W", country:"Irlande",        founded:2023, genre:"Aventure",   games:1 },
+  { id:"dani",            name:"Dani",                    initial:"D", country:"Royaume-Uni",    founded:2016, genre:"Action",     games:1, gameTitle:"KARLSON" },
+  { id:"paper-owl",       name:"Paper Owl Studio",        initial:"P", country:"Danemark",       founded:2019, genre:"Puzzle",     games:1 },
+  { id:"iron-tide",       name:"Iron Tide Games",         initial:"I", country:"Suisse",         founded:2017, genre:"Action",     games:2 },
+  { id:"velvet-static",   name:"Velvet Static",           initial:"V", country:"États-Unis",     founded:2021, genre:"Horreur",    games:1 },
+  { id:"birchwood",       name:"Birchwood Interactive",   initial:"B", country:"Suède",          founded:2020, genre:"Simulation", games:1 },
+  { id:"copperline",      name:"Copperline Studio",       initial:"C", country:"Nouvelle-Zélande",founded:2018, genre:"Aventure",   games:2 },
+  { id:"faultline",       name:"Faultline Games",         initial:"F", country:"Japon",          founded:2016, genre:"Action",     games:3 },
+  { id:"quietstorm",      name:"Quietstorm",              initial:"Q", country:"Norvège",        founded:2022, genre:"Puzzle",     games:1 },
+  { id:"driftglass",      name:"Driftglass Studio",       initial:"D", country:"Écosse",         founded:2019, genre:"Aventure",   games:1 },
+  { id:"emberlane",       name:"Emberlane Interactive",   initial:"E", country:"Belgique",       founded:2020, genre:"Action",     games:2 },
 ];
 const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo"];
 // New Blood's own devlog history, shown on its studio_single page only.
@@ -4329,7 +4404,7 @@ function PlanTierCard({ tier, isCurrent }) {
 }
 
 function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, demoMode }) {
-  const followedStudios = STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
+  const followedStudios = REAL_STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
   const periodEnd = subscriptionStatus?.currentPeriodEnd ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString() : null;
   const trialEnd  = subscriptionStatus?.trialEnd ? new Date(subscriptionStatus.trialEnd).toLocaleDateString() : null;
   const currentPlanTierId = subscriptionStatus?.hasAccess ? PLAN_TIERS.find(t=>t.planType===subscriptionStatus.planType)?.id : null;
@@ -5016,7 +5091,8 @@ export default function LauncherGames() {
         {activeTab==="home" && (
           <HomePage games={games} uiByGame={uiByGame} dlByGame={dlByGame}
             onSelectGame={handleSelectGame} user={authSession?.user}
-            onTabChange={handleTabChange}/>
+            onTabChange={handleTabChange}
+            onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}/>
         )}
         {activeTab==="games" && (
           <MyGamesPage games={games} uiByGame={uiByGame} dlByGame={dlByGame}
