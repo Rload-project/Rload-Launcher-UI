@@ -1577,12 +1577,17 @@ function CommunityFavoriteCard({ item }) {
 // game-grid rows, an upgrade banner, the studio spotlight, upcoming events,
 // and the shared footer.
 // ─────────────────────────────────────────────────────────────────────────────
+// Slide backgrounds: Ravenfield keeps its real gameplay video (matches Figma's
+// "Ready for Dev" hero exactly). Jelly Drift and Karlson have no hero-quality
+// background asset yet — Figma's own mockup uses generic mood photography
+// there too (not real screenshots), so these use the same placeholder
+// convention: a high-quality stock photo, not a stretched cover thumbnail.
 const HERO_SLIDES = [
   { gameId:"ravenfield",  title:"Ravenfield",  studio:"SteelRaven7", rating:"4.8", video:"./videos/ravenfield_highlight.mp4", image:HERO_IMAGE, tags:["FPS","Action","Solo"],
     description:"Solo battle against an AI enemy that always wins. Help the Blue side win, and singlehandedly fight your way to victory across the battlefield." },
-  { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:LOCAL_COVERS["jelly-drift"], tags:["Racing","Arcade","Party"],
+  { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:"./images/home/hero_slides/jelly_drift_hero.jpg", tags:["Racing","Arcade","Party"],
     description:"An arcade racing game on ever-sliding jelly. Take impossible turns and stay in one piece." },
-  { gameId:"karlson",     title:"Karlson",     studio:"DANIDEV",      rating:"4.6", image:LOCAL_COVERS["karlson"], tags:["FPS","Movement","Speedrun"],
+  { gameId:"karlson",     title:"Karlson",     studio:"DANIDEV",      rating:"4.6", image:"./images/home/hero_slides/karlson_hero.jpg", tags:["FPS","Movement","Speedrun"],
     description:"An ultra-fast movement-first FPS where parkour matters as much as aim. Find your flow, chain the levels." },
 ];
 
@@ -1597,7 +1602,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
   };
 
   return (
-    <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:520, maxHeight:720, overflow:"hidden", flexShrink:0, background:coverGradient(slide.gameId) }}>
+    <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:480, maxHeight:680, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
       {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
       {slide.video && !videoFailed ? (
         <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
@@ -1638,8 +1643,8 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
         </div>
       </div>
 
-      {/* Prev / next + dots */}
-      <div style={{ position:"absolute", right:48, bottom:32, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:14 }}>
+      {/* Prev / next + dots — bottom-center, matching the Figma hero exactly. */}
+      <div style={{ position:"absolute", left:"50%", bottom:24, transform:"translateX(-50%)", display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
         <div style={{ display:"flex", gap:8 }}>
           <button onClick={()=>go(index-1)} aria-label="Previous slide"
             style={{ width:36, height:36, borderRadius:14, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -1766,7 +1771,9 @@ function HomePage({ games, onSelectGame, onTabChange }) {
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
-      <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
+      <div style={{ padding:"24px 24px 12px" }}>
+        <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
+      </div>
 
       <CategoryFilterBar onTabChange={onTabChange}/>
 
