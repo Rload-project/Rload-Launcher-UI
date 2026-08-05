@@ -185,16 +185,21 @@ const COMING_SOON_ITEMS = [
   { id:4, title:"Aether Echo",      subtitle:"Atmospheric platformer", genre:"Platformer",studio:"Dusk Forge",        imageUrl:"./images/home/hero_slides/rooftop_bg.png"           },
   { id:5, title:"Voidwatcher",      subtitle:"Deep space horror",      genre:"Horror",    studio:"Dark Matter Labs", imageUrl:"./images/home/new_releases/steel_trigger.png"       },
 ];
-const PC_RANKED_ITEMS = [
-  { rank:1, title:"Iron Onslaught",     genre:["Action","Tactical"],  studio:"FireLine Studios", plays:"48.2k", imageUrl:"./images/games/placeholders/iron_onslaught.png", imagePosition:"center 30%" },
-  { rank:2, title:"Gladiator Battle",   genre:["Fights","Arena"],     studio:"Arena Forge",      plays:"39.7k", imageUrl:"./images/games/placeholders/gladiator_battle.png"    },
-  { rank:3, title:"Circuit Bloom",      genre:["Puzzle","Chill"],     studio:"PixelNova",        plays:"31.4k", imageUrl:"./images/games/placeholders/circuit_bloom.png"       },
-  { rank:4, title:"Steelbound Legacy",  genre:["RPG","Strategy"],     studio:"IronLore Games",   plays:"28.9k", imageUrl:"./images/games/placeholders/steelbound_legacy.png"   },
-  { rank:5, title:"Neon Cyclone",       genre:["Racing","Arcade"],    studio:"Speedcraft Labs",  plays:"22.1k", imageUrl:"./images/games/placeholders/neon_cyclone.png"        },
-  { rank:6, title:"Cybernetic Showdown",genre:["Shooter","Sci-Fi"],   studio:"SynthCore Dev",    plays:"19.5k", imageUrl:"./images/games/placeholders/cybernetic_showdown.png" },
-  { rank:7, title:"Knight's Fiery Stand",genre:["RPG","Fantasy"],     studio:"Mythic Leaf",      plays:"16.8k", imageUrl:"./images/games/placeholders/knights_stand.png"       },
-  { rank:8, title:"Underground Battle", genre:["Fights","Street"],    studio:"Street Level",     plays:"14.2k", imageUrl:"./images/games/placeholders/underground_battle.png"  },
-];
+// Derives HomeGameCard/SearchPage result items from the REAL catalog (`games`,
+// as returned by listLocalGames()) — replaces what used to be a static list of
+// fabricated titles/studios/play-counts. Same image-resolution convention used
+// everywhere else in this file: LOCAL_COVERS override, then CDN thumbnail/coverUrl,
+// then the generic default cover.
+function gameToRankedItem(game, rank) {
+  return {
+    rank,
+    game,
+    title: game.title,
+    genre: game.tags?.length ? game.tags : [game.studio || "Game"],
+    studio: game.studio || "",
+    imageUrl: LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png",
+  };
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // Icons (inline SVG — no external deps)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1711,13 +1716,13 @@ function HomeGameCard({ title, imageUrl, imagePosition, genre, onSelect }) {
   );
 }
 
-function HomeGameGrid({ items, onTabChange }) {
+function HomeGameGrid({ items, onSelectGame, onTabChange }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:14 }}>
       {items.map(item=>(
         <HomeGameCard key={item.title} title={item.title} imageUrl={item.imageUrl} imagePosition={item.imagePosition}
           genre={Array.isArray(item.genre) ? item.genre[0] : item.genre}
-          onSelect={()=>onTabChange("games")}/>
+          onSelect={()=>item.game && onSelectGame ? onSelectGame(item.game) : onTabChange("games")}/>
       ))}
     </div>
   );
@@ -1749,8 +1754,15 @@ function HomePage({ games, onSelectGame, onTabChange }) {
     .sort((a,b)=> new Date(`${a.day} ${a.month} 2026`) - new Date(`${b.day} ${b.month} 2026`))
     .slice(0,2);
 
-  const gamesRow     = PC_RANKED_ITEMS.slice(0,5);
-  const communityRow = [...PC_RANKED_ITEMS].reverse().slice(0,5);
+  // "Games" / "Community Favorite" rows: real catalog games, minus whichever
+  // ones the hero carousel and the studio spotlight are already showcasing on
+  // this same page, so nothing repeats. No fabricated titles/studios/play
+  // counts — if the catalog ever has fewer than 10 remaining games, these
+  // rows simply show fewer real cards rather than inventing filler.
+  const featuredIds = new Set([...HERO_SLIDES.map(s=>s.gameId), KAKUDO_SPOTLIGHT.gameId]);
+  const remainingGames = games.filter(g=>!featuredIds.has(g.gameId));
+  const gamesRow     = remainingGames.slice(0,5).map((g,i)=>gameToRankedItem(g,i+1));
+  const communityRow = remainingGames.slice(5,10).map((g,i)=>gameToRankedItem(g,i+1));
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
@@ -1760,7 +1772,7 @@ function HomePage({ games, onSelectGame, onTabChange }) {
 
       <div style={{ padding:"40px 32px 0" }}>
         <SectionHeader title="Games" onMore={()=>onTabChange("games")}/>
-        <HomeGameGrid items={gamesRow} onTabChange={onTabChange}/>
+        <HomeGameGrid items={gamesRow} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
       </div>
 
       <div style={{ margin:"40px 0" }}>
@@ -1772,7 +1784,7 @@ function HomePage({ games, onSelectGame, onTabChange }) {
 
       <div style={{ padding:"8px 32px 0", marginBottom:40 }}>
         <SectionHeader title="Community Favorite" onMore={()=>onTabChange("games")}/>
-        <HomeGameGrid items={communityRow} onTabChange={onTabChange}/>
+        <HomeGameGrid items={communityRow} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
       </div>
 
       {/* ── Events — sober, editorial, 2 max on Home; the rest lives on the Events tab ── */}
@@ -4375,9 +4387,11 @@ function SearchPage({ games, onSelectGame, onTabChange, onSelectStudio }) {
 
   const q = submitted.toLowerCase();
   const gameResults = q
-    ? PC_RANKED_ITEMS.filter(g=>
-        g.title.toLowerCase().includes(q) ||
-        (Array.isArray(g.genre) ? g.genre : [g.genre]).some(genre=>genre?.toLowerCase().includes(q)))
+    ? games
+        .map((g,i)=>gameToRankedItem(g,i+1))
+        .filter(g=>
+          g.title.toLowerCase().includes(q) ||
+          g.genre.some(genre=>genre?.toLowerCase().includes(q)))
     : [];
   const studioResults = q
     ? STUDIOS.filter(s=>s.name.toLowerCase().includes(q) || s.genre.toLowerCase().includes(q))
