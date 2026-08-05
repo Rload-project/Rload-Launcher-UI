@@ -3980,32 +3980,22 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
 // SectionHeader, HomeGameCard, AppFooter, and the games/UPCOMING_EVENTS data
 // already used elsewhere in this file.
 // ─────────────────────────────────────────────────────────────────────────────
+// Only studios the real catalog actually names (`game.studio` non-null) get a
+// card — 10 of the 14 catalog games have no studio on file yet, so there is
+// nothing truthful to show for them. No invented country/founding year/team
+// for entries where that isn't verified; StudioCard/StudioSinglePage render
+// those fields conditionally rather than fabricate them.
 const STUDIOS = [
-  { id:"new-blood",      name:"New Blood Interactive",   initial:"N", country:"États-Unis",     founded:2016, genre:"Action",     games:1, gameTitle:"ULTRAKILL",
+  { id:"new-blood",   name:"New Blood Interactive", initial:"N", country:"États-Unis", founded:2016, genre:"Action",   games:1, gameTitle:"ULTRAKILL",
     location:"Los Angeles, USA", tagline:"Loud games, made by people who mean it.",
     bio:"New Blood Interactive started as a scrappy publishing label for games that were too loud, too fast, or too strange for anyone else to take a chance on. What began as prototypes traded in Discord DMs has grown into a home for retro-inspired shooters and cult classics, built by solo developers and small teams who'd rather ship something weird than safe. The philosophy hasn't changed since day one: back the games that make noise.",
     team:[ {initials:"AP", name:'Arsi "Hakita" Patala', role:"Founder & Creative Director"}, {initials:"DR", name:"Dillon Rogers", role:"Community Lead"}, {initials:"LW", name:"Leo Wolfe", role:"Art Director"}, {initials:"SE", name:"Sam Ecoff", role:"Composer"} ] },
-  { id:"kakudo",         name:"Studio Kakoudo",          initial:"K", country:"Japon",          founded:2018, genre:"Aventure",   games:2 },
-  { id:"nightshift",     name:"Nightshift Interactive",  initial:"N", country:"Canada",         founded:2019, genre:"Horreur",    games:1 },
-  { id:"pale-horse",     name:"Pale Horse Games",        initial:"P", country:"Royaume-Uni",    founded:2020, genre:"Horreur",    games:1 },
-  { id:"steelraven7",    name:"SteelRaven7",             initial:"S", country:"Pays-Bas",       founded:2014, genre:"Action",     games:1 },
-  { id:"klei-vale",      name:"Klei Vale Studio",        initial:"K", country:"Suède",          founded:2017, genre:"Puzzle",     games:2 },
-  { id:"copper-fox",     name:"Copper Fox Games",        initial:"C", country:"France",         founded:2015, genre:"Aventure",   games:3 },
-  { id:"voltpixel",      name:"Voltpixel",               initial:"V", country:"Allemagne",      founded:2019, genre:"Course",     games:1 },
-  { id:"moonlit-owl",    name:"Moonlit Owl Interactive",  initial:"M", country:"Pologne",        founded:2021, genre:"Aventure",   games:1 },
-  { id:"redline",        name:"Redline Motorsport Devs", initial:"R", country:"Italie",         founded:2018, genre:"Course",     games:2 },
-  { id:"static-bloom",   name:"Static Bloom",            initial:"S", country:"États-Unis",     founded:2022, genre:"Puzzle",     games:1 },
-  { id:"hollow-circuit", name:"Hollow Circuit Studio",   initial:"H", country:"Corée du Sud",   founded:2017, genre:"Action",     games:2 },
-  { id:"driftwood",      name:"Driftwood Collective",    initial:"D", country:"Australie",      founded:2016, genre:"Simulation", games:1 },
-  { id:"nine-lanterns",  name:"Nine Lanterns",           initial:"N", country:"Vietnam",        founded:2020, genre:"Aventure",   games:1 },
-  { id:"ferrous-kingdom",name:"Ferrous Kingdom",         initial:"F", country:"Espagne",        founded:2019, genre:"Action",     games:2 },
-  { id:"glasswing",      name:"Glasswing Studio",        initial:"G", country:"Portugal",       founded:2021, genre:"Puzzle",     games:1 },
-  { id:"blackout",       name:"Blackout Interactive",    initial:"B", country:"Finlande",       founded:2018, genre:"Horreur",    games:1 },
-  { id:"tidepool",       name:"Tidepool Games",          initial:"T", country:"Norvège",        founded:2022, genre:"Simulation", games:1 },
-  { id:"rustbelt",       name:"Rustbelt Devs",           initial:"R", country:"Tchéquie",       founded:2015, genre:"Action",     games:3 },
-  { id:"wandermoss",     name:"Wandermoss",              initial:"W", country:"Irlande",        founded:2023, genre:"Aventure",   games:1 },
+  { id:"kakudo",      name:"Bad Weather Studios",    initial:"B", country:"Belgique",                  genre:"Aventure", games:1, gameTitle:"KAKUDO",
+    bio:KAKUDO_SPOTLIGHT.bioParagraphs.join(" ") },
+  { id:"steelraven7", name:"SteelRaven7",            initial:"S",                                      genre:"Action",   games:1, gameTitle:"Ravenfield" },
+  { id:"dani",        name:"Dani",                   initial:"D",                                      genre:"Action",   games:1, gameTitle:"KARLSON" },
 ];
-const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo","nightshift","pale-horse"];
+const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo"];
 // New Blood's own devlog history, shown on its studio_single page only.
 const NEW_BLOOD_DEVLOGS = [
   { time:"il y a 2 jours",    title:"Patch 1.3 — équilibrage des armes",             text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
@@ -4014,9 +4004,8 @@ const NEW_BLOOD_DEVLOGS = [
 ];
 // Cross-studio feed shown on the My Rload page ("Devlogs des studios suivis").
 const FOLLOWED_DEVLOG_FEED = [
-  { studioId:"kakudo",     studio:"Studio Kakoudo",        initial:"K", time:"Il y a 2 jours",   title:"Aperçu du niveau 4 : le marais empoisonné",  text:"On teste un nouveau système de brouillard dynamique qui réagit à vos pas. Encore expérimental, mais ça change tout l'ambiance du niveau." },
+  { studioId:"kakudo",     studio:"Bad Weather Studios",   initial:"B", time:"Il y a 2 jours",   title:"Aperçu du niveau 4 : le marais empoisonné",  text:"On teste un nouveau système de brouillard dynamique qui réagit à vos pas. Encore expérimental, mais ça change tout l'ambiance du niveau." },
   { studioId:"new-blood",  studio:"New Blood Interactive", initial:"N", time:"Il y a 5 jours",   title:"Patch 1.3 — équilibrage des armes",          text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
-  { studioId:"nightshift", studio:"Nightshift Interactive",initial:"N", time:"Il y a 1 semaine", title:"Pourquoi on a mis 8 mois sur l'écran-titre", text:"Un petit post un peu long sur l'itération artistique et pourquoi le perfectionnisme n'est pas toujours un défaut." },
 ];
 const GAME_HISTORY = [
   { title:"Ravenfield",  imageUrl:HERO_IMAGE,                  meta:"Il y a 2h" },
@@ -4076,7 +4065,9 @@ function StudioCard({ studio, onSelect }) {
           <span style={{ alignSelf:"flex-start", padding:"2px 9px", borderRadius:999, background:"rgba(114,85,229,0.14)", color:"#c2b5fa", fontSize:10.5, fontWeight:500 }}>{studio.genre}</span>
         </div>
       </div>
-      <div style={{ fontSize:12, color:T.textMuted }}>🌍 {studio.country} · Fondé en {studio.founded}</div>
+      <div style={{ fontSize:12, color:T.textMuted }}>
+        🌍 {[studio.country, studio.founded && `Fondé en ${studio.founded}`].filter(Boolean).join(" · ") || "Studio indépendant"}
+      </div>
       <div style={{ fontSize:12, color:T.textMuted }}>🎮 {studio.games} jeu{studio.games>1?"x":""} sur Rload</div>
       <FollowButton/>
     </div>
@@ -4096,7 +4087,7 @@ function StudiosPage({ onSelectStudio, onTabChange }) {
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
       <div style={{ padding:"48px 24px 0" }}>
         <div style={{ fontSize:34, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginBottom:8 }}>Studios</div>
-        <div style={{ fontSize:14, color:T.textMuted, marginBottom:32 }}>Découvre les studios indépendants qui font vivre Rload — 20 équipes, leurs jeux, et leurs univers.</div>
+        <div style={{ fontSize:14, color:T.textMuted, marginBottom:32 }}>Découvre les studios indépendants qui font vivre Rload.</div>
         <div style={{ display:"flex", gap:12, marginBottom:32, maxWidth:560 }}>
           <div style={{ flex:1, display:"flex", alignItems:"center", gap:12, padding:"10px 24px", borderRadius:999, background:"rgba(255,255,255,0.05)", border:`1.5px solid ${T.borderBrand}` }}>
             <span style={{ color:T.textMuted, fontSize:18 }}>⌕</span>
@@ -4141,7 +4132,7 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
             <StudioLogo initial={studio.initial} size={88} fontSize={34}/>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
               <div style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{studio.name}</div>
-              <div style={{ fontSize:14.5, color:T.textMuted }}>{studio.tagline || `${studio.genre} · ${studio.country}`}</div>
+              <div style={{ fontSize:14.5, color:T.textMuted }}>{studio.tagline || [studio.genre, studio.country].filter(Boolean).join(" · ")}</div>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:10, alignItems:"flex-end" }}>
               <div style={{ display:"flex", gap:8 }}>
@@ -4153,8 +4144,8 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
             </div>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center", fontSize:13, color:T.textMuted, flexWrap:"wrap" }}>
-            <span>📍 {studio.location || studio.country}</span><span style={{ opacity:0.4 }}>·</span>
-            <span>📅 Fondé en {studio.founded}</span><span style={{ opacity:0.4 }}>·</span>
+            {(studio.location || studio.country) && <><span>📍 {studio.location || studio.country}</span><span style={{ opacity:0.4 }}>·</span></>}
+            {studio.founded && <><span>📅 Fondé en {studio.founded}</span><span style={{ opacity:0.4 }}>·</span></>}
             {studio.team && <><span>👥 {studio.team.length * 3} personnes</span><span style={{ opacity:0.4 }}>·</span></>}
             <span>🎮 {studio.games} jeu{studio.games>1?"x":""} sur Rload</span>
           </div>
@@ -4164,7 +4155,9 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>À propos</div>
           <div style={{ fontSize:15, color:T.textSub, lineHeight:1.65, maxWidth:1100 }}>
-            {studio.bio || `${studio.name} est un studio indépendant basé en ${studio.country}, actif depuis ${studio.founded}, connu pour ses jeux du genre ${studio.genre}.`}
+            {studio.bio || (studio.country
+              ? `${studio.name} est un studio indépendant basé en ${studio.country}, connu pour ses jeux du genre ${studio.genre}.`
+              : `${studio.name} — profil détaillé à venir.`)}
           </div>
         </div>
 
