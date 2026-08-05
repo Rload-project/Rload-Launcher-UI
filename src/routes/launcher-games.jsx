@@ -872,44 +872,55 @@ function SectionHeader({ title, count, onMore, subtitle }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // GameGridCard — portrait card for 4-col grid
 // ─────────────────────────────────────────────────────────────────────────────
+// Cover-overlay treatment matches HomeGameCard (Figma Home grid) — gradient
+// scrim, title + genre pill + rating overlaid at the bottom of the art —
+// instead of the old separate text block below the image. Install-state
+// badge, transfer progress bar and selection ring are real functional UI
+// with no Figma equivalent, so they're kept as-is, layered on top.
 function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
   const [hov, setHov] = useState(false);
+  const [liked, setLiked] = useState(false);
   const badge = getStateBadge(uiState);
   const pct   = clamp(dl?.percent??0, 0, 100);
   const isXfer = [UI.DOWNLOADING,UI.INSTALLING,UI.PAUSED,UI.UPDATING].includes(uiState);
+  // Catalog `tags` is just the gameId repeated (e.g. tags:["ultrakill"]) — `genres`
+  // holds the real genre labels (e.g. ["Action","FPS","Indie"]); prefer that.
+  const genre = game.genres?.[0] || game.tags?.[0] || "Game";
   return (
     <div role="button" tabIndex={0}
       onClick={()=>onSelect(game)}
       onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&onSelect(game)}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ borderRadius:T.radius, overflow:"hidden",
-        background:isSelected ? "rgba(128,74,240,0.10)" : T.bgCard,
-        border:isSelected ? `1px solid ${T.brand}` : `1px solid ${T.border}`,
-        cursor:"pointer", userSelect:"none",
-        boxShadow:isSelected ? `0 0 0 1px ${T.brand}, 0 16px 48px rgba(0,0,0,0.55)` : hov ? "0 12px 40px rgba(0,0,0,0.5)" : "none",
+      style={{ position:"relative", borderRadius:16, overflow:"hidden", aspectRatio:"259/353",
+        cursor:"pointer", userSelect:"none", background:coverGradient(game.title||game.gameId),
+        boxShadow:isSelected ? `0 0 0 2px ${T.brand}, 0 16px 48px rgba(0,0,0,0.55)` : hov ? "0 12px 40px rgba(0,0,0,0.5)" : "none",
         transform:hov&&!isSelected ? "translateY(-3px)" : "translateY(0)",
-        transition:"transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out, background 0.2s ease-out",
+        transition:"transform 0.2s ease-out, box-shadow 0.2s ease-out",
       }}>
-      {/* Cover */}
-      <div style={{ position:"relative", width:"100%", paddingTop:"133%", overflow:"hidden", background:"#0a0914" }}>
-        <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt={game.title}
-          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", display:"block", transform:hov?"scale(1.07)":"scale(1)", transition:"transform 0.22s ease-out" }}
-          onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
-        {badge && (
-          <div style={{ position:"absolute", top:8, right:8, padding:"3px 8px", borderRadius:T.radiusPill, fontSize:9, fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:badge.color, background:badge.bg, border:`1px solid ${badge.border}`, backdropFilter:"blur(8px)" }}>
-            {badge.label}
-          </div>
-        )}
-        {isXfer && (
-          <div style={{ position:"absolute", bottom:0, left:0, right:0, height:3, background:"rgba(255,255,255,0.07)" }}>
-            <div style={{ height:"100%", width:`${pct}%`, background:T.brandGrad, transition:"width 0.3s ease" }}/>
-          </div>
-        )}
-        {hov && <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(14,12,31,0.65) 0%, transparent 50%)", pointerEvents:"none" }}/>}
-      </div>
-      <div style={{ padding:"9px 11px 11px" }}>
-        <div style={{ fontSize:12.5, fontWeight:650, color:T.text, lineHeight:1.3, marginBottom:1, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{game.title||game.gameId}</div>
-        {game.studio && <div style={{ fontSize:10.5, color:T.textDim }}>{game.studio}</div>}
+      <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt={game.title}
+        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", display:"block", transform:hov?"scale(1.07)":"scale(1)", transition:"transform 0.22s ease-out" }}
+        onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(38,38,38,0.1) 0%, rgba(38,38,38,0.39) 49%, rgba(0,0,0,0.75) 100%)" }}/>
+      {badge && (
+        <div style={{ position:"absolute", top:12, left:12, padding:"3px 8px", borderRadius:T.radiusPill, fontSize:9, fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:badge.color, background:badge.bg, border:`1px solid ${badge.border}`, backdropFilter:"blur(8px)" }}>
+          {badge.label}
+        </div>
+      )}
+      <button onClick={e=>{ e.stopPropagation(); setLiked(v=>!v); }} aria-label="Like"
+        style={{ position:"absolute", top:12, right:12, width:32, height:32, borderRadius:16, background:"rgba(0,0,0,0.35)", border:"1px solid rgba(255,255,255,0.14)", color:liked?T.brandLight:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>
+        {liked ? "♥" : "♡"}
+      </button>
+      {isXfer && (
+        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:3, background:"rgba(255,255,255,0.07)" }}>
+          <div style={{ height:"100%", width:`${pct}%`, background:T.brandGrad, transition:"width 0.3s ease" }}/>
+        </div>
+      )}
+      <div style={{ position:"absolute", left:0, right:0, bottom:0, padding:16 }}>
+        <div style={{ fontSize:18, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{game.title||game.gameId}</div>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <span style={{ padding:"5px 14px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:11, fontWeight:500 }}>{genre}</span>
+          <span style={{ fontSize:12, fontWeight:600, color:"#ffffa6" }}>★ {mockRating(game.title||game.gameId)}</span>
+        </div>
       </div>
     </div>
   );
