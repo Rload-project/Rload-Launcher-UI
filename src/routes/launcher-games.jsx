@@ -855,10 +855,11 @@ function SectionHeader({ title, count, onMore, subtitle }) {
     <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:14 }}>
       <div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-          <div style={{ fontSize:17, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.2px" }}>{title}</div>
-          {count !== undefined && <span style={{ fontSize:11, padding:"1px 7px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.06)", color:T.textMuted }}>{count}</span>}
+          {/* Figma Dev Mode (Home, "Games"/"Community Favorite" heading): Poppins 700 40px/48px — was 17px, badly undersized. */}
+          <div style={{ fontSize:40, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.5px", lineHeight:"48px" }}>{title}</div>
+          {count !== undefined && <span style={{ fontSize:13, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.06)", color:T.textMuted }}>{count}</span>}
         </div>
-        {subtitle && <div style={{ fontSize:12, color:T.textDim, marginTop:2 }}>{subtitle}</div>}
+        {subtitle && <div style={{ fontSize:14, color:T.textDim, marginTop:4 }}>{subtitle}</div>}
       </div>
       {onMore && (
         <button onClick={onMore} style={{ fontSize:12, color:T.brand, background:"none", border:"none", cursor:"pointer", padding:"2px 0", display:"flex", alignItems:"center", gap:4, fontFamily:T.fontBody }}>
@@ -1613,7 +1614,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
   };
 
   return (
-    <div style={{ position:"relative", height:"calc(75vh - 62px)", minHeight:480, maxHeight:680, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
+    <div style={{ position:"relative", height:"calc(100vh - 130px)", minHeight:560, maxHeight:920, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
       {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
       {slide.video && !videoFailed ? (
         <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
@@ -1770,15 +1771,17 @@ function HomePage({ games, onSelectGame, onTabChange }) {
     .sort((a,b)=> new Date(`${a.day} ${a.month} 2026`) - new Date(`${b.day} ${b.month} 2026`))
     .slice(0,2);
 
-  // "Games" / "Community Favorite" rows: real catalog games, minus whichever
-  // ones the hero carousel and the studio spotlight are already showcasing on
-  // this same page, so nothing repeats. No fabricated titles/studios/play
-  // counts — if the catalog ever has fewer than 10 remaining games, these
-  // rows simply show fewer real cards rather than inventing filler.
+  // "Games": real catalog games minus whatever the hero carousel/studio spotlight
+  // already showcase on this same page. Figma's "Games" section (verified in Dev
+  // Mode) is 2 rows of 5 (10 cards), not 1 — was rendering only the first row.
+  // "Community Favorite" is a separate curation lens on the same pool, not a
+  // disjoint set (Pam's original build reused/reordered the same list for both
+  // rows too) — with a 14-game catalog there aren't 15 distinct non-featured
+  // games to fill both sections without overlap.
   const featuredIds = new Set([...HERO_SLIDES.map(s=>s.gameId), KAKUDO_SPOTLIGHT.gameId]);
   const remainingGames = games.filter(g=>!featuredIds.has(g.gameId));
-  const gamesRow     = remainingGames.slice(0,5).map((g,i)=>gameToRankedItem(g,i+1));
-  const communityRow = remainingGames.slice(5,10).map((g,i)=>gameToRankedItem(g,i+1));
+  const gamesRow     = remainingGames.slice(0,10).map((g,i)=>gameToRankedItem(g,i+1));
+  const communityRow = [...remainingGames].reverse().slice(0,5).map((g,i)=>gameToRankedItem(g,i+1));
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
@@ -4113,7 +4116,7 @@ function StudiosPage({ onSelectStudio, onTabChange }) {
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
       <div style={{ padding:"48px 24px 0" }}>
-        <div style={{ fontSize:34, fontWeight:700, color:T.text, fontFamily:T.fontHead, marginBottom:8 }}>Studios</div>
+        <div style={{ fontSize:44, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.5px", marginBottom:8 }}>Studios</div>
         <div style={{ fontSize:14, color:T.textMuted, marginBottom:32 }}>Découvre les studios indépendants qui font vivre Rload.</div>
         <div style={{ display:"flex", gap:12, marginBottom:32, maxWidth:560 }}>
           <div style={{ flex:1, display:"flex", alignItems:"center", gap:12, padding:"10px 24px", borderRadius:999, background:"rgba(255,255,255,0.05)", border:`1.5px solid ${T.borderBrand}` }}>
@@ -4158,7 +4161,7 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
           <div style={{ display:"flex", gap:24, alignItems:"center" }}>
             <StudioLogo initial={studio.initial} size={88} fontSize={34}/>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
-              <div style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{studio.name}</div>
+              <div style={{ fontSize:44, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.5px" }}>{studio.name}</div>
               <div style={{ fontSize:14.5, color:T.textMuted }}>{studio.tagline || [studio.genre, studio.country].filter(Boolean).join(" · ")}</div>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:10, alignItems:"flex-end" }}>
