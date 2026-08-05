@@ -4028,10 +4028,19 @@ const SAVED_EVENTS = [
   { id:"gameawards-2026",day:"10", month:"DEC", category:"Lives & streams", title:"The Game Awards — Watch Party",        lieu:"En ligne" },
   { id:"igds-2026",      day:"19", month:"AUG", category:"Workshops & Panels", title:"Indie Game Developer Summit",       lieu:"Berlin, Allemagne" },
 ];
+// Matches the real Stripe plan structure (planType "trial"/"monthly"/"yearly",
+// see [[rload-stripe-decisions]] memory) and the pricing screen Figma: Pack
+// Découverte (5-day trial), Elite Pack (monthly), Pack Annuel (yearly).
 const PLAN_TIERS = [
-  { id:"free",    name:"Gratuit",  price:"0 €",     period:"toujours", features:["Accès à la bibliothèque","1 slot de téléchargement","Support communautaire"], cta:"Passer à ce plan", active:false },
-  { id:"premium", name:"Premium",  price:"9,99 €",  period:"/ mois",   features:["Tout Gratuit, plus :","Téléchargements illimités","Badges & bannières exclusifs"], cta:"Plan actuel", active:true },
-  { id:"ultimate",name:"Ultimate", price:"19,99 €", period:"/ mois",   features:["Tout Premium, plus :","Accès anticipé aux jeux","Support prioritaire"], cta:"Passer à ce plan", active:false },
+  { id:"trial",  planType:"trial",  name:"Pack Découverte", headline:"5 jours gratuits", badge:null,
+    features:["Accès aux jeux indés sélectionnés","Téléchargements limités","Publicités activées","Pas de multijoueur","Pas de titres premium","Pas d'avantages événements exclusifs","Annulez à tout moment"],
+    cta:"Essai gratuit 5 jours" },
+  { id:"monthly",planType:"monthly",name:"Elite Pack",      price:"9,99 €",  period:"/ mois", badge:"LE PLUS POPULAIRE",
+    features:["Accès complet à tous les jeux","Jeu sans publicité","Multijoueur activé","Téléchargements illimités","Sauvegardes cloud","Support prioritaire","Avantages événements exclusifs"],
+    cta:"S'inscrire" },
+  { id:"yearly", planType:"yearly", name:"Pack Annuel",     price:"99,99 €", period:"/ an",   badge:"MEILLEURE OFFRE",
+    features:["Tout ce qui est dans Premium","Meilleure valeur, économisez vs mensuel","Accès anticipé aux nouveaux titres","Badge exclusif annuel","Téléchargements illimités","Avantages événements exclusifs","Sauvegardes cloud prioritaires"],
+    cta:"S'inscrire" },
 ];
 
 function FollowButton({ following=false, onToggle }) {
@@ -4253,32 +4262,56 @@ function SavedEventCard({ ev }) {
   );
 }
 
-function PlanTierCard({ tier }) {
+function PlanTierCard({ tier, isCurrent }) {
+  const highlight = tier.badge === "LE PLUS POPULAIRE";
   return (
-    <div style={{ flex:1, background:tier.active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)",
-      border:tier.active ? `1.5px solid ${T.borderBrand}` : `1px solid ${T.border}`, borderRadius:16, padding:24, display:"flex", flexDirection:"column", gap:14 }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ fontSize:18, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{tier.name}</div>
-        {tier.active && <span style={{ padding:"4px 10px", borderRadius:999, background:"rgba(114,85,229,0.22)", color:T.brandLight, fontSize:11, fontWeight:600 }}>Actif</span>}
+    <div style={{ position:"relative", flex:1, background:"rgba(255,255,255,0.04)",
+      border:highlight ? `1.5px solid ${T.borderBrand}` : `1px solid ${T.border}`,
+      borderRadius:20, padding:"30px 24px 24px", display:"flex", flexDirection:"column", gap:16,
+      boxShadow:highlight ? T.brandGlow : "none" }}>
+      {tier.badge && (
+        <span style={{ position:"absolute", top:-13, left:"50%", transform:"translateX(-50%)",
+          padding:"6px 16px", borderRadius:999, fontSize:11, fontWeight:700, whiteSpace:"nowrap",
+          background:highlight ? T.brandGrad : "#f2b400", color:highlight ? "#fff" : "#241a05" }}>
+          {tier.badge}
+        </span>
+      )}
+      <div>
+        <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.08em", color:T.textMuted, textTransform:"uppercase", marginBottom:10 }}>{tier.name}</div>
+        {tier.headline ? (
+          <div style={{ fontSize:26, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.headline}</div>
+        ) : (
+          <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+            <span style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
+            <span style={{ fontSize:14, color:T.textMuted }}>{tier.period}</span>
+          </div>
+        )}
       </div>
-      <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
-        <span style={{ fontSize:28, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
-        <span style={{ fontSize:13, color:T.textMuted }}>{tier.period}</span>
+      <div style={{ height:1, background:T.border }}/>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:11, fontSize:13.5, color:T.textSub }}>
+        {tier.features.map(f=>(
+          <div key={f} style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ width:18, height:18, borderRadius:"50%", background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:T.textMuted, flexShrink:0 }}>✓</span>
+            {f}
+          </div>
+        ))}
       </div>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8, fontSize:13, color:T.textSub }}>
-        {tier.features.map(f=><div key={f}>✓ {f}</div>)}
-      </div>
-      <button style={{ padding:"10px 0", borderRadius:999, border:tier.active?`1px solid ${T.border}`:"none",
-        background:tier.active ? "rgba(255,255,255,0.06)" : T.brand, color:tier.active ? T.textMuted : "#fff",
-        fontSize:13, fontWeight:600, cursor:tier.active?"default":"pointer", fontFamily:T.fontBody }} disabled={tier.active}>
-        {tier.cta}
+      <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} disabled={isCurrent}
+        style={{ padding:"12px 0", borderRadius:999, border:highlight ? "none" : `1px solid ${T.border}`,
+          background:highlight ? T.brandGrad : (isCurrent ? "rgba(255,255,255,0.06)" : "transparent"),
+          color:isCurrent ? T.textMuted : "#fff", fontSize:13.5, fontWeight:700,
+          cursor:isCurrent ? "default" : "pointer", fontFamily:T.fontBody }}>
+        {isCurrent ? "Plan actuel" : tier.cta}
       </button>
     </div>
   );
 }
 
-function MyRloadPage({ games, onTabChange, onSelectStudio }) {
+function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, demoMode }) {
   const followedStudios = STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
+  const periodEnd = subscriptionStatus?.currentPeriodEnd ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString() : null;
+  const trialEnd  = subscriptionStatus?.trialEnd ? new Date(subscriptionStatus.trialEnd).toLocaleDateString() : null;
+  const currentPlanTierId = subscriptionStatus?.hasAccess ? PLAN_TIERS.find(t=>t.planType===subscriptionStatus.planType)?.id : null;
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
@@ -4348,15 +4381,25 @@ function MyRloadPage({ games, onTabChange, onSelectStudio }) {
           <div style={{ background:"linear-gradient(90deg, rgba(114,85,229,0.35) 0%, rgba(38,26,64,0.35) 100%)", border:`1px solid ${T.borderBrand}`, borderRadius:16, padding:"20px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               <div style={{ fontSize:12, fontWeight:600, color:T.textMuted, letterSpacing:"0.06em" }}>PLAN ACTUEL</div>
-              <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Rload Premium</div>
-              <div style={{ fontSize:13, color:T.textSub }}>9,99 €/mois · Prochain renouvellement le 12 août 2026</div>
+              <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>
+                {demoMode ? "Mode démo" : (subscriptionStatus?.planName || "Aucun abonnement actif")}
+              </div>
+              <div style={{ fontSize:13, color:T.textSub }}>
+                {demoMode
+                  ? "Abonnement non requis — build de démonstration."
+                  : subscriptionStatus?.hasAccess
+                    ? (periodEnd ? `Prochain renouvellement le ${periodEnd}` : "Actif")
+                    : trialEnd
+                      ? `Essai expiré le ${trialEnd}`
+                      : "Choisis un plan ci-dessous pour débloquer l'accès complet."}
+              </div>
             </div>
-            <button onClick={()=>onTabChange("profile")} style={{ padding:"10px 18px", borderRadius:999, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
-              Gérer le paiement
+            <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"10px 18px", borderRadius:999, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+              {subscriptionStatus?.hasAccess ? "Gérer le paiement" : "S'abonner"}
             </button>
           </div>
           <div style={{ display:"flex", gap:24 }}>
-            {PLAN_TIERS.map(tier=><PlanTierCard key={tier.id} tier={tier}/>)}
+            {PLAN_TIERS.map(tier=><PlanTierCard key={tier.id} tier={tier} isCurrent={tier.id===currentPlanTierId}/>)}
           </div>
         </div>
       </div>
@@ -4966,7 +5009,8 @@ export default function LauncherGames() {
         {activeTab==="about"     && <AboutPage onTabChange={handleTabChange}/>}
         {activeTab==="myrload"   && (
           <MyRloadPage games={games} onTabChange={handleTabChange}
-            onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}/>
+            onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}
+            subscriptionStatus={subscriptionStatus} demoMode={demoMode}/>
         )}
         {activeTab==="studios" && (
           selectedStudioId ? (
