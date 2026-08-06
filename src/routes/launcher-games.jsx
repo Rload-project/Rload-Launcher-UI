@@ -890,7 +890,7 @@ function SectionHeader({ title, count, onMore, subtitle, moreLabel="See all" }) 
         {subtitle && <div style={{ fontSize:14, color:T.textDim, marginTop:4 }}>{subtitle}</div>}
       </div>
       {onMore && (
-        <button onClick={onMore} style={{ fontSize:12, color:T.brand, background:"none", border:"none", cursor:"pointer", padding:"2px 0", display:"flex", alignItems:"center", gap:4, fontFamily:T.fontBody }}>
+        <button onClick={onMore} style={{ fontSize:15, fontWeight:600, color:T.brandLight, background:"none", border:"none", cursor:"pointer", padding:"2px 0", display:"flex", alignItems:"center", gap:6, fontFamily:T.fontBody }}>
           {moreLabel} <Icon.ArrowRight/>
         </button>
       )}
@@ -1148,7 +1148,7 @@ function EventCard({ ev, showThumbnail = false, thumbSize = 100 }) {
         {showThumbnail && ev.imageUrl && !imgErr && (
           <div style={{ position:"relative", aspectRatio:"1/1", height:thumbSize, borderRadius:"0.75rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
             <img src={ev.imageUrl} alt={ev.title}
-              style={{ width:"100%", height:"100%", objectFit:"cover" }}
+              style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center" }}
               onError={()=>setImgErr(true)}/>
             <div style={{ position:"absolute", left:10, bottom:10, textAlign:"center", background:"rgba(20,16,42,0.85)", backdropFilter:"blur(6px)", borderRadius:"0.7rem", border:"1px solid rgba(128,74,240,0.4)", padding:"6px 10px" }}>
               <div style={{ fontSize:16, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
