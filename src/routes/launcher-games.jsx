@@ -122,6 +122,34 @@ function coverGradient(gameId) {
   return `linear-gradient(145deg, ${a} 0%, ${b} 100%)`;
 }
 
+// ── Favorites — single source of truth (localStorage "rload-favorites") shared by every
+// heart button in the app (Home cards, Games grid, MyGamesPage's sidebar filter). A card's
+// own useState was never wired to this before, so liking a game on Home didn't show up
+// in Games > Favorites. window event keeps every mounted heart in sync when any of them toggles. ──
+const FAVORITES_KEY = "rload-favorites";
+const FAVORITES_EVENT = "rload:favorites-changed";
+function getFavoriteIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(FAVORITES_KEY)||"[]")); }
+  catch { return new Set(); }
+}
+function toggleFavoriteId(gameId) {
+  const next = getFavoriteIds();
+  next.has(gameId) ? next.delete(gameId) : next.add(gameId);
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...next]));
+  window.dispatchEvent(new Event(FAVORITES_EVENT));
+  return next;
+}
+function useIsFavorite(gameId) {
+  const [fav, setFav] = useState(()=>getFavoriteIds().has(gameId));
+  useEffect(() => {
+    setFav(getFavoriteIds().has(gameId));
+    const onChange = () => setFav(getFavoriteIds().has(gameId));
+    window.addEventListener(FAVORITES_EVENT, onChange);
+    return () => window.removeEventListener(FAVORITES_EVENT, onChange);
+  }, [gameId]);
+  return [fav, ()=>toggleFavoriteId(gameId)];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Real events data (from Vercel website Events.tsx)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -880,7 +908,7 @@ function SectionHeader({ title, count, onMore, subtitle, moreLabel="See all" }) 
 // with no Figma equivalent, so they're kept as-is, layered on top.
 function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
   const [hov, setHov] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const [liked, toggleLiked] = useIsFavorite(game.gameId);
   const badge = getStateBadge(uiState);
   const pct   = clamp(dl?.percent??0, 0, 100);
   const isXfer = [UI.DOWNLOADING,UI.INSTALLING,UI.PAUSED,UI.UPDATING].includes(uiState);
@@ -901,13 +929,14 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
       <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt={game.title}
         style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", display:"block", transform:hov?"scale(1.07)":"scale(1)", transition:"transform 0.22s ease-out" }}
         onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(38,38,38,0.1) 0%, rgba(38,38,38,0.39) 49%, rgba(0,0,0,0.75) 100%)" }}/>
+      {/* Light bottom-only scrim for text legibility — no full-cover dark holo; covers stay vibrant, like Figma. */}
+      <div style={{ position:"absolute", left:0, right:0, bottom:0, height:"55%", background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.75) 100%)" }}/>
       {badge && (
         <div style={{ position:"absolute", top:12, left:12, padding:"3px 8px", borderRadius:T.radiusPill, fontSize:9, fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:badge.color, background:badge.bg, border:`1px solid ${badge.border}`, backdropFilter:"blur(8px)" }}>
           {badge.label}
         </div>
       )}
-      <button onClick={e=>{ e.stopPropagation(); setLiked(v=>!v); }} aria-label="Like"
+      <button onClick={e=>{ e.stopPropagation(); toggleLiked(); }} aria-label="Like"
         style={{ position:"absolute", top:12, right:12, width:32, height:32, borderRadius:16, background:"rgba(0,0,0,0.35)", border:"1px solid rgba(255,255,255,0.14)", color:liked?T.brandLight:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>
         {liked ? "♥" : "♡"}
       </button>
@@ -917,7 +946,7 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
         </div>
       )}
       <div style={{ position:"absolute", left:0, right:0, bottom:0, padding:16 }}>
-        <div style={{ fontSize:18, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{game.title||game.gameId}</div>
+        <div style={{ fontSize:24, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{game.title||game.gameId}</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <span style={{ padding:"5px 14px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:11, fontWeight:500 }}>{genre}</span>
           <span style={{ fontSize:12, fontWeight:600, color:"#ffffa6" }}>★ {mockRating(game.title||game.gameId)}</span>
@@ -1115,29 +1144,29 @@ function EventCard({ ev, showThumbnail = false, thumbSize = 100 }) {
   // wasting, so title/description get real room instead of a cramped sliver on the right.
   if (big) {
     return (
-      <div style={{ borderRadius:T.radius, padding:16, display:"flex", alignItems:"center", gap:16, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
+      <div style={{ borderRadius:T.radius, padding:12, display:"flex", alignItems:"center", gap:14, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)" }}>
         {showThumbnail && ev.imageUrl && !imgErr && (
-          <div style={{ position:"relative", aspectRatio:"9/16", height:thumbSize, borderRadius:"0.75rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
+          <div style={{ position:"relative", aspectRatio:"1/1", height:thumbSize, borderRadius:"0.75rem", overflow:"hidden", flexShrink:0, background:coverGradient(ev.id) }}>
             <img src={ev.imageUrl} alt={ev.title}
               style={{ width:"100%", height:"100%", objectFit:"cover" }}
               onError={()=>setImgErr(true)}/>
-            <div style={{ position:"absolute", left:10, bottom:10, textAlign:"center", background:"rgba(20,16,42,0.85)", backdropFilter:"blur(6px)", borderRadius:"0.7rem", border:"1px solid rgba(128,74,240,0.4)", padding:"8px 12px" }}>
-              <div style={{ fontSize:18, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
-              <div style={{ fontSize:9.5, fontWeight:600, color:T.brandLight, marginTop:2, letterSpacing:"0.04em" }}>{ev.month}</div>
+            <div style={{ position:"absolute", left:10, bottom:10, textAlign:"center", background:"rgba(20,16,42,0.85)", backdropFilter:"blur(6px)", borderRadius:"0.7rem", border:"1px solid rgba(128,74,240,0.4)", padding:"6px 10px" }}>
+              <div style={{ fontSize:16, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
+              <div style={{ fontSize:9, fontWeight:600, color:T.brandLight, marginTop:2, letterSpacing:"0.04em" }}>{ev.month}</div>
             </div>
           </div>
         )}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", gap:6, marginBottom:8, flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:6, marginBottom:6, flexWrap:"wrap" }}>
             <span style={{ fontSize:10, fontWeight:600, padding:"2px 10px", borderRadius:T.radiusPill, color:cc.color, background:"#804af033", border:"1px solid rgba(128,74,240,0.3)" }}>{ev.category}</span>
             {ev.status && (
               <span style={{ fontSize:10, fontWeight:600, padding:"2px 10px", borderRadius:T.radiusPill, color:T.blue2Light, background:"#2B7FFF33", border:"1px solid rgba(43,127,255,0.3)" }}>{ev.status}</span>
             )}
           </div>
-          <div style={{ fontSize:17, fontWeight:600, color:T.text, fontFamily:T.fontHead, lineHeight:1.3, marginBottom:6 }}>{ev.title}</div>
-          {ev.description && <div style={{ fontSize:13, color:"#a0a0a0", lineHeight:1.55, marginBottom:6, whiteSpace:"normal" }}>{ev.description}</div>}
+          <div style={{ fontSize:17, fontWeight:600, color:T.text, fontFamily:T.fontHead, lineHeight:1.25, marginBottom:4 }}>{ev.title}</div>
+          {ev.description && <div style={{ fontSize:12.5, color:"#a0a0a0", lineHeight:1.4, marginBottom:4, whiteSpace:"normal" }}>{ev.description}</div>}
           {ev.time && (
-            <div style={{ display:"flex", alignItems:"center", gap:6, color:"#878787", fontSize:12, marginTop:4 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6, color:"#878787", fontSize:12, marginTop:2 }}>
               <Icon.Calendar/> {ev.time}
             </div>
           )}
@@ -1450,7 +1479,7 @@ function HeroPlayButton({ onClick }) {
 // reads as "these studios are active on Rload right now".
 function FeaturedStudiosSidebar({ onSelectStudio }) {
   return (
-    <div style={{ flex:"0 0 300px", display:"flex", gap:24 }}>
+    <div style={{ flex:"0 0 35%", display:"flex", gap:24 }}>
       <div style={{ width:3, borderRadius:999, background:T.brand, flexShrink:0 }}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", gap:32 }}>
         <div style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.4px" }}>Studios à la une</div>
@@ -1478,7 +1507,7 @@ function StudioSpotlight({ games, onSelectGame, onTabChange, onSelectStudio }) {
     <div style={{ padding:"0 32px", marginBottom:32, display:"flex", gap:32, alignItems:"stretch" }}>
       {/* Single full-bleed image, bottom overlay bar — matches Figma's studio card exactly.
           No floating collage/screenshot squares (removed per direct request). */}
-      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400, flex:1,
+      <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400, flex:"0 0 65%",
         border:`1px solid ${T.borderBrand}`, cursor:"pointer" }} onClick={openKakudo}>
         <img src={KAKUDO_SPOTLIGHT.bgImage} alt=""
           style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
@@ -1595,7 +1624,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
   };
 
   return (
-    <div style={{ position:"relative", height:"calc(100vh - 130px)", minHeight:560, maxHeight:920, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
+    <div style={{ position:"relative", height:"calc(100vh - 130px)", minHeight:560, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
       {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
       {slide.video && !videoFailed ? (
         <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
@@ -1665,8 +1694,8 @@ const HOME_CATEGORIES = ["All","Action","Adventure","FPS","Racing","Platformer",
 function CategoryFilterBar({ onTabChange }) {
   const [active, setActive] = useState("All");
   return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, padding:"20px 32px", background:"rgba(26,7,55,0.77)" }}>
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:24, padding:"20px 32px", background:"rgba(26,7,55,0.77)" }}>
+      <div style={{ display:"flex", flex:1, justifyContent:"space-between", flexWrap:"wrap" }}>
         {HOME_CATEGORIES.map(cat=>(
           <button key={cat} onClick={()=>{ setActive(cat); onTabChange("games"); }}
             style={{ padding:"7px 16px", borderRadius:999, border:"none", cursor:"pointer", fontSize:13.5, fontWeight:500, fontFamily:T.fontBody,
@@ -1691,20 +1720,21 @@ function mockRating(title) {
 }
 
 // ── HomeGameCard — full-bleed portrait cover, gradient title block, genre pill + rating, like toggle. ──
-function HomeGameCard({ title, imageUrl, imagePosition, genre, onSelect }) {
-  const [liked, setLiked] = useState(false);
+function HomeGameCard({ title, gameId, imageUrl, imagePosition, genre, onSelect }) {
+  const [liked, toggleLiked] = useIsFavorite(gameId);
   return (
     <div onClick={onSelect} role="button" tabIndex={0} onKeyDown={e=>(e.key==="Enter"||e.key===" ")&&onSelect()}
       style={{ position:"relative", borderRadius:16, overflow:"hidden", cursor:"pointer", aspectRatio:"259/353", background:coverGradient(title) }}>
       <img src={imageUrl} alt={title} style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:imagePosition||"center" }}
         onError={e=>{ e.currentTarget.style.display="none"; }}/>
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(180deg, rgba(38,38,38,0.1) 0%, rgba(38,38,38,0.39) 49%, rgba(0,0,0,0.75) 100%)" }}/>
-      <button onClick={e=>{ e.stopPropagation(); setLiked(v=>!v); }} aria-label="Like"
+      {/* Light bottom-only scrim for text legibility — no full-cover dark holo; covers stay vibrant, like Figma. */}
+      <div style={{ position:"absolute", left:0, right:0, bottom:0, height:"55%", background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.75) 100%)" }}/>
+      <button onClick={e=>{ e.stopPropagation(); toggleLiked(); }} aria-label="Like"
         style={{ position:"absolute", top:12, right:12, width:32, height:32, borderRadius:16, background:"rgba(0,0,0,0.35)", border:"1px solid rgba(255,255,255,0.14)", color:liked?T.brandLight:"#fff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>
         {liked ? "♥" : "♡"}
       </button>
       <div style={{ position:"absolute", left:0, right:0, bottom:0, padding:16 }}>
-        <div style={{ fontSize:22, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{title}</div>
+        <div style={{ fontSize:28, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{title}</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <span style={{ padding:"5px 14px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:12, fontWeight:500 }}>{genre}</span>
           <span style={{ fontSize:12, fontWeight:600, color:"#ffffa6" }}>★ {mockRating(title)}</span>
@@ -1718,7 +1748,7 @@ function HomeGameGrid({ items, onSelectGame, onTabChange }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:14 }}>
       {items.map(item=>(
-        <HomeGameCard key={item.title} title={item.title} imageUrl={item.imageUrl} imagePosition={item.imagePosition}
+        <HomeGameCard key={item.title} title={item.title} gameId={item.game?.gameId} imageUrl={item.imageUrl} imagePosition={item.imagePosition}
           genre={Array.isArray(item.genre) ? item.genre[0] : item.genre}
           onSelect={()=>item.game && onSelectGame ? onSelectGame(item.game) : onTabChange("games")}/>
       ))}
@@ -1797,7 +1827,7 @@ function HomePage({ games, onSelectGame, onTabChange, onSelectStudio }) {
       <div style={{ padding:"8px 32px 0", marginBottom:32 }}>
         <SectionHeader title="Events" onMore={()=>onTabChange("events")} moreLabel="See more"/>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:14 }}>
-          {nextEvents.map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true} thumbSize={247}/>)}
+          {nextEvents.map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true} thumbSize={168}/>)}
         </div>
       </div>
 
@@ -2460,19 +2490,15 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
   }, []);
 
-  // ── Favorites (localStorage) — unchanged CDN logic ────────────────────────
-  const [favorites, setFavorites] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("rload-favorites")||"[]")); }
-    catch { return new Set(); }
-  });
-  const toggleFavorite = (gameId) => {
-    setFavorites(prev => {
-      const next = new Set(prev);
-      next.has(gameId) ? next.delete(gameId) : next.add(gameId);
-      localStorage.setItem("rload-favorites", JSON.stringify([...next]));
-      return next;
-    });
-  };
+  // ── Favorites (shared FAVORITES_KEY/EVENT — same source hearts on Home/Games grid use,
+  // so liking a game anywhere shows up here and vice versa) ────────────────────────
+  const [favorites, setFavorites] = useState(getFavoriteIds);
+  useEffect(() => {
+    const onChange = () => setFavorites(getFavoriteIds());
+    window.addEventListener(FAVORITES_EVENT, onChange);
+    return () => window.removeEventListener(FAVORITES_EVENT, onChange);
+  }, []);
+  const toggleFavorite = (gameId) => setFavorites(toggleFavoriteId(gameId));
 
   // ── Playtime tracking — unchanged CDN logic ───────────────────────────────
   const [weeklyMins, setWeeklyMins] = useState(() =>
@@ -3865,7 +3891,7 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
   const [displayMode, setDisplayMode] = useState("dark");
   // Hooks must run unconditionally on every render — declared before the sub-page early returns below.
   const [profileFavorites] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("rload-favorites")||"[]")); }
+    try { return getFavoriteIds(); }
     catch { return new Set(); }
   });
   const INSTALLED_SET = new Set([UI.INSTALLED,UI.RUNNING,UI.UPDATE_AVAILABLE,UI.INSTALLED_NO_EXE]);
