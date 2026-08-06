@@ -957,128 +957,6 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GameDetailPanel — right panel
-// ─────────────────────────────────────────────────────────────────────────────
-function GameDetailPanel({ game, dl, uiState, resolvedExe, installedVersion, error, busy, hasAccess, onInstall, onUpdate, onPause, onResume, onCancel, onPlay, onUninstall, onClose, onRefreshAccess }) {
-  const pct      = clamp(dl?.percent??0, 0, 100);
-  const [refreshing, setRefreshing] = useState(false);
-  async function doRefresh() {
-    if (refreshing || !onRefreshAccess) return;
-    setRefreshing(true);
-    try { await onRefreshAccess(); } finally { setRefreshing(false); }
-  }
-  const hasUrl   = !!(game.downloadUrl||game.url);
-  const bytesDown  = Number.isFinite(dl?.bytesDownloaded) ? dl.bytesDownloaded : 0;
-  const bytesTotal = Number.isFinite(dl?.totalBytes)      ? dl.totalBytes      : 0;
-  const showInstall = [UI.IDLE,UI.CANCELED,UI.ERROR].includes(uiState);
-  const showPause   = uiState===UI.DOWNLOADING;
-  const showResume  = uiState===UI.PAUSED;
-  const showCancel  = [UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING].includes(uiState);
-  const showUpdate  = uiState===UI.UPDATE_AVAILABLE;
-  const showPlay    = uiState===UI.INSTALLED && !!resolvedExe;
-  const showNoExe   = uiState===UI.INSTALLED_NO_EXE || (uiState===UI.INSTALLED && !resolvedExe);
-  const showRunning = uiState===UI.RUNNING;
-  const isXfer      = [UI.DOWNLOADING,UI.INSTALLING,UI.UPDATING].includes(uiState);
-  const badge = getStateBadge(uiState);
-
-  return (
-    <div style={{ width:340, flexShrink:0, background:T.bgDeep, borderLeft:`1px solid ${T.border}`, display:"flex", flexDirection:"column", overflowY:"auto", fontFamily:T.fontBody, scrollBehavior:"smooth" }}>
-      {/* Header */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 16px 11px", borderBottom:`1px solid ${T.border}`, flexShrink:0 }}>
-        <div style={{ fontSize:12, fontWeight:600, color:T.textMuted }}>{game.studio||"Unknown Studio"}</div>
-        <button onClick={onClose} style={{ background:"rgba(255,255,255,0.06)", border:`1px solid ${T.border}`, color:T.textMuted, borderRadius:T.radiusSm, padding:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center" }}>
-          <Icon.Close/>
-        </button>
-      </div>
-      {/* Cover banner */}
-      <div style={{ position:"relative", width:"100%", paddingTop:"56.25%", overflow:"hidden", background:"#0a0914", flexShrink:0 }}>
-        <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt={game.title} style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }}
-          onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
-        <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"55%", background:"linear-gradient(to top, rgba(14,12,31,0.95) 0%, transparent 100%)", pointerEvents:"none" }}/>
-        {badge && (
-          <div style={{ position:"absolute", top:10, right:10, padding:"3px 10px", borderRadius:T.radiusPill, fontSize:9.5, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", color:badge.color, background:badge.bg, border:`1px solid ${badge.border}`, backdropFilter:"blur(8px)" }}>{badge.label}</div>
-        )}
-      </div>
-      {/* Body */}
-      <div style={{ padding:"16px 18px 28px", flex:1 }}>
-        <div style={{ fontSize:19, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.3px", lineHeight:1.2, marginBottom:6 }}>{game.title||game.gameId}</div>
-        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:12 }}>
-          <span style={{ fontSize:10.5, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, color:T.textMuted }}>
-            {uiState===UI.UPDATE_AVAILABLE&&installedVersion ? `v${installedVersion} → v${game.version}` : `v${game.version}`}
-          </span>
-          {game.downloadSize && (
-            <span style={{ fontSize:10.5, padding:"2px 9px", borderRadius:T.radiusPill, background:"rgba(255,255,255,0.04)", border:`1px solid ${T.border}`, color:T.textMuted }}>{humanBytes(game.downloadSize)}</span>
-          )}
-        </div>
-        {game.tags?.length>0 && (
-          <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginBottom:12 }}>
-            {game.tags.map(tag=>(
-              <span key={tag} style={{ fontSize:9.5, padding:"2px 8px", borderRadius:T.radiusPill, background:"rgba(128,74,240,0.12)", border:"1px solid rgba(128,74,240,0.22)", color:T.brandLight, fontWeight:500 }}>{tag}</span>
-            ))}
-          </div>
-        )}
-        {game.description && (
-          <div style={{ fontSize:12.5, color:T.textSub, lineHeight:1.65, marginBottom:16 }}>{game.description}</div>
-        )}
-        {/* Progress */}
-        {isXfer && (
-          <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:11.5, color:T.textMuted, marginBottom:6 }}>
-              {(uiState===UI.INSTALLING||uiState===UI.UPDATING)&&pct>=100
-                ? (uiState===UI.UPDATING ? "Extracting update…" : "Extracting…")
-                : uiState===UI.UPDATING
-                ? `Updating… ${pct}% — ${humanBytes(bytesDown)} / ${humanBytes(bytesTotal)}`
-                : `Downloading… ${pct}% — ${humanBytes(bytesDown)} / ${humanBytes(bytesTotal)}`}
-            </div>
-            <div style={{ height:5, borderRadius:999, background:"rgba(255,255,255,0.07)", overflow:"hidden" }}>
-              <div style={{ height:"100%", width:`${pct}%`, background:T.brandGrad, borderRadius:999, transition:"width 0.25s ease" }}/>
-            </div>
-          </div>
-        )}
-        {uiState===UI.PAUSED && <div style={{ fontSize:12, color:T.orange, marginBottom:14 }}>Paused — {pct}% downloaded</div>}
-        {!!error && <div style={{ fontSize:12, color:T.red, marginBottom:12, lineHeight:1.5, padding:"8px 12px", background:T.redBg, borderRadius:T.radiusSm, border:`1px solid ${T.redBorder}` }}>{uiState===UI.ERROR?"Error: ":""}{toErrStr(error)||"unknown"}</div>}
-        {showNoExe && <div style={{ fontSize:12, color:T.orange, marginBottom:12, lineHeight:1.5, padding:"8px 12px", background:T.orangeBg, borderRadius:T.radiusSm, border:`1px solid ${T.orangeBorder}` }}>Installed — no executable found. Uninstall and reinstall to retry.</div>}
-        {showRunning && <div style={{ fontSize:12.5, color:T.green, fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:6 }}><span style={{ width:8, height:8, borderRadius:"50%", background:T.green, display:"inline-block" }}/> Running</div>}
-        {showUpdate && <div style={{ fontSize:12, color:T.blue2Light, fontWeight:500, marginBottom:12, padding:"8px 12px", background:T.blue2Bg, borderRadius:T.radiusSm, border:`1px solid ${T.blue2Border}` }}>Update available — v{installedVersion} → v{game.version}</div>}
-        {showInstall&&!hasUrl && <div style={{ fontSize:12, color:T.orange, marginBottom:12 }}>No download URL configured.</div>}
-        {/* Actions */}
-        <div style={{ display:"flex", flexDirection:"column", gap:7, marginTop:4 }}>
-          {!hasAccess && (showPlay || showInstall || showUpdate) && (
-            <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
-              Subscribe to Play
-            </button>
-          )}
-          {showPlay && hasAccess && (
-            <button onClick={onPlay} disabled={busy} style={{ padding:"12px 16px", borderRadius:T.radius, fontWeight:700, fontSize:14.5, border:"none", background:T.brandGrad, color:"#fff", cursor:busy?"not-allowed":"pointer", boxShadow:T.brandGlow, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
-              <Icon.Play/> Play Now
-            </button>
-          )}
-          {showInstall && hasAccess && (
-            <button onClick={onInstall} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.borderBrand}`, background:"rgba(128,74,240,0.12)", color:T.text, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
-              <Icon.Download/> Install Game
-            </button>
-          )}
-          {showUpdate && hasAccess && (
-            <button onClick={onUpdate} disabled={busy||!hasUrl} style={{ padding:"10px 16px", borderRadius:T.radius, fontWeight:600, fontSize:13.5, border:`1px solid ${T.blue2Border}`, background:T.blue2Bg, color:T.blue2Light, cursor:(busy||!hasUrl)?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:T.fontBody }}>
-              <Icon.Update/> Update
-            </button>
-          )}
-          {showPause && <button onClick={onPause} disabled={busy} style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:T.bgCard, color:T.textSub, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody }}>Pause Download</button>}
-          {showResume && <button onClick={onResume} disabled={busy} style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:T.bgCard, color:T.textSub, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody }}>Resume</button>}
-          {showCancel && <button onClick={onCancel} disabled={busy} style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:T.bgCard, color:T.textMuted, cursor:"pointer", fontSize:12.5, fontFamily:T.fontBody }}>Cancel</button>}
-          {showRunning && <button disabled style={{ padding:"8px 16px", borderRadius:T.radius, border:`1px solid ${T.border}`, background:"rgba(255,255,255,0.02)", color:T.textMuted, cursor:"not-allowed", fontSize:12.5, opacity:0.5, fontFamily:T.fontBody }}>Game Running…</button>}
-          {[UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR].includes(uiState) && (
-            <button onClick={onUninstall} disabled={busy} style={{ marginTop:2, padding:"7px 16px", borderRadius:T.radius, border:"1px solid rgba(248,113,113,0.18)", background:"rgba(248,113,113,0.05)", color:"rgba(248,113,113,0.65)", cursor:busy?"not-allowed":"pointer", fontSize:11.5, fontFamily:T.fontBody }}>
-              Uninstall
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // SmallCoverCard — compact portrait for Home grids
 // ─────────────────────────────────────────────────────────────────────────────
 function SmallCoverCard({ game, uiState, onSelect }) {
@@ -2600,7 +2478,6 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     return searchBase; // "all"
   };
   const gridGames    = getGridGames();
-  const selectedGame = selectedGameId ? games.find(g=>g.gameId===selectedGameId) : null;
 
   // Placeholder slots — visual padding when real library is small (all view only)
   const placeholderSlots = (sidebarView==="all" && !search)
@@ -2834,7 +2711,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
                 </div>
               ) : (
                 <div style={{ display:"grid",
-                  gridTemplateColumns:selectedGame?"repeat(auto-fill,minmax(138px,1fr))":"repeat(auto-fill,minmax(155px,1fr))",
+                  gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",
                   gap:14 }}>
                   {/* Real CDN games — fully functional */}
                   {gridGames.map(g=>(
@@ -2874,11 +2751,6 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
 
           </div>
         </div>
-
-        {/* ── Game detail panel — CDN logic unchanged ───────────────── */}
-        {selectedGame && gameDetailProps && (
-          <GameDetailPanel game={selectedGame} {...gameDetailProps} onClose={()=>onSelectGame(null)}/>
-        )}
       </div>
     </div>
   );
