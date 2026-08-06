@@ -1613,7 +1613,7 @@ const HERO_SLIDES = [
     description:"Below Decks is an Unreal Engine game available on Rload." },
 ];
 
-function HeroCarousel({ games, onSelectGame, onTabChange }) {
+function HeroCarousel({ games, onSelectGame, onTabChange, height }) {
   const [index, setIndex] = useState(0);
   const [videoFailed, setVideoFailed] = useState(false);
   const slide = HERO_SLIDES[index];
@@ -1624,7 +1624,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
   };
 
   return (
-    <div style={{ position:"relative", height:"calc(100vh - 130px)", minHeight:560, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
+    <div style={{ position:"relative", height:height||"calc(100vh - 130px)", minHeight:height?undefined:560, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
       {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
       {slide.video && !videoFailed ? (
         <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
@@ -1685,6 +1685,36 @@ function HeroCarousel({ games, onSelectGame, onTabChange }) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+// "In my library" — Figma pairs the Games-page hero with a sidebar list of the
+// player's own installed games. Real data only (uiByGame-filtered `games`, passed
+// in by the caller) — no placeholder titles.
+function InMyLibraryWidget({ games, onSelectGame }) {
+  return (
+    <div style={{ flex:"0 0 280px", background:"rgba(128,74,240,0.14)", border:`1px solid ${T.borderBrand}`,
+      borderRadius:T.radiusLg, padding:"22px 20px", display:"flex", flexDirection:"column", gap:16, overflowY:"auto" }}
+      className="hide-scrollbar">
+      <div style={{ fontSize:19, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>In my library</div>
+      {games.length===0 && <div style={{ fontSize:12.5, color:T.textMuted }}>No games installed yet.</div>}
+      {games.slice(0,6).map(g=>(
+        <div key={g.gameId} onClick={()=>onSelectGame(g)} role="button" tabIndex={0}
+          style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
+          <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
+            style={{ width:44, height:44, borderRadius:10, objectFit:"cover", flexShrink:0, background:"#0a0914" }}
+            onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontSize:14.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.title||g.gameId}</div>
+            <div style={{ display:"flex", gap:6, marginTop:3 }}>
+              {(g.genres||g.tags||[]).slice(0,2).map(tag=>(
+                <span key={tag} style={{ fontSize:10.5, padding:"2px 8px", borderRadius:999, background:"rgba(255,255,255,0.08)", color:T.textMuted }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -2626,6 +2656,19 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
           <SidebarNavItem icon="🟢" label="Status"   active={false} disabled={true} onClick={()=>{}}/>
         </div>
 
+        {/* Upgrade widget — same destination as Home's UpgradeBanner/CTA, no subscription
+            check here (that banner is shown unconditionally elsewhere in the app too). */}
+        <div style={{ margin:"16px 12px", padding:"20px 16px", borderRadius:16, flexShrink:0,
+          background:"linear-gradient(163deg, rgba(124,92,252,1) 0%, rgba(88,46,214,1) 100%)",
+          display:"flex", flexDirection:"column", alignItems:"center", gap:12, textAlign:"center" }}>
+          <span style={{ fontSize:22 }}>👑</span>
+          <div style={{ fontSize:15, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1.2 }}>Upgrade your plan</div>
+          <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")}
+            style={{ padding:"8px 20px", borderRadius:999, background:"rgba(255,255,255,0.16)", border:"1px solid rgba(255,255,255,0.3)", color:"#fff", fontSize:12.5, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
+            See now
+          </button>
+        </div>
+
         {/* Version footer */}
         <div style={{ padding:"12px 14px 16px", flexShrink:0,
           borderTop:"1px solid rgba(255,255,255,0.06)",
@@ -2672,6 +2715,19 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
           {/* ── Scrollable body ───────────────────────────────────────── */}
           <div style={{ flex:1, overflowY:"auto", scrollBehavior:"smooth" }}
             className="hide-scrollbar">
+
+            {/* ═══════════════════════════════════════════════════════
+                Figma hero — same featured HeroCarousel as Home, paired with a
+                real "In my library" list (installed games only, no placeholders).
+            ═══════════════════════════════════════════════════════ */}
+            {sidebarView==="all" && !search && (
+              <div style={{ padding:"20px 22px 0", display:"flex", gap:20, alignItems:"stretch" }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange} height={420}/>
+                </div>
+                <InMyLibraryWidget games={installed} onSelectGame={onSelectGame}/>
+              </div>
+            )}
 
             {/* ═══════════════════════════════════════════════════════
                 SECTION 1 — CONTINUE PLAYING (all / recent views)
