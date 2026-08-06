@@ -1444,16 +1444,6 @@ function HeroPlayButton({ onClick }) {
   );
 }
 
-// Studio Spotlight — one real studio, one real (unreleased) game. Right side is a small
-// overlapping collage of actual Kakudo screenshots rather than a single flat background.
-// Bolds «Quoted Titles» within a bio paragraph — a "press kit" convention (game names as the
-// visual anchor points a reader's eye catches first), without hardcoding JSX into the data.
-function renderStudioBio(text) {
-  return text.split(/(«[^»]+»)/g).map((part, i) =>
-    part.startsWith("«") ? <strong key={i} style={{ color:T.text, fontWeight:700 }}>{part}</strong> : part
-  );
-}
-
 // "Studios à la une" — Figma pairs the spotlight card with a sidebar list of
 // featured studios. Only REAL_STUDIOS (studios the catalog actually names) go
 // in it — never padded with STUDIOS' placeholder roster, since this sidebar
@@ -1462,18 +1452,20 @@ function FeaturedStudiosSidebar({ onSelectStudio }) {
   return (
     <div style={{ flex:"0 0 300px", display:"flex", gap:24 }}>
       <div style={{ width:3, borderRadius:999, background:T.brand, flexShrink:0 }}/>
-      <div style={{ display:"flex", flexDirection:"column", gap:20, paddingTop:2 }}>
-        <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.3px" }}>Studios à la une</div>
-        {REAL_STUDIOS.map(s=>(
-          <div key={s.id} onClick={()=>onSelectStudio?.(s.id)} role="button" tabIndex={0}
-            style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
-            <StudioLogo initial={s.initial} size={44} fontSize={16}/>
-            <div style={{ minWidth:0 }}>
-              <div style={{ fontSize:15, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
-              <div style={{ fontSize:12.5, color:T.textMuted }}>{s.games} jeu{s.games>1?"x":""} sur Rload</div>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", gap:32 }}>
+        <div style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.4px" }}>Studios à la une</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:26 }}>
+          {REAL_STUDIOS.map(s=>(
+            <div key={s.id} onClick={()=>onSelectStudio?.(s.id)} role="button" tabIndex={0}
+              style={{ display:"flex", alignItems:"center", gap:14, cursor:"pointer" }}>
+              <StudioLogo initial={s.initial} size={52} fontSize={19}/>
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontSize:19, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
+                <div style={{ fontSize:14, color:T.textMuted, marginTop:2 }}>{s.games} jeu{s.games>1?"x":""} sur Rload</div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1484,89 +1476,48 @@ function StudioSpotlight({ games, onSelectGame, onTabChange, onSelectStudio }) {
   const openKakudo = () => kakudoGame ? onSelectGame(kakudoGame) : onTabChange("games");
   return (
     <div style={{ padding:"0 32px", marginBottom:32, display:"flex", gap:32, alignItems:"stretch" }}>
+      {/* Single full-bleed image, bottom overlay bar — matches Figma's studio card exactly.
+          No floating collage/screenshot squares (removed per direct request). */}
       <div style={{ position:"relative", borderRadius:T.radiusLg, overflow:"hidden", minHeight:400, flex:1,
-        border:`1px solid ${T.borderBrand}`, display:"flex", background:T.bgDeep }}>
+        border:`1px solid ${T.borderBrand}`, cursor:"pointer" }} onClick={openKakudo}>
         <img src={KAKUDO_SPOTLIGHT.bgImage} alt=""
-          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", opacity:0.55 }}
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 35%" }}
           onError={e=>e.currentTarget.style.display="none"}/>
-        {/* Masking overlay kept light (~15%) so the real screenshot reads through, not a flat violet block */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg, rgba(20,16,42,0.55) 0%, rgba(20,16,42,0.30) 45%, rgba(20,16,42,0.15) 100%)" }}/>
-        {/* Faint violet halo behind the CTA zone */}
-        <div style={{ position:"absolute", left:-60, bottom:-100, width:380, height:380, borderRadius:"50%",
-          background:"radial-gradient(circle, rgba(128,74,240,0.28) 0%, transparent 70%)", pointerEvents:"none" }}/>
-
-        {/* Left — studio text. Light: identity + bio + CTA, nothing else (no genre/category chips). */}
-        <div style={{ position:"relative", flex:"0 0 62%", padding:"32px 40px 32px 40px", display:"flex", flexDirection:"column", justifyContent:"center" }}>
-          <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight, marginBottom:12, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
-            Studio Spotlight
-          </div>
-          <div style={{ fontSize:30, fontWeight:800, color:T.text, fontFamily:T.fontHead, marginBottom:8, letterSpacing:"-0.3px", textShadow:"0 2px 16px rgba(0,0,0,0.65)" }}>
-            {KAKUDO_SPOTLIGHT.studio}
-          </div>
-          <div style={{ fontSize:14, color:"rgba(255,255,255,0.9)", fontWeight:600, marginBottom:14, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>
-            Meet the team behind Kakudo.
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:20 }}>
-            {KAKUDO_SPOTLIGHT.bioParagraphs.map((p,i)=>(
-              <div key={i} style={{ fontSize:15.5, fontWeight:500, color:"rgba(255,255,255,0.86)", lineHeight:1.65, maxWidth:900, textShadow:"0 1px 10px rgba(0,0,0,0.55)" }}>
-                {renderStudioBio(p)}
-              </div>
-            ))}
-          </div>
-          <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:22 }}>
-            {KAKUDO_SPOTLIGHT.stats.map(s=>(
-              <span key={s} style={{ fontSize:11, padding:"5px 12px", borderRadius:T.radiusPill,
-                background:"rgba(20,16,42,0.55)", border:"1px solid rgba(255,255,255,0.16)", color:T.textMuted, backdropFilter:"blur(6px)" }}>
-                {s}
-              </span>
-            ))}
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:22 }}>
-            <button onClick={()=>onTabChange("studios")}
-              style={{ padding:"11px 24px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
-                border:"none", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody, transition:T.transitionBase }}>
-              Explore Bad Weather Studios
-            </button>
-            <button onClick={openKakudo}
-              style={{ padding:0, background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:12.5,
-                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
-              <Icon.Play/> Play Kakudo
-            </button>
-          </div>
+        <div style={{ position:"absolute", top:16, left:16, fontSize:10.5, fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:T.brandLight, textShadow:"0 2px 12px rgba(0,0,0,0.7)" }}>
+          Studio Spotlight
         </div>
-
-        {/* Right — overlapping collage of real Kakudo screenshots, 16:9 and ~1.3x bigger than the
-            first pass. Interactive: hover straightens + enlarges + brings to front, no click needed. */}
-        <div style={{ position:"relative", flex:"0 0 38%" }}>
-          <KakudoCollage images={KAKUDO_SPOTLIGHT.collage}
-            imgW={260} imgH={146} tilts={[-4,3,-2]} rights={[10,50,90]} tops={[50,150,250]}/>
+        <div style={{ position:"absolute", left:16, right:16, bottom:16, padding:"20px 24px", borderRadius:T.radius,
+          background:"rgba(20,16,42,0.72)", backdropFilter:"blur(10px)" }} onClick={e=>e.stopPropagation()}>
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:16, marginBottom:10 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0 }}>
+              <StudioLogo initial="B" size={44} fontSize={16}/>
+              <div style={{ fontSize:26, fontWeight:700, color:T.text, fontFamily:T.fontHead, letterSpacing:"-0.3px" }}>
+                {KAKUDO_SPOTLIGHT.studio}
+              </div>
+            </div>
+            <button onClick={()=>onTabChange("studios")}
+              style={{ flexShrink:0, padding:"9px 20px", borderRadius:T.radiusPill, background:T.brandGrad, color:"#fff",
+                border:"none", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:T.fontBody }}>
+              + Suivre
+            </button>
+          </div>
+          <div style={{ fontSize:13, color:T.textMuted, marginBottom:8 }}>
+            {KAKUDO_SPOTLIGHT.stats.join(" · ")}
+          </div>
+          <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:16 }}>
+            <div style={{ fontSize:14.5, color:"rgba(255,255,255,0.85)", lineHeight:1.5, maxWidth:640 }}>
+              Meet the team behind Kakudo.
+            </div>
+            <button onClick={()=>onTabChange("studios")}
+              style={{ flexShrink:0, padding:0, background:"none", border:"none", color:T.brandLight, fontSize:13,
+                fontWeight:600, cursor:"pointer", fontFamily:T.fontBody, display:"flex", alignItems:"center", gap:6 }}>
+              Voir le studio <Icon.ArrowRight/>
+            </button>
+          </div>
         </div>
       </div>
       <FeaturedStudiosSidebar onSelectStudio={onSelectStudio}/>
     </div>
-  );
-}
-
-// Hover: straighten to 0deg, scale up slightly, and jump in front of its siblings — no click needed.
-function KakudoCollage({ images, imgW=190, imgH=120, tilts=[-5,4,-3], rights=[130,70,10], tops=[70,70,70] }) {
-  const [hovIdx, setHovIdx] = useState(null);
-  return (
-    <>
-      {images.map((src, i)=>{
-        const isHov = hovIdx === i;
-        return (
-          <img key={src} src={src} alt="" onMouseEnter={()=>setHovIdx(i)} onMouseLeave={()=>setHovIdx(null)}
-            style={{ position:"absolute", width:imgW, height:imgH, objectFit:"cover", clipPath:cutCorner(14),
-              boxShadow: isHov ? "0 16px 40px rgba(0,0,0,0.55)" : T.shadowHoverLg,
-              border:"1px solid rgba(255,255,255,0.16)", cursor:"pointer",
-              right: rights[i], top: tops[i],
-              zIndex: isHov ? 10 : i,
-              transform: isHov ? "rotate(0deg) scale(1.08)" : `rotate(${tilts[i]}deg) scale(1)`,
-              transition:"transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease-out" }}
-            onError={e=>{ e.currentTarget.style.display="none"; }}/>
-        );
-      })}
-    </>
   );
 }
 
@@ -1811,7 +1762,7 @@ function HomePage({ games, onSelectGame, onTabChange, onSelectStudio }) {
   // Mode) is 2 rows of 5 (10 cards) — with a 14-game catalog and this curation,
   // there are 9 candidates, so the second row renders 4 rather than inventing a
   // 10th.
-  const featuredIds = new Set(["jelly-drift","below-decks", KAKUDO_SPOTLIGHT.gameId]);
+  const featuredIds = new Set(["jelly-drift", KAKUDO_SPOTLIGHT.gameId]);
   const weakCoverIds = new Set(["ums-quest","balls"]);
   const remainingGames = games.filter(g=>!featuredIds.has(g.gameId) && !weakCoverIds.has(g.gameId));
   const gamesRow     = remainingGames.slice(0,10).map((g,i)=>gameToRankedItem(g,i+1));
@@ -1842,10 +1793,10 @@ function HomePage({ games, onSelectGame, onTabChange, onSelectStudio }) {
         <HomeGameGrid items={communityRow} onSelectGame={onSelectGame} onTabChange={onTabChange}/>
       </div>
 
-      {/* ── Events — Figma: violet band background, no subtitle, "See more" — 2 max on Home; the rest lives on the Events tab ── */}
-      <div style={{ padding:"32px", marginBottom:32, background:"linear-gradient(90deg, #4306a6 0%, #33077e 100%)" }}>
+      {/* ── Events — same page background as the rest of Home (no special band), no subtitle, "See more" — 2 max on Home; the rest lives on the Events tab ── */}
+      <div style={{ padding:"8px 32px 0", marginBottom:32 }}>
         <SectionHeader title="Events" onMore={()=>onTabChange("events")} moreLabel="See more"/>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:20 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:14 }}>
           {nextEvents.map(ev=><EventCard key={ev.id} ev={ev} showThumbnail={true} thumbSize={247}/>)}
         </div>
       </div>
