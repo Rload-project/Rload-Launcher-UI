@@ -256,6 +256,7 @@ const Icon = {
   ArrowRight:  () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>),
   ChevronRight:() => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>),
   ChevronLeft: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>),
+  ChevronDown: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>),
   // Inline / decorative — 14px (used inside text-flow)
   Calendar: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>),
   Star:     () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>),
@@ -1491,8 +1492,8 @@ const HERO_SLIDES = [
     description:"Below Decks is an Unreal Engine game available on Rload." },
 ];
 
-function HeroCarousel({ games, onSelectGame, onTabChange, height }) {
-  const [index, setIndex] = useState(0);
+function HeroCarousel({ games, onSelectGame, onTabChange, height, initialIndex=0 }) {
+  const [index, setIndex] = useState(initialIndex);
   const [videoFailed, setVideoFailed] = useState(false);
   const slide = HERO_SLIDES[index];
   const go = (i) => { setIndex((i + HERO_SLIDES.length) % HERO_SLIDES.length); setVideoFailed(false); };
@@ -1571,28 +1572,40 @@ function HeroCarousel({ games, onSelectGame, onTabChange, height }) {
 // player's own installed games. Real data only (uiByGame-filtered `games`, passed
 // in by the caller) — no placeholder titles.
 function InMyLibraryWidget({ games, onSelectGame }) {
+  const listRef = useRef(null);
+  const scrollBy = (dy) => listRef.current?.scrollBy({ top: dy, behavior: "smooth" });
   return (
-    <div style={{ flex:"0 0 280px", background:"rgba(128,74,240,0.14)", border:`1px solid ${T.borderBrand}`,
-      borderRadius:T.radiusLg, padding:"22px 20px", display:"flex", flexDirection:"column", gap:16, overflowY:"auto" }}
-      className="hide-scrollbar">
+    <div style={{ position:"relative", flex:"0 0 280px", background:"rgba(128,74,240,0.14)", border:`1px solid ${T.borderBrand}`,
+      borderRadius:T.radiusLg, padding:"22px 20px", display:"flex", flexDirection:"column", gap:16, overflow:"hidden" }}>
       <div style={{ fontSize:19, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>In my library</div>
       {games.length===0 && <div style={{ fontSize:12.5, color:T.textMuted }}>No games installed yet.</div>}
-      {games.slice(0,6).map(g=>(
-        <div key={g.gameId} onClick={()=>onSelectGame(g)} role="button" tabIndex={0}
-          style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
-          <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
-            style={{ width:44, height:44, borderRadius:10, objectFit:"cover", flexShrink:0, background:"#0a0914" }}
-            onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontSize:14.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.title||g.gameId}</div>
-            <div style={{ display:"flex", gap:6, marginTop:3 }}>
-              {(g.genres||g.tags||[]).slice(0,2).map(tag=>(
-                <span key={tag} style={{ fontSize:10.5, padding:"2px 8px", borderRadius:999, background:"rgba(255,255,255,0.08)", color:T.textMuted }}>{tag}</span>
-              ))}
+      <div ref={listRef} style={{ display:"flex", flexDirection:"column", gap:16, overflowY:"auto" }} className="hide-scrollbar">
+        {games.map(g=>(
+          <div key={g.gameId} onClick={()=>onSelectGame(g)} role="button" tabIndex={0}
+            style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", flexShrink:0 }}>
+            <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
+              style={{ width:44, height:44, borderRadius:10, objectFit:"cover", flexShrink:0, background:"#0a0914" }}
+              onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:14.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.title||g.gameId}</div>
+              <div style={{ display:"flex", gap:6, marginTop:3 }}>
+                {(g.genres||g.tags||[]).slice(0,2).map(tag=>(
+                  <span key={tag} style={{ fontSize:10.5, padding:"2px 8px", borderRadius:999, background:"rgba(255,255,255,0.08)", color:T.textMuted }}>{tag}</span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      {/* Real library — scroll control shown only once there's more than fits, matching the reference. */}
+      {games.length>4 && (
+        <button onClick={()=>scrollBy(120)} aria-label="Scroll library down"
+          style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
+            width:28, height:28, borderRadius:14, background:T.brandGrad, border:"none", color:"#fff",
+            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:T.brandGlow }}>
+          <Icon.ChevronDown/>
+        </button>
+      )}
     </div>
   );
 }
@@ -2493,18 +2506,13 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     : sidebarView==="queue"      ? "Download Queue"
     : "Games";
 
-  // ── Featured: prefer real CDN games, pad with FEATURED_PLACEHOLDERS ─────
-  const featuredReal = realGames.slice(0, 3);
-  const featuredPad  = FEATURED_PLACEHOLDERS.slice(0, Math.max(0, 3 - featuredReal.length));
-  const featuredCards = [...featuredReal, ...featuredPad];
-
   return (
     <div style={{ display:"flex", flex:1, overflow:"hidden", fontFamily:T.fontBody }}>
 
       {/* ── LEFT SIDEBAR — floating frosted-glass panel, Apple TV-inspired, Rload identity ─── */}
       <div style={{ width:240, flexShrink:0, display:"flex", flexDirection:"column",
         margin:"20px 0 20px 20px", borderRadius:22,
-        background:"rgba(20,20,22,0.78)", backdropFilter:"blur(22px)", WebkitBackdropFilter:"blur(22px)",
+        background:"linear-gradient(180deg, rgba(88,46,214,0.28) 0%, rgba(35,20,66,0.85) 100%)", backdropFilter:"blur(22px)", WebkitBackdropFilter:"blur(22px)",
         border:"1px solid rgba(255,255,255,0.06)",
         boxShadow:"0 8px 32px rgba(0,0,0,0.35)",
         overflowY:"auto", overflowX:"hidden" }} className="hide-scrollbar">
@@ -2600,7 +2608,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
             {sidebarView==="all" && !search && (
               <div style={{ padding:"20px 22px 0", display:"flex", gap:20, alignItems:"stretch" }}>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange} height={420}/>
+                  <HeroCarousel games={games} onSelectGame={onSelectGame} onTabChange={onTabChange} height={420} initialIndex={1}/>
                 </div>
                 <InMyLibraryWidget games={installed} onSelectGame={onSelectGame}/>
               </div>
@@ -2646,24 +2654,6 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
             )}
 
             {/* ═══════════════════════════════════════════════════════
-                SECTION 3 — FEATURED ON RLOAD (bento grid, Image #5 style)
-                all view only, no search
-            ═══════════════════════════════════════════════════════ */}
-            {sidebarView==="all" && !search && (
-              <div style={{ padding:"22px 22px 0" }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                  marginBottom:14 }}>
-                  <SectionHeading title="Featured on Rload" noMargin/>
-                  <span style={{ fontSize:11, color:"rgba(128,74,240,0.7)", fontWeight:600,
-                    letterSpacing:"0.04em" }}>Handpicked</span>
-                </div>
-                <FeaturedBento
-                  cards={featuredCards.slice(0,3)}
-                  onSelect={g=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════
                 SECTION 3b — 3D CARD ROW (Image #4 style, all / recent)
                 Subtle perspective depth effect — one row only
             ═══════════════════════════════════════════════════════ */}
@@ -2692,7 +2682,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
               </div>
 
               {gamesLoading ? (
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))", gap:14 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))", gap:14 }}>
                   {[0,1,2,3,4,5,6,7].map(i=><SkeletonGameCard key={i}/>)}
                 </div>
               ) : sidebarView==="queue" ? (
@@ -2711,7 +2701,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
                 </div>
               ) : (
                 <div style={{ display:"grid",
-                  gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",
+                  gridTemplateColumns:"repeat(auto-fill,minmax(230px,1fr))",
                   gap:14 }}>
                   {/* Real CDN games — fully functional */}
                   {gridGames.map(g=>(

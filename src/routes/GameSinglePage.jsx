@@ -1050,7 +1050,7 @@ export function GameSinglePage({
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
       overflowY: "auto",
-      background: `linear-gradient(160deg, ${T.bgDeep} 0%, #0d0b1f 60%, #100e24 100%)`,
+      background: `linear-gradient(160deg, ${T.bgDeep} 0%, #241d4a 55%, #1c1640 100%)`,
       fontFamily: T.fontBody, color: T.text,
     }}>
 
