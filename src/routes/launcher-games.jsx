@@ -223,7 +223,7 @@ function gameToRankedItem(game, rank) {
     rank,
     game,
     title: game.title,
-    genre: game.tags?.length ? game.tags : [game.studio || "Game"],
+    genre: game.genres?.length ? game.genres : (game.tags?.length ? game.tags : [game.studio || "Game"]),
     studio: game.studio || "",
     imageUrl: LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png",
   };
@@ -256,6 +256,7 @@ const Icon = {
   ArrowRight:  () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>),
   ChevronRight:() => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>),
   ChevronLeft: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>),
+  ChevronUp:   () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 15 12 9 18 15"/></svg>),
   ChevronDown: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>),
   // Inline / decorative — 14px (used inside text-flow)
   Calendar: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>),
@@ -818,7 +819,7 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
   }, []);
   const navAvatar = navAvatarId ? findAvatar(navAvatarId) : null;
   return (
-    <div style={{ height:62, flexShrink:0, background:T.bgMid, borderBottom:`1px solid ${T.border}`, display:"flex", alignItems:"center", padding:"0 152px 0 24px", fontFamily:T.fontBody, position:"relative", zIndex:100, WebkitAppRegion:"drag" }}>
+    <div style={{ height:62, flexShrink:0, background:T.bgMid, borderBottom:`1px solid ${T.border}`, display:"flex", alignItems:"center", padding:"0 0 0 24px", fontFamily:T.fontBody, position:"relative", zIndex:100, WebkitAppRegion:"drag" }}>
       {/* Logo — white transparent SVG */}
       <div onClick={()=>onTab("home")} onMouseEnter={()=>setHov("logo")} onMouseLeave={()=>setHov(null)}
         style={{ cursor:"pointer", flexShrink:0, marginRight:28, userSelect:"none", display:"flex", alignItems:"center",
@@ -827,7 +828,8 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
           style={{ height:24, objectFit:"contain", filter:"brightness(0) invert(1)" }}/>
       </div>
       {/* Nav links */}
-      <div style={{ display:"flex", gap:4, flex:1, alignItems:"center", WebkitAppRegion:"no-drag" }}>
+      <div style={{ position:"absolute", left:"50%", top:"50%", transform:"translate(-50%, -50%)",
+        display:"flex", gap:4, alignItems:"center", WebkitAppRegion:"no-drag" }}>
         {NAV_ITEMS.map(({ id, label }) => {
           const active = tab === id;
           const isHov  = hov === id;
@@ -849,7 +851,7 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
         })}
       </div>
       {/* Right side */}
-      <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0, WebkitAppRegion:"no-drag" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0, marginLeft:"auto", WebkitAppRegion:"no-drag" }}>
         {!desktop && <div style={{ padding:"3px 9px", borderRadius:T.radiusPill, fontSize:9.5, background:"rgba(251,146,60,0.1)", border:`1px solid ${T.orangeBorder}`, color:T.orange }}>Desktop only</div>}
         {/* Bell */}
         <div onMouseEnter={()=>setHov("bell")} onMouseLeave={()=>setHov(null)}
@@ -870,6 +872,10 @@ function TopNavBar({ tab, onTab, user, updatesCount, catalogSource, desktop }) {
             userSelect:"none",
           }}>
           {navAvatar ? <img src={navAvatar.asset} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }}/> : initial}
+        </div>
+        <div style={{display:"flex",alignSelf:"stretch",marginLeft:6}}>
+          {[{label:"—",action:"minimize"},{label:"□",action:"toggleMaximize"},{label:"×",action:"close"}].map(item=><button key={item.action} onClick={()=>window.rload?.windowControls?.[item.action]?.()} aria-label={item.action}
+            style={{width:42,border:0,background:"transparent",color:"rgba(255,255,255,.72)",fontSize:item.action==="close"?22:16,cursor:"pointer",fontFamily:T.fontBody}}>{item.label}</button>)}
         </div>
       </div>
     </div>
@@ -1482,6 +1488,8 @@ function CommunityFavoriteCard({ item }) {
 const HERO_SLIDES = [
   { gameId:"ravenfield",  title:"Ravenfield",  studio:"SteelRaven7", rating:"4.8", video:"./videos/ravenfield_highlight.mp4", image:HERO_IMAGE, tags:["FPS","Action","Solo"],
     description:"Solo battle against an AI enemy that always wins. Help the Blue side win, and singlehandedly fight your way to victory across the battlefield." },
+  { gameId:"karlson", title:"KARLSON", studio:"Dani", rating:"4.7", image:LOCAL_COVERS["karlson"], tags:["Action","FPS","Indie"],
+    description:"A fast-paced movement shooter where speed, precision and momentum are the keys to survival." },
   { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", rating:"4.5", image:HERO_IMAGE, tags:["Racing","Arcade","Party"],
     description:"An arcade racing game on ever-sliding jelly. Take impossible turns and stay in one piece." },
   // No hero-quality wallpaper for Below Decks — reuse its real portrait cover, object-fit:cover
@@ -1503,7 +1511,7 @@ function HeroCarousel({ games, onSelectGame, onTabChange, height, initialIndex=0
   };
 
   return (
-    <div style={{ position:"relative", height:height||"calc(100vh - 130px)", minHeight:height?undefined:560, overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
+    <div style={{ position:"relative", height:height||"clamp(560px, 48.2vw, 694px)", overflow:"hidden", flexShrink:0, borderRadius:20, background:coverGradient(slide.gameId) }}>
       {/* Ravenfield keeps its original video background; other slides (no CDN video yet) use a static image. */}
       {slide.video && !videoFailed ? (
         <video key={slide.gameId} src={slide.video} autoPlay muted loop playsInline preload="auto"
@@ -1518,13 +1526,13 @@ function HeroCarousel({ games, onSelectGame, onTabChange, height, initialIndex=0
       <div style={{ position:"absolute", inset:0, background:"linear-gradient(0deg, rgba(14,12,31,0.68) 0%, rgba(14,12,31,0.37) 22%, transparent 65%)" }}/>
 
       <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 48px 48px", maxWidth:560 }}>
-        <div style={{ fontSize:44, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1px", lineHeight:1.05, marginBottom:10, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
+        <div style={{ fontSize:60, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1.8px", lineHeight:"72px", marginBottom:4, textShadow:"0 2px 20px rgba(0,0,0,0.7)" }}>
           {slide.title}
         </div>
         <div style={{ fontSize:13, color:T.brandLight, fontWeight:600, marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
           {slide.studio && <>by {slide.studio} <span style={{ opacity:0.4 }}>·</span></>} <span style={{ color:"#ffffa6" }}>★ {slide.rating}</span>
         </div>
-        <div style={{ fontSize:13.5, color:"rgba(255,255,255,0.72)", marginBottom:20, lineHeight:1.6, maxWidth:460 }}>
+        <div style={{ fontSize:14, color:"rgba(255,255,255,0.6)", marginBottom:20, lineHeight:"20px", maxWidth:448 }}>
           {slide.description}
         </div>
         <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:22 }}>
@@ -1573,16 +1581,29 @@ function HeroCarousel({ games, onSelectGame, onTabChange, height, initialIndex=0
 // in by the caller) — no placeholder titles.
 function InMyLibraryWidget({ games, onSelectGame }) {
   const listRef = useRef(null);
-  const scrollBy = (dy) => listRef.current?.scrollBy({ top: dy, behavior: "smooth" });
+  const [scrollState, setScrollState] = useState({ up:false, down:games.length>5 });
+  const updateScrollState = () => {
+    const el=listRef.current;
+    if (!el) return;
+    setScrollState({ up:el.scrollTop>2, down:el.scrollTop+el.clientHeight<el.scrollHeight-2 });
+  };
+  const scrollBy = (dy) => {
+    const el = listRef.current;
+    if (!el) return;
+    const nextTop = Math.max(0, Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + dy));
+    el.scrollTop = nextTop;
+    setScrollState({ up:nextTop>2, down:nextTop+el.clientHeight<el.scrollHeight-2 });
+  };
+  useEffect(()=>{ listRef.current?.scrollTo({top:0}); requestAnimationFrame(updateScrollState); }, [games]);
   return (
     <div style={{ position:"relative", flex:"0 0 280px", background:"rgba(128,74,240,0.14)", border:`1px solid ${T.borderBrand}`,
       borderRadius:T.radiusLg, padding:"22px 20px", display:"flex", flexDirection:"column", gap:16, overflow:"hidden" }}>
       <div style={{ fontSize:19, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>In my library</div>
       {games.length===0 && <div style={{ fontSize:12.5, color:T.textMuted }}>No games installed yet.</div>}
-      <div ref={listRef} style={{ display:"flex", flexDirection:"column", gap:16, overflowY:"auto" }} className="hide-scrollbar">
+      <div ref={listRef} onScroll={updateScrollState} style={{ display:"flex", flexDirection:"column", gap:16, height:284, maxHeight:284, overflowY:"auto", scrollSnapType:"y mandatory" }} className="hide-scrollbar">
         {games.map(g=>(
           <div key={g.gameId} onClick={()=>onSelectGame(g)} role="button" tabIndex={0}
-            style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", flexShrink:0 }}>
+            style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", flexShrink:0, height:44, scrollSnapAlign:"start" }}>
             <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
               style={{ width:44, height:44, borderRadius:10, objectFit:"cover", flexShrink:0, background:"#0a0914" }}
               onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
@@ -1598,9 +1619,17 @@ function InMyLibraryWidget({ games, onSelectGame }) {
         ))}
       </div>
       {/* Real library — scroll control shown only once there's more than fits, matching the reference. */}
-      {games.length>4 && (
-        <button onClick={()=>scrollBy(120)} aria-label="Scroll library down"
-          style={{ position:"absolute", right:14, top:"50%", transform:"translateY(-50%)",
+      {games.length>5 && scrollState.up && (
+        <button onClick={()=>scrollBy(-60)} aria-label="Scroll library up"
+          style={{ position:"absolute", right:14, top:"calc(50% - 18px)", transform:"translateY(-50%)",
+            width:28, height:28, borderRadius:14, background:T.brandGrad, border:"none", color:"#fff",
+            cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:T.brandGlow }}>
+          <Icon.ChevronUp/>
+        </button>
+      )}
+      {games.length>5 && scrollState.down && (
+        <button onClick={()=>scrollBy(60)} aria-label="Scroll library down"
+          style={{ position:"absolute", right:14, top:"calc(50% + 18px)", transform:"translateY(-50%)",
             width:28, height:28, borderRadius:14, background:T.brandGrad, border:"none", color:"#fff",
             cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:T.brandGlow }}>
           <Icon.ChevronDown/>
@@ -1655,9 +1684,9 @@ function HomeGameCard({ title, gameId, imageUrl, imagePosition, genre, onSelect 
         {liked ? "♥" : "♡"}
       </button>
       <div style={{ position:"absolute", left:0, right:0, bottom:0, padding:16 }}>
-        <div style={{ fontSize:28, fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:8, textShadow:"0 2px 12px rgba(0,0,0,0.6)" }}>{title}</div>
+        <div style={{ fontSize:32, lineHeight:"32px", letterSpacing:"1.5px", fontWeight:700, color:"#fff", fontFamily:T.fontHead, marginBottom:10, textShadow:"0 2px 12px rgba(0,0,0,0.6)", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{title}</div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <span style={{ padding:"5px 14px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:12, fontWeight:500 }}>{genre}</span>
+          <span style={{ padding:"6px 16px", borderRadius:999, background:T.brand, color:"rgba(255,255,255,0.9)", fontSize:14, fontWeight:500 }}>{genre}</span>
           <span style={{ fontSize:12, fontWeight:600, color:"#ffffa6" }}>★ {mockRating(title)}</span>
         </div>
       </div>
@@ -1828,7 +1857,7 @@ function PlaceholderCard({ p }) {
 function SidebarSectionLabel({ label }) {
   return (
     <div style={{ fontSize:9, fontWeight:700, color:"rgba(255,255,255,0.28)", letterSpacing:"0.14em",
-      textTransform:"uppercase", padding:"28px 14px 8px", userSelect:"none", fontFamily:T.fontBody }}>
+      textTransform:"uppercase", padding:"16px 10px 5px", userSelect:"none", fontFamily:T.fontBody }}>
       {label}
     </div>
   );
@@ -1837,10 +1866,20 @@ function SidebarSectionLabel({ label }) {
 // SidebarNavItem — Apple TV-inspired floating sidebar, adapted to Rload's purple identity
 function SidebarNavItem({ icon, label, active, onClick, badge, disabled }) {
   const [hov, setHov] = useState(false);
+  const [badgeShift, setBadgeShift] = useState({ x:0, y:0 });
   return (
     <div onClick={disabled?undefined:onClick}
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ display:"flex", alignItems:"center", gap:10, padding:"0 12px", height:44,
+      onMouseEnter={()=>setHov(true)}
+      onMouseMove={event=>{
+        if (!active || badge==null || badge<=0) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        setBadgeShift({
+          x:Math.max(-5, Math.min(5, ((event.clientX-rect.left)/rect.width-.5)*10)),
+          y:Math.max(-4, Math.min(4, ((event.clientY-rect.top)/rect.height-.5)*8)),
+        });
+      }}
+      onMouseLeave={()=>{ setHov(false); setBadgeShift({x:0,y:0}); }}
+      style={{ display:"flex", alignItems:"center", gap:8, padding:"0 10px", height:36,
         borderRadius:10, cursor:disabled?"default":"pointer", userSelect:"none", margin:"1px 0",
         background: active
           ? "linear-gradient(135deg, rgba(128,74,240,0.38) 0%, rgba(68,44,117,0.28) 100%)"
@@ -1859,7 +1898,9 @@ function SidebarNavItem({ icon, label, active, onClick, badge, disabled }) {
       {badge!=null && badge>0 && (
         <span style={{ fontSize:9.5, fontWeight:700, padding:"2px 7px", borderRadius:99,
           background:active?"rgba(255,255,255,0.22)":"rgba(128,74,240,0.40)",
-          color:"#fff", flexShrink:0, minWidth:18, textAlign:"center" }}>
+          color:"#fff", flexShrink:0, minWidth:18, textAlign:"center",
+          transform:`translate3d(${badgeShift.x}px,${badgeShift.y}px,0)`,
+          transition:hov?"transform 80ms linear":"transform 180ms ease-out", willChange:"transform" }}>
           {badge}
         </span>
       )}
@@ -2087,12 +2128,12 @@ function ContinuePlayingHero({ heroGame, heroImg, isRunning, onSelect }) {
 }
 
 // RecentCard — medium landscape card in the recently played row
-function RecentCard({ g, badge, sel, onClick }) {
+function RecentCard({ g, badge, sel, onClick, compact=false }) {
   const [hov, setHov] = useState(false);
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={onClick}
-      style={{ minWidth:198, width:198, height:124, borderRadius:T.radius,
+      style={{ minWidth:compact?0:198, width:compact?"100%":198, height:compact?150:124, borderRadius:T.radius,
         position:"relative", overflow:"hidden", flexShrink:0, cursor:"pointer",
         background:coverGradient(g.gameId),
         border:sel?`1.5px solid ${T.brand}`:hov?"1px solid rgba(255,255,255,0.18)":"1px solid rgba(255,255,255,0.07)",
@@ -2131,7 +2172,7 @@ function FeaturedCard({ game, large, onSelect }) {
   const imgSrc = game.isPlaceholder
     ? game.imageUrl
     : (LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png");
-  const genreLabel = game.isPlaceholder ? game.genre : (game.tags?.[0] || "");
+  const genreLabel = game.isPlaceholder ? game.genre : (game.genres?.[0] || game.tags?.[0] || "");
 
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
@@ -2281,22 +2322,25 @@ function CarouselDots({ page, pageCount, onSelect }) {
 }
 
 // RecentPlayedRow — "Recently Played" scroll row (Games page), with page dots underneath.
-function RecentPlayedRow({ games, uiByGame, selectedGameId, onSelectGame }) {
+function RecentPlayedRow({ games, uiByGame, selectedGameId, onSelectGame, compact=false, maxItems }) {
   const itemSize = 198, gap = 12;
-  const { scrollRef, page, pageCount, goToPage } = useScrollDots(games.length, itemSize, gap);
+  const visibleGames = maxItems ? games.slice(0, maxItems) : games;
+  const { scrollRef, page, pageCount, goToPage } = useScrollDots(visibleGames.length, itemSize, gap);
   return (
     <div>
-      <div ref={scrollRef} style={{ display:"flex", gap, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
-        {games.map(g=>{
+      <div ref={scrollRef} style={compact
+        ? { display:"grid", gridTemplateColumns:"repeat(3, minmax(0, 1fr))", gap:10 }
+        : { display:"flex", gap, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+        {visibleGames.map(g=>{
           const badge = getStateBadge(uiByGame[g.gameId]);
           const sel   = selectedGameId===g.gameId;
           return (
-            <RecentCard key={g.gameId} g={g} badge={badge} sel={sel}
+            <RecentCard key={g.gameId} g={g} badge={badge} sel={sel} compact={compact}
               onClick={()=>onSelectGame(g.gameId===selectedGameId?null:g)}/>
           );
         })}
       </div>
-      <CarouselDots page={page} pageCount={pageCount} onSelect={goToPage}/>
+      {!compact && <CarouselDots page={page} pageCount={pageCount} onSelect={goToPage}/>}
     </div>
   );
 }
@@ -2465,10 +2509,12 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
   const heroImg  = heroGame ? (LOCAL_COVERS[heroGame.gameId] || heroGame.thumbnail || heroGame.coverUrl || null) : null;
 
   // Search base — real games only
-  const searchBase = search
+  const normalizedSearch = search.trim().toLowerCase();
+  const searchBase = normalizedSearch
     ? realGames.filter(g =>
-        (g.title||g.gameId).toLowerCase().includes(search.toLowerCase()) ||
-        (g.studio||"").toLowerCase().includes(search.toLowerCase()))
+        [g.title, g.gameId, g.studio, ...(g.genres||[]), ...(g.tags||[])]
+          .filter(Boolean)
+          .some(value=>String(value).toLowerCase().includes(normalizedSearch)))
     : realGames;
 
   // ── Sidebar counts ────────────────────────────────────────────────────────
@@ -2483,10 +2529,10 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
   // ── Grid games based on sidebar view ─────────────────────────────────────
   const getGridGames = () => {
     if (sidebarView==="installed")    return search ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : installed;
-    if (sidebarView==="updates")      return withUpdates;
+    if (sidebarView==="updates")      return normalizedSearch ? searchBase.filter(g=>uiByGame[g.gameId]===UI.UPDATE_AVAILABLE) : withUpdates;
     if (sidebarView==="favorites")    return search ? searchBase.filter(g=>favorites.has(g.gameId)) : favorited;
-    if (sidebarView==="recent")       return installed.length ? installed : realGames;
-    if (sidebarView==="downloads")    return activeDownloads;
+    if (sidebarView==="recent")       return normalizedSearch ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : (installed.length ? installed : realGames);
+    if (sidebarView==="downloads")    return normalizedSearch ? searchBase.filter(g=>[UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING].includes(uiByGame[g.gameId])) : activeDownloads;
     if (sidebarView==="queue")        return [];
     return searchBase; // "all"
   };
@@ -2510,14 +2556,14 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     <div style={{ display:"flex", flex:1, overflow:"hidden", fontFamily:T.fontBody }}>
 
       {/* ── LEFT SIDEBAR — floating frosted-glass panel, Apple TV-inspired, Rload identity ─── */}
-      <div style={{ width:240, flexShrink:0, display:"flex", flexDirection:"column",
-        margin:"20px 0 20px 20px", borderRadius:22,
+      <div style={{ width:218, flexShrink:0, display:"flex", flexDirection:"column",
+        margin:"12px 0 12px 12px", borderRadius:20,
         background:"linear-gradient(180deg, rgba(88,46,214,0.28) 0%, rgba(35,20,66,0.85) 100%)", backdropFilter:"blur(22px)", WebkitBackdropFilter:"blur(22px)",
         border:"1px solid rgba(255,255,255,0.06)",
         boxShadow:"0 8px 32px rgba(0,0,0,0.35)",
-        overflowY:"auto", overflowX:"hidden" }} className="hide-scrollbar">
+        overflow:"hidden" }}>
 
-        <div style={{ flex:1, padding:"20px 10px 0" }}>
+        <div style={{ flex:1, minHeight:0, padding:"8px 8px 0" }}>
 
           {/* LIBRARY */}
           <SidebarSectionLabel label="Library"/>
@@ -2543,9 +2589,9 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
 
         {/* Upgrade widget — same destination as Home's UpgradeBanner/CTA, no subscription
             check here (that banner is shown unconditionally elsewhere in the app too). */}
-        <div style={{ margin:"16px 12px", padding:"20px 16px", borderRadius:16, flexShrink:0,
+        <div style={{ margin:"8px 10px", padding:"10px 12px", borderRadius:14, flexShrink:0,
           background:"linear-gradient(163deg, rgba(124,92,252,1) 0%, rgba(88,46,214,1) 100%)",
-          display:"flex", flexDirection:"column", alignItems:"center", gap:12, textAlign:"center" }}>
+          display:"flex", flexDirection:"column", alignItems:"center", gap:6, textAlign:"center" }}>
           <span style={{ fontSize:22 }}>👑</span>
           <div style={{ fontSize:15, fontWeight:700, color:"#fff", fontFamily:T.fontHead, lineHeight:1.2 }}>Upgrade your plan</div>
           <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")}
@@ -2555,7 +2601,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
         </div>
 
         {/* Version footer */}
-        <div style={{ padding:"12px 14px 16px", flexShrink:0,
+        <div style={{ padding:"7px 12px 9px", flexShrink:0,
           borderTop:"1px solid rgba(255,255,255,0.06)",
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <span style={{ fontSize:10.5, color:"rgba(255,255,255,0.22)", fontWeight:500 }}>
@@ -2577,7 +2623,11 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
             <div style={{ position:"relative", flex:1, maxWidth:400 }}>
               <div style={{ position:"absolute", left:12, top:"50%", transform:"translateY(-50%)",
                 color:"rgba(255,255,255,0.28)", pointerEvents:"none", fontSize:13 }}><Icon.Search/></div>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search games…"
+              <input value={search} onChange={e=>{
+                  const value=e.target.value;
+                  setSearch(value);
+                  if (value.trim()) setSidebarView("all");
+                }} placeholder="Search games…"
                 style={{ width:"100%", padding:"8px 14px 8px 36px",
                   background:"rgba(255,255,255,0.05)", backdropFilter:"blur(8px)",
                   border:`1px solid rgba(255,255,255,0.10)`, borderRadius:"0.75rem",
@@ -2614,42 +2664,20 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
               </div>
             )}
 
-            {/* ═══════════════════════════════════════════════════════
-                SECTION 1 — CONTINUE PLAYING (all / recent views)
-            ═══════════════════════════════════════════════════════ */}
+            {/* Equal-size panels: Continue Playing left, three Recently Played right. */}
             {(sidebarView==="all"||sidebarView==="recent") && (
-              <div style={{ padding:"20px 22px 0" }}>
-                <SectionHeading title={running.length>0 ? "▶ Now Playing" : "Continue Playing"}/>
-
-                {gamesLoading ? (
-                  <div className="rl-sk" style={{ height:190, borderRadius:T.radiusLg }}/>
-                ) : heroGame ? (
-                  <ContinuePlayingHero
-                    heroGame={heroGame} heroImg={heroImg}
-                    isRunning={uiByGame[heroGame.gameId]===UI.RUNNING}
-                    onSelect={()=>onSelectGame(heroGame.gameId===selectedGameId?null:heroGame)}/>
-                ) : (
-                  <div style={{ height:140, borderRadius:T.radiusLg,
-                    border:`1px dashed rgba(255,255,255,0.10)`,
-                    background:"rgba(255,255,255,0.02)",
-                    display:"flex", flexDirection:"column", alignItems:"center",
-                    justifyContent:"center", gap:8 }}>
-                    <span style={{ fontSize:22, opacity:0.4 }}>🎮</span>
-                    <div style={{ fontSize:13, color:T.textMuted }}>No games installed yet</div>
-                    <div style={{ fontSize:11.5, color:T.textDim }}>Install a game from the Library below</div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════
-                SECTION 2 — RECENTLY PLAYED (all / recent views)
-            ═══════════════════════════════════════════════════════ */}
-            {(sidebarView==="all"||sidebarView==="recent") && installed.length>0 && (
-              <div style={{ padding:"22px 22px 0" }}>
-                <SectionHeading title="Recently Played"/>
-                <RecentPlayedRow games={installed} uiByGame={uiByGame}
-                  selectedGameId={selectedGameId} onSelectGame={onSelectGame}/>
+              <div style={{padding:"20px 22px 0",display:"grid",gridTemplateColumns:"repeat(2,minmax(0,1fr))",gap:20,alignItems:"stretch"}}>
+                <section style={{minWidth:0,padding:18,borderRadius:T.radiusLg,background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.07)"}}>
+                  <SectionHeading title={running.length>0 ? "▶ Now Playing" : "Continue Playing"}/>
+                  {gamesLoading ? <div className="rl-sk" style={{height:150,borderRadius:T.radiusLg}}/> : heroGame ?
+                    <ContinuePlayingHero heroGame={heroGame} heroImg={heroImg} isRunning={uiByGame[heroGame.gameId]===UI.RUNNING} onSelect={()=>onSelectGame(heroGame.gameId===selectedGameId?null:heroGame)}/> :
+                    <div style={{height:150,borderRadius:T.radiusLg,border:"1px dashed rgba(255,255,255,.10)",display:"grid",placeItems:"center",color:T.textMuted,fontSize:13}}>No games installed yet</div>}
+                </section>
+                <section style={{minWidth:0,padding:18,borderRadius:T.radiusLg,background:"rgba(255,255,255,.025)",border:"1px solid rgba(255,255,255,.07)"}}>
+                  <SectionHeading title="Recently Played"/>
+                  {installed.length>0 ? <RecentPlayedRow games={installed} uiByGame={uiByGame} compact maxItems={3} selectedGameId={selectedGameId} onSelectGame={onSelectGame}/> :
+                    <div style={{height:150,display:"grid",placeItems:"center",color:T.textMuted,fontSize:13}}>No recently played games</div>}
+                </section>
               </div>
             )}
 
@@ -4920,6 +4948,11 @@ export default function LauncherGames() {
     setActiveTab(prevGameTab);
   }, [prevGameTab]);
 
+  // Keep Game Single on the same localStorage/event-backed favorites source
+  // as Home and the Games grid. This hook stays before the auth gate so hook
+  // ordering is stable while Auth0 restores the session.
+  const [selectedGameIsFavorite, toggleSelectedGameFavorite] = useIsFavorite(selectedGameId);
+
   // ── Auth gate ──────────────────────────────────────────────────────────────
   if (authSession === undefined) return null;
   if (!authSession) return <LoginScreen authBusy={authBusy} authError={authError} onSignIn={handleSignIn}/>;
@@ -4980,6 +5013,10 @@ export default function LauncherGames() {
             onSelectGame={handleSelectGame}
             subscriptionStatus={subscriptionStatus}
             demoMode={demoMode}
+            isFavorite={selectedGameIsFavorite}
+            onToggleFavorite={toggleSelectedGameFavorite}
+            favoriteIds={getFavoriteIds()}
+            onToggleGameFavorite={toggleFavoriteId}
             onViewAllGames={()=>{ setSelectedGameId(null); handleTabChange("games"); }}
           />
         )}

@@ -1,1153 +1,297 @@
-// GameSinglePage.jsx — M4 enhanced game detail view
-// Layout: Hero (cover + metadata) → Screenshots → Why Play → About+Sidebar → Studio → More Games
+import React, { useEffect, useRef, useState } from "react";
 
-import React, { useState, useRef, useEffect } from "react";
-
-// ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
-  bgDeep:       "#302861",
-  bgMid:        "#442c75",
-  bgCard:       "rgba(255,255,255,0.05)",
-  bgCardHover:  "rgba(255,255,255,0.09)",
-  bgGlass:      "rgba(255,255,255,0.06)",
-  border:       "rgba(255,255,255,0.11)",
-  borderBright: "rgba(255,255,255,0.20)",
-  borderBrand:  "rgba(128,74,240,0.3)",
-  brand:        "#804af0",
-  brandGrad:    "linear-gradient(135deg, #804af0 0%, #442c75 100%)",
-  brandGlow:    "0 4px 24px rgba(128,74,240,0.45)",
-  brandLight:   "#DAB2FF",
-  brandSoft:    "rgba(128,74,240,0.15)",
-  green:        "#22c55e",
-  greenGrad:    "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
-  greenGlow:    "0 4px 24px rgba(34,197,94,0.4)",
-  orange:       "#fb923c",
-  orangeGrad:   "linear-gradient(135deg, #fb923c 0%, #ea7c1a 100%)",
-  orangeGlow:   "0 4px 24px rgba(251,146,60,0.4)",
-  red:          "#f87171",
-  redBg:        "rgba(248,113,113,0.14)",
-  redBorder:    "rgba(248,113,113,0.28)",
-  blue:         "#60a5fa",
-  text:         "#FCFCFC",
-  textSub:      "rgba(255,255,255,0.72)",
-  textMuted:    "rgba(255,255,255,0.50)",
-  textDim:      "rgba(255,255,255,0.30)",
-  fontHead:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
-  fontBody:     "'Poppins', ui-sans-serif, system-ui, sans-serif",
-  radius:       "1rem",
-  radiusSm:     "0.75rem",
-  radiusLg:     "1.25rem",
-  radiusPill:   "999px",
-  shadowCover:  "0 24px 64px rgba(0,0,0,0.75)",
-  shadowCard:   "0 4px 16px rgba(0,0,0,0.30)",
-  shadowHover:  "0 12px 32px rgba(0,0,0,0.50)",
-  ringBrand:    "0 0 0 1px rgba(128,74,240,0.4)",
-  transitionBase: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-  transitionFast: "all 0.15s cubic-bezier(0.16, 1, 0.3, 1)",
+  page: "#240c4a",
+  heroCard: "rgba(87,78,173,0.56)",
+  card: "rgba(255,255,255,0.035)",
+  cardStrong: "rgba(255,255,255,0.055)",
+  border: "rgba(255,255,255,0.08)",
+  text: "#fff",
+  sub: "rgba(255,255,255,0.85)",
+  muted: "rgba(255,255,255,0.55)",
+  dim: "rgba(255,255,255,0.32)",
+  violet: "#7255e5",
+  green: "#22c55e",
+  orange: "#fb923c",
+  red: "#f87171",
+  head: "'Poppins', ui-sans-serif, system-ui, sans-serif",
+  body: "'Inter', 'Poppins', ui-sans-serif, system-ui, sans-serif",
 };
 
-// ── UI state constants ────────────────────────────────────────────────────────
 const UI = {
-  IDLE:"idle", DOWNLOADING:"downloading", PAUSED:"paused",
-  INSTALLING:"installing", INSTALLED:"installed",
-  INSTALLED_NO_EXE:"installed_no_exe", UPDATE_AVAILABLE:"update_available",
+  IDLE:"idle", DOWNLOADING:"downloading", PAUSED:"paused", INSTALLING:"installing",
+  INSTALLED:"installed", INSTALLED_NO_EXE:"installed_no_exe", UPDATE_AVAILABLE:"update_available",
   UPDATING:"updating", RUNNING:"running", ERROR:"error", CANCELED:"canceled",
 };
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+const LOCAL_GAME_SHOTS = {
+  ultrakill: Array.from({length:6},(_,i)=>`./images/games/ultrakill/screenshots/ss_${i+1}.jpg`),
+  ravenfield: Array.from({length:5},(_,i)=>`./images/games/ravenfield/screenshots/ss_${i+1}.jpg`),
+  karlson: Array.from({length:6},(_,i)=>`./images/games/karlson/screenshots/ss_${i+1}.jpg`),
+  kakudo: Array.from({length:6},(_,i)=>`./images/games/kakudo/screenshots/ss_${i+1}.jpg`),
+};
+
 function humanBytes(n) {
   if (!Number.isFinite(n) || n <= 0) return null;
-  const u = ["B","KB","MB","GB","TB"]; let i = 0, v = n;
-  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
-  return `${v.toFixed(i === 0 ? 0 : 1)} ${u[i]}`;
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = n;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
 }
-function formatYear(d) {
-  if (!d) return null;
-  const p = new Date(d);
-  return isNaN(p.getTime()) ? null : String(p.getFullYear());
-}
-function countryFlag(code) {
-  if (!code || code.length !== 2) return "";
-  const base = 0x1F1E6 - 65;
-  return String.fromCodePoint(code.toUpperCase().charCodeAt(0) + base) +
-         String.fromCodePoint(code.toUpperCase().charCodeAt(1) + base);
-}
-function countryName(code) {
-  const map = { BE:"Belgium", FR:"France", DE:"Germany", NL:"Netherlands", GB:"United Kingdom",
-    US:"United States", CA:"Canada", JP:"Japan", KR:"South Korea", AU:"Australia",
-    SE:"Sweden", DK:"Denmark", PL:"Poland", CZ:"Czech Republic" };
-  return map[(code || "").toUpperCase()] || code || null;
-}
-function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
-// ── Cover placeholder gradient — elegant fallback when no artwork is available ──
-const GRAD_PAIRS = [
-  ["#1a1a2e","#4a1942"],["#0f3460","#16213e"],["#2d1b69","#0d4f56"],
-  ["#1a0533","#4c1d95"],["#0c1445","#1e3a5f"],["#2c0a4e","#0a3d2b"],
-  ["#3d0429","#1a0f3c"],["#0a2942","#1a4a35"],
-];
+function capitalize(value) {
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+}
+
 function coverGradient(seed) {
-  const idx = (seed||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0) % GRAD_PAIRS.length;
-  const [a,b] = GRAD_PAIRS[idx];
-  return `linear-gradient(145deg, ${a} 0%, ${b} 100%)`;
-}
-
-// ── Icons ─────────────────────────────────────────────────────────────────────
-const BackIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 18 9 12 15 6"/>
-  </svg>
-);
-const PlayIcon = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <polygon points="5 3 19 12 5 21 5 3"/>
-  </svg>
-);
-const DownloadIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-);
-const PauseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
-  </svg>
-);
-const UpdateIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"/>
-    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-  </svg>
-);
-const ArrowRightIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="5" y1="12" x2="19" y2="12"/>
-    <polyline points="12 5 19 12 12 19"/>
-  </svg>
-);
-const GlobeIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-  </svg>
-);
-
-// ── CTA configuration ─────────────────────────────────────────────────────────
-function ctaConfig(uiState, hasAccess, game, dl, busy) {
-  if (game?.comingSoon) return { label: "Coming Soon on Rload", variant: "comingsoon", action: null, icon: null, disabled: true };
-  if (!hasAccess) return { label: "Subscribe to Play", variant: "subscribe", action: "subscribe", icon: null, disabled: false };
-  switch (uiState) {
-    case UI.DOWNLOADING: {
-      const pct = dl?.percent ?? 0;
-      const speed = dl?.speed ? ` · ${humanBytes(dl.speed)}/s` : "";
-      return { label: `Downloading ${pct}%${speed}`, variant: "progress", action: "pause", icon: <PauseIcon/>, disabled: busy };
-    }
-    case UI.PAUSED:      return { label: "Resume Download", variant: "paused",   action: "resume",  icon: <PlayIcon/>,     disabled: busy };
-    case UI.INSTALLING:  return { label: "Installing…",      variant: "progress", action: null,      icon: null,           disabled: true };
-    case UI.INSTALLED:   return { label: `Play ${game.title}`,variant: "play",    action: "play",    icon: <PlayIcon size={18}/>, disabled: busy };
-    case UI.RUNNING:     return { label: "Playing…",          variant: "running",  action: null,      icon: null,           disabled: true };
-    case UI.UPDATE_AVAILABLE: return { label: "Update Available", variant: "update", action: "update", icon: <UpdateIcon/>, disabled: busy };
-    case UI.UPDATING: {
-      const pct = dl?.percent ?? 0;
-      return { label: `Updating ${pct}%`, variant: "progress", action: "pause", icon: <PauseIcon/>, disabled: busy };
-    }
-    case UI.ERROR: return { label: "Retry Install", variant: "install", action: "install", icon: <DownloadIcon/>, disabled: busy };
-    default: {
-      const sz = humanBytes(game.downloadSize);
-      return { label: sz ? `Install — ${sz}` : "Install", variant: "install", action: "install", icon: <DownloadIcon/>, disabled: busy };
-    }
-  }
-}
-
-const CTA_STYLES = {
-  subscribe:  { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
-  install:    { background: T.brandGrad,  color: "#fff", boxShadow: T.brandGlow },
-  play:       { background: T.greenGrad,  color: "#fff", boxShadow: T.greenGlow },
-  update:     { background: T.orangeGrad, color: "#fff", boxShadow: T.orangeGlow },
-  progress:   { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
-  paused:     { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
-  running:    { background: "rgba(255,255,255,0.07)", color: T.textSub, boxShadow: "none" },
-  comingsoon: { background: "transparent", color: T.textMuted, boxShadow: "none", border: `1px solid ${T.border}` },
-};
-
-// ── ProgressBar ───────────────────────────────────────────────────────────────
-function ProgressBar({ dl, uiState }) {
-  const active    = [UI.DOWNLOADING, UI.UPDATING].includes(uiState);
-  const paused    = uiState === UI.PAUSED;
-  const installing = uiState === UI.INSTALLING;
-  if (!active && !paused && !installing) return null;
-  const pct   = installing ? 100 : (dl?.percent ?? 0);
-  const color = installing ? T.brand : (paused ? T.orange : T.green);
-  return (
-    <div style={{ marginTop: 10, width: "100%", maxWidth: 300 }}>
-      <div style={{ height: 3, background: "rgba(255,255,255,0.12)", borderRadius: 999, overflow: "hidden" }}>
-        <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 999, transition: "width 0.4s ease" }}/>
-      </div>
-      {dl?.bytesDownloaded != null && dl?.totalBytes > 0 && (
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 3 }}>
-          <span style={{ fontSize: 10, color: T.textDim }}>{humanBytes(dl.bytesDownloaded)} / {humanBytes(dl.totalBytes)}</span>
-          <span style={{ fontSize: 10, color: T.textDim }}>{pct}%</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── MetaDot — separator ───────────────────────────────────────────────────────
-function MetaDot() {
-  return <span style={{ color: T.textDim, fontSize: 12, userSelect: "none", flexShrink: 0 }}>·</span>;
-}
-
-// ── Section heading ───────────────────────────────────────────────────────────
-function SectionHeading({ children, tight }) {
-  return (
-    <h2 style={{ fontFamily: T.fontHead, fontSize: 18, fontWeight: 700, color: T.text, margin: tight ? "0 0 12px" : "0 0 18px", letterSpacing: "-0.01em" }}>
-      {children}
-    </h2>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 1. GAME HERO — cover art left, banner background, all key metadata
-// ═══════════════════════════════════════════════════════════════════════════════
-function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, installedVersion,
-  onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onBack, onRefreshAccess, onUninstall }) {
-
-  const hasAccess = demoMode ? true : (subscriptionStatus?.hasAccess ?? false);
-  const cfg       = ctaConfig(uiState, hasAccess, game, dl, busy);
-  const ctaStyle  = CTA_STYLES[cfg.variant] || CTA_STYLES.install;
-  const [refreshing, setRefreshing] = useState(false);
-  async function doRefresh() {
-    if (refreshing || !onRefreshAccess) return;
-    setRefreshing(true);
-    try { await onRefreshAccess(); } finally { setRefreshing(false); }
-  }
-
-  const [uninstallArm, setUninstallArm] = useState(false);
-  const uninstallTimer = useRef(null);
-  function handleUninstallClick() {
-    if (uninstallArm) {
-      clearTimeout(uninstallTimer.current);
-      setUninstallArm(false);
-      onUninstall?.();
-    } else {
-      setUninstallArm(true);
-      uninstallTimer.current = setTimeout(() => setUninstallArm(false), 3000);
-    }
-  }
-
-  const bannerSrc = game.banner || game.coverImage || game.thumbnail || game.coverUrl || null;
-  const coverSrc  = game.coverImage || game.thumbnail || game.coverUrl || game.banner || null;
-
-  const releaseYear  = formatYear(game.releaseDate);
-  const langCount    = game.languages?.length || 0;
-  const sizeFmt      = humanBytes(game.downloadSize);
-  const flag         = countryFlag(game.studioCountry);
-
-  function handleCta() {
-    if (cfg.disabled || !cfg.action) return;
-    switch (cfg.action) {
-      case "subscribe":
-        if (!demoMode) { window.rload?.openExternal?.("https://rload.be/pricing?source=launcher"); }
-        else { console.warn("[RLOAD DEMO MODE] Subscribe redirect suppressed."); }
-        break;
-      case "install":   onInstall?.(); break;
-      case "play":      onPlay?.();    break;
-      case "update":    onUpdate?.();  break;
-      case "pause":     onPause?.();   break;
-      case "resume":    onResume?.();  break;
-      case "cancel":    onCancel?.();  break;
-    }
-  }
-
-  return (
-    <div style={{ position: "relative", width: "100%", minHeight: 520, flexShrink: 0, overflow: "hidden" }}>
-
-      {/* Banner background */}
-      {bannerSrc ? (
-        <img src={bannerSrc} alt="" aria-hidden="true"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 20%" }}/>
-      ) : (
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #1e1648 0%, #0d0b1f 100%)" }}/>
-      )}
-
-      {/* Gradient overlays */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to right, rgba(18,16,41,0.98) 0%, rgba(18,16,41,0.85) 40%, rgba(18,16,41,0.3) 65%, rgba(18,16,41,0.1) 100%)",
-      }}/>
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(to bottom, rgba(18,16,41,0.0) 0%, rgba(18,16,41,0.0) 50%, rgba(18,16,41,0.6) 80%, rgba(18,16,41,1) 100%)",
-      }}/>
-
-      {/* Top chrome */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", zIndex: 2 }}>
-        <button onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 5,
-          padding: "6px 14px 6px 10px", borderRadius: T.radiusPill,
-          background: "rgba(18,16,41,0.7)", backdropFilter: "blur(16px)",
-          border: `1px solid ${T.border}`, color: T.textSub,
-          fontSize: 13, fontFamily: T.fontBody, cursor: "pointer",
-          transition: "all 0.15s",
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = T.text; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(18,16,41,0.7)"; e.currentTarget.style.color = T.textSub; }}
-        >
-          <BackIcon/> Library
-        </button>
-
-        {game.comingSoon ? (
-          <div style={{
-            padding: "5px 14px", borderRadius: T.radiusPill,
-            background: "rgba(251,146,60,0.15)", backdropFilter: "blur(12px)",
-            border: "1px solid rgba(251,146,60,0.35)",
-            fontSize: 11, fontWeight: 600, color: T.orange, letterSpacing: "0.04em",
-          }}>
-            Coming Soon
-          </div>
-        ) : (
-          <div style={{
-            padding: "5px 14px", borderRadius: T.radiusPill,
-            background: "rgba(128,74,240,0.2)", backdropFilter: "blur(12px)",
-            border: "1px solid rgba(128,74,240,0.4)",
-            fontSize: 11, fontWeight: 600, color: T.brandLight, letterSpacing: "0.04em",
-          }}>
-            Available with Rload
-          </div>
-        )}
-      </div>
-
-      {/* Main content row */}
-      <div style={{
-        position: "relative", zIndex: 1,
-        display: "flex", alignItems: "flex-end", gap: 36,
-        padding: "100px 48px 40px",
-      }}>
-
-        {/* Cover art — always renders; falls back to a themed gradient + monogram when no artwork is available */}
-        <div style={{
-          flexShrink: 0, width: 220, height: 293,
-          borderRadius: T.radius, overflow: "hidden",
-          boxShadow: T.shadowCover,
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: coverGradient(game.gameId || game.title),
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {coverSrc ? (
-            <img src={coverSrc} alt={game.title}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              onError={e => { e.currentTarget.style.display = "none"; }}/>
-          ) : (
-            <span style={{ fontSize: 44, fontWeight: 800, fontFamily: T.fontHead, color: "rgba(255,255,255,0.28)" }}>
-              {(game.title || game.gameId || "?").charAt(0).toUpperCase()}
-            </span>
-          )}
-        </div>
-
-        {/* Info block */}
-        <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
-
-          {/* Genre badges */}
-          {game.genres?.length > 0 && (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-              {game.genres.map(g => (
-                <span key={g} style={{
-                  padding: "3px 10px", borderRadius: T.radiusPill,
-                  background: "rgba(128,74,240,0.2)", border: "1px solid rgba(128,74,240,0.35)",
-                  color: T.brandLight, fontSize: 11, fontWeight: 600, letterSpacing: "0.03em",
-                }}>
-                  {capitalize(g)}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Title */}
-          <h1 style={{
-            fontFamily: T.fontHead, fontSize: 48, fontWeight: 800,
-            color: T.text, margin: 0, lineHeight: 1.05, letterSpacing: "-0.02em",
-            textShadow: "0 2px 24px rgba(0,0,0,0.6)",
-          }}>
-            {game.title}
-          </h1>
-
-          {/* Studio + country */}
-          {game.studio && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
-              <span style={{ fontSize: 14, color: T.textMuted, fontWeight: 500 }}>by</span>
-              <span style={{ fontSize: 14, color: T.brandLight, fontWeight: 600 }}>{game.studio}</span>
-              {flag && <span style={{ fontSize: 16 }}>{flag}</span>}
-            </div>
-          )}
-
-          {/* Short description */}
-          {game.shortDescription && (
-            <p style={{
-              color: T.textSub, fontSize: 14, marginTop: 10, maxWidth: 520,
-              lineHeight: 1.6, textShadow: "0 1px 8px rgba(0,0,0,0.4)",
-            }}>
-              {game.shortDescription}
-            </p>
-          )}
-
-          {/* Metadata row — each MetaDot only renders when a later segment
-              actually exists, so the row never ends on a dangling separator */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-            {releaseYear && <>
-              <span style={{ fontSize: 12, color: T.textMuted }}>{releaseYear}</span>
-              {(langCount > 0 || sizeFmt || game.ageRating) && <MetaDot/>}
-            </>}
-            {langCount > 0 && <>
-              <span style={{ fontSize: 12, color: T.textMuted }}>{langCount} language{langCount !== 1 ? "s" : ""}</span>
-              {(sizeFmt || game.ageRating) && <MetaDot/>}
-            </>}
-            {sizeFmt && <>
-              <span style={{ fontSize: 12, color: T.textMuted }}>{sizeFmt}</span>
-              {game.ageRating && <MetaDot/>}
-            </>}
-            {game.ageRating && (
-              <span style={{
-                fontSize: 11, fontWeight: 600, color: T.orange,
-                padding: "2px 8px", borderRadius: 4,
-                background: "rgba(251,146,60,0.15)", border: "1px solid rgba(251,146,60,0.3)",
-              }}>
-                {game.ageRating}
-              </span>
-            )}
-          </div>
-
-          {/* CTA row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
-            <button onClick={handleCta} disabled={cfg.disabled} style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "13px 28px", borderRadius: T.radiusSm,
-              fontSize: 15, fontWeight: 700, fontFamily: T.fontBody,
-              cursor: cfg.disabled ? "not-allowed" : "pointer",
-              opacity: cfg.disabled ? (cfg.variant === "comingsoon" ? 1 : 0.65) : 1,
-              border: "none", transition: "all 0.18s",
-              ...ctaStyle,
-            }}
-              onMouseEnter={e => { if (!cfg.disabled && cfg.variant !== "progress") e.currentTarget.style.filter = "brightness(1.1)"; }}
-              onMouseLeave={e => { e.currentTarget.style.filter = "none"; }}
-            >
-              {cfg.icon}
-              {cfg.label}
-            </button>
-
-            {cfg.variant === "subscribe" && onRefreshAccess && (
-              <button onClick={doRefresh} disabled={refreshing} style={{
-                padding: "12px 20px", borderRadius: T.radiusSm,
-                background: "rgba(255,255,255,0.05)", border: `1px solid ${T.border}`,
-                color: T.textSub, fontSize: 14, fontWeight: 500, fontFamily: T.fontBody,
-                cursor: refreshing ? "not-allowed" : "pointer", transition: "all 0.15s",
-              }}
-                onMouseEnter={e => { if (!refreshing) e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
-              >
-                {refreshing ? "Checking…" : "↻ Refresh Access"}
-              </button>
-            )}
-
-            {uiState === UI.UPDATE_AVAILABLE && hasAccess && (
-              <button onClick={onPlay} style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "12px 20px", borderRadius: T.radiusSm,
-                background: "rgba(255,255,255,0.07)", border: `1px solid ${T.border}`,
-                color: T.textSub, fontSize: 14, fontWeight: 500, fontFamily: T.fontBody,
-                cursor: "pointer", transition: "all 0.15s",
-              }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
-                onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
-              >
-                <PlayIcon/> Play current
-              </button>
-            )}
-
-            {[UI.DOWNLOADING, UI.UPDATING].includes(uiState) && (
-              <button onClick={onCancel} style={{
-                padding: "12px 16px", borderRadius: T.radiusSm,
-                background: "transparent", border: `1px solid ${T.border}`,
-                color: T.textMuted, fontSize: 13, cursor: "pointer",
-                fontFamily: T.fontBody, transition: "border-color 0.15s",
-              }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = T.red}
-                onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
-              >
-                Cancel
-              </button>
-            )}
-
-            {[UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR].includes(uiState) && hasAccess && !game?.comingSoon && (
-              <button onClick={handleUninstallClick} disabled={busy} style={{
-                padding: "12px 16px", borderRadius: T.radiusSm,
-                background: uninstallArm ? "rgba(248,113,113,0.10)" : "transparent",
-                border: `1px solid ${uninstallArm ? "rgba(248,113,113,0.45)" : "rgba(248,113,113,0.22)"}`,
-                color: uninstallArm ? T.red : "rgba(248,113,113,0.55)",
-                fontSize: 13, cursor: busy ? "not-allowed" : "pointer",
-                fontFamily: T.fontBody, transition: "all 0.18s", whiteSpace: "nowrap",
-              }}
-                onMouseEnter={e => { if (!busy) { e.currentTarget.style.borderColor = "rgba(248,113,113,0.55)"; e.currentTarget.style.color = T.red; } }}
-                onMouseLeave={e => { if (!uninstallArm) { e.currentTarget.style.borderColor = "rgba(248,113,113,0.22)"; e.currentTarget.style.color = "rgba(248,113,113,0.55)"; } }}
-              >
-                {uninstallArm ? "Confirm uninstall?" : "Uninstall"}
-              </button>
-            )}
-          </div>
-
-          <ProgressBar dl={dl} uiState={uiState}/>
-
-          {installedVersion && [UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.RUNNING].includes(uiState) && (
-            <div style={{ marginTop: 8, fontSize: 11, color: uiState === UI.UPDATE_AVAILABLE ? T.orange : T.green, display: "flex", alignItems: "center", gap: 5, opacity: 0.85 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              {uiState === UI.UPDATE_AVAILABLE
-                ? `v${installedVersion} installed · v${game.version} available`
-                : `v${installedVersion} installed`}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <style>{`@keyframes rload-scroll-hint{0%,100%{opacity:.3;transform:translateX(-50%) translateY(0)}50%{opacity:.6;transform:translateX(-50%) translateY(7px)}}`}</style>
-      <div style={{ position:"absolute", bottom:18, left:"50%", zIndex:3, pointerEvents:"none", animation:"rload-scroll-hint 2.4s ease-in-out infinite" }}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 2. SCREENSHOTS — full-width, featured + filmstrip
-// ═══════════════════════════════════════════════════════════════════════════════
-function GameScreenshots({ screenshots }) {
-  const [active, setActive] = useState(0);
-  if (!screenshots || screenshots.length === 0) return null;
-
-  return (
-    <div>
-      <SectionHeading>Screenshots</SectionHeading>
-
-      {/* Featured */}
-      <div style={{
-        width: "100%", borderRadius: T.radius, overflow: "hidden",
-        aspectRatio: "16/9", background: "rgba(0,0,0,0.35)",
-        border: `1px solid ${T.border}`,
-      }}>
-        <img src={screenshots[active]} alt={`Screenshot ${active + 1}`}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}/>
-      </div>
-
-      {/* Filmstrip */}
-      {screenshots.length > 1 && (
-        <div style={{ display: "flex", gap: 8, marginTop: 8, overflowX: "auto", paddingBottom: 2 }}>
-          {screenshots.map((src, i) => (
-            <button key={i} onClick={() => setActive(i)} style={{
-              flexShrink: 0, width: 112, height: 63, padding: 0, border: "none", cursor: "pointer",
-              borderRadius: T.radiusSm, overflow: "hidden",
-              outline: i === active ? `2px solid ${T.brand}` : "2px solid transparent",
-              outlineOffset: 1, opacity: i === active ? 1 : 0.6,
-              transition: "outline 0.12s, opacity 0.12s",
-            }}>
-              <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 3. WHY PLAY — editorial cards, Rload recommendation voice
-// ═══════════════════════════════════════════════════════════════════════════════
-const CARD_ICONS = {
-  maze: "🌀", score: "🏆", haiku: "📜", explore: "🗺️", zen: "🧘",
-  art: "🎨", puzzle: "🧩", story: "📖", action: "⚔️", music: "🎵",
-  world: "🌍", coop: "👥", speed: "⚡", craft: "🔨", nature: "🌿",
-};
-function getCardIcon(key) {
-  if (!key) return "✨";
-  return CARD_ICONS[key.toLowerCase()] || "✨";
-}
-
-function GameWhyPlay({ featureCards }) {
-  if (!featureCards || featureCards.length === 0) return null;
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-        <SectionHeading tight>Why Play?</SectionHeading>
-        <span style={{
-          fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: T.brandLight,
-          padding: "3px 10px", borderRadius: T.radiusPill,
-          background: T.brandSoft, border: `1px solid ${T.borderBrand}`,
-          textTransform: "uppercase",
-        }}>
-          Rload Editorial
-        </span>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(featureCards.length, 3)}, 1fr)`, gap: 12 }}>
-        {featureCards.map((card, i) => (
-          <div key={i} style={{
-            padding: "22px 20px", borderRadius: T.radius,
-            background: T.bgCard,
-            border: `1px solid ${T.border}`,
-            display: "flex", flexDirection: "column", gap: 10,
-            transition: "border-color 0.15s, background 0.15s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = T.bgCardHover; e.currentTarget.style.borderColor = T.borderBrand; }}
-            onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.borderColor = T.border; }}
-          >
-            <div style={{ fontSize: 32, lineHeight: 1 }}>{getCardIcon(card.icon)}</div>
-            <div style={{
-              fontFamily: T.fontHead, fontSize: 15, fontWeight: 700,
-              color: T.text, lineHeight: 1.3,
-            }}>
-              {card.title}
-            </div>
-            <div style={{ fontSize: 13, color: T.textSub, lineHeight: 1.65 }}>
-              {card.text}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 4. ABOUT
-// ═══════════════════════════════════════════════════════════════════════════════
-function GameAbout({ game }) {
-  if (!game.description) return null;
-  return (
-    <div>
-      <SectionHeading>About {game.title}</SectionHeading>
-      <p style={{ fontSize: 14, color: T.textSub, lineHeight: 1.8, margin: 0, whiteSpace: "pre-line" }}>
-        {game.description}
-      </p>
-    </div>
-  );
-}
-
-// ── Trailer ───────────────────────────────────────────────────────────────────
-function GameTrailer({ trailerUrl }) {
-  if (!trailerUrl) return null;
-  const yt = trailerUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-  const embed = yt ? `https://www.youtube.com/embed/${yt[1]}?rel=0` : null;
-  const isVideo = /\.(mp4|webm|ogg)(\?|$)/i.test(trailerUrl);
-  if (!embed && !isVideo) return null;
-  return (
-    <div>
-      <SectionHeading>Trailer</SectionHeading>
-      <div style={{ width: "100%", aspectRatio: "16/9", borderRadius: T.radius, overflow: "hidden", background: "#000", border: `1px solid ${T.border}` }}>
-        {embed ? (
-          <iframe src={embed} title="Game trailer" style={{ width: "100%", height: "100%", border: "none" }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
-        ) : (
-          <video src={trailerUrl} controls style={{ width: "100%", height: "100%", objectFit: "contain" }}/>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── System Requirements ───────────────────────────────────────────────────────
-function GameRequirements({ systemRequirements }) {
-  if (!systemRequirements) return null;
-  const { min, rec } = systemRequirements;
-  if (!min && !rec) return null;
-
-  const fields = [
-    { key: "os",      label: "OS" },
-    { key: "cpu",     label: "CPU" },
-    { key: "ram",     label: "RAM" },
-    { key: "gpu",     label: "GPU" },
-    { key: "storage", label: "Storage" },
-    { key: "directx", label: "DirectX" },
+  const pairs = [
+    ["#5a315f", "#15243e"], ["#61305c", "#1a1640"], ["#1f4965", "#17203d"],
+    ["#6b3e69", "#25214d"], ["#244858", "#142d35"], ["#553475", "#23123d"],
   ];
-
-  function ReqCard({ title, req, accent }) {
-    if (!req) return null;
-    const rows = fields.filter(f => req[f.key]);
-    if (rows.length === 0) return null;
-    return (
-      <div style={{
-        flex: 1, padding: "18px 20px", borderRadius: T.radius,
-        background: T.bgCard,
-        border: `1px solid ${accent ? T.borderBrand : T.border}`,
-      }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: accent ? T.brand : T.textMuted, marginBottom: 14, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          {title}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-          {rows.map(f => (
-            <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ fontSize: 10, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</span>
-              <span style={{ fontSize: 13, color: T.textSub }}>{req[f.key]}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <SectionHeading>System Requirements</SectionHeading>
-      <div style={{ display: "flex", gap: 12 }}>
-        <ReqCard title="Minimum" req={min} accent={false}/>
-        <ReqCard title="Recommended" req={rec} accent={true}/>
-      </div>
-    </div>
-  );
+  const index = (seed || "").split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) % pairs.length;
+  return `linear-gradient(145deg, ${pairs[index][0]}, ${pairs[index][1]})`;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 5. GAME INFO GRID — sidebar
-// ═══════════════════════════════════════════════════════════════════════════════
-function GameInfoGrid({ game }) {
-  const cells = [];
-  if (game.studio)           cells.push({ label: "Developer",  value: game.studio });
-  if (game.version)          cells.push({ label: "Version",    value: game.version });
-  if (game.releaseDate)      { const y = formatYear(game.releaseDate); if (y) cells.push({ label: "Released", value: y }); }
-  if (game.genres?.length)   cells.push({ label: "Genre",      value: game.genres.map(capitalize).join(", ") });
-  if (game.ageRating)        cells.push({ label: "Age Rating", value: game.ageRating });
-  if (game.languages?.length) cells.push({ label: "Languages", value: `${game.languages.length} supported` });
-  if (!game.comingSoon)      { const s = humanBytes(game.downloadSize); cells.push({ label: "Download", value: s || "—" }); }
-  const platforms = game.platform?.length ? game.platform : ["Windows"];
-  cells.push({ label: "Platform", value: platforms.join(", ") });
-  if (game.tags?.length)     cells.push({ label: "Tags", value: game.tags.slice(0, 6).join(", ") });
+function PlayIcon({ size = 14 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>;
+}
 
-  if (cells.length === 0) return null;
+function DownloadIcon() {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>;
+}
+
+function PauseIcon() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>;
+}
+
+function ctaConfig(uiState, hasAccess, game, dl, busy) {
+  if (game?.comingSoon) return { label: "COMING SOON", action: null, disabled: true };
+  if (!hasAccess) return { label: "SUBSCRIBE TO PLAY", action: "subscribe", disabled: false };
+  switch (uiState) {
+    case UI.DOWNLOADING: return { label: `DOWNLOADING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
+    case UI.PAUSED: return { label: "RESUME DOWNLOAD", action: "resume", icon: <PlayIcon/>, disabled: busy };
+    case UI.INSTALLING: return { label: "INSTALLING…", action: null, disabled: true };
+    case UI.INSTALLED: return { label: "PLAY", action: "play", icon: <PlayIcon/>, disabled: busy };
+    case UI.RUNNING: return { label: "PLAYING…", action: null, disabled: true };
+    case UI.UPDATE_AVAILABLE: return { label: "UPDATE", action: "update", icon: <DownloadIcon/>, disabled: busy };
+    case UI.UPDATING: return { label: `UPDATING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
+    case UI.ERROR: return { label: "RETRY INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
+    default: return { label: "INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
+  }
+}
+
+function GameInfoCard({ game }) {
+  const rows = [];
+  if (game.studio) rows.push(["Developer", game.studio]);
+  if (game.version) rows.push(["Version", game.version]);
+  if (game.genres?.length) rows.push(["Genre", game.genres.map(capitalize).join(", ")]);
+  if (!game.comingSoon) rows.push(["Download", humanBytes(game.downloadSize) || "—"]);
+  const platforms = Array.isArray(game.platform) ? game.platform : [game.platform || "Windows"];
+  rows.push(["Platform", platforms.filter(Boolean).join(", ")]);
+  if (game.tags?.length) rows.push(["Tags", game.tags.slice(0, 5).join(", ")]);
 
   return (
-    <div>
-      <SectionHeading tight>Game Info</SectionHeading>
-      <div style={{ borderRadius: T.radius, overflow: "hidden", border: `1px solid ${T.border}` }}>
-        {cells.map((cell, i) => (
-          <div key={i} style={{
-            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            padding: "9px 14px", gap: 12,
-            background: i % 2 === 0 ? "rgba(255,255,255,0.025)" : "transparent",
-            borderBottom: i < cells.length - 1 ? `1px solid ${T.border}` : "none",
-          }}>
-            <span style={{ fontSize: 11, color: T.textDim, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>{cell.label}</span>
-            <span style={{ fontSize: 12, color: T.textSub, textAlign: "right" }}>{cell.value}</span>
+    <aside style={{ width: "100%", height: 372, padding: 20, borderRadius: 16, background: T.heroCard, backdropFilter: "blur(18px)", boxSizing:"border-box" }}>
+      <h2 style={{ margin: "0 0 20px", font: `700 28px/34px ${T.head}`, color: T.text }}>Game Info</h2>
+      <div style={{ padding: "4px 20px", borderRadius: 16, background: "rgba(255,255,255,0.04)" }}>
+        {rows.map(([label, value], index) => (
+          <div key={label} style={{ display: "grid", gridTemplateColumns: "96px minmax(0,1fr)", gap: 16, alignItems: "center", minHeight: 45, borderBottom: index < rows.length - 1 ? `1px solid ${T.border}` : "none", fontFamily: T.body }}>
+            <span style={{ fontSize: 14, color: T.muted }}>{label}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: T.text, textAlign: "right", overflowWrap: "anywhere" }}>{value}</span>
           </div>
         ))}
       </div>
-
-      {/* External links */}
-      {(game.website || game.studioLinks?.website || game.studioLinks?.steam) && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
-          {(game.website || game.studioLinks?.website) && (
-            <button onClick={() => window.rload?.openExternal?.(game.website || game.studioLinks.website)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 12px", borderRadius: T.radiusSm,
-                background: T.bgCard, border: `1px solid ${T.border}`,
-                color: T.textSub, fontSize: 12, cursor: "pointer", textAlign: "left",
-                transition: "all 0.15s", fontFamily: T.fontBody, width: "100%",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = T.bgCardHover; e.currentTarget.style.color = T.text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textSub; }}
-            >
-              <GlobeIcon/> Official Website
-            </button>
-          )}
-          {game.studioLinks?.steam && (
-            <button onClick={() => window.rload?.openExternal?.(game.studioLinks.steam)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 12px", borderRadius: T.radiusSm,
-                background: T.bgCard, border: `1px solid ${T.border}`,
-                color: T.textSub, fontSize: 12, cursor: "pointer", textAlign: "left",
-                transition: "all 0.15s", fontFamily: T.fontBody, width: "100%",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = T.bgCardHover; e.currentTarget.style.color = T.text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = T.bgCard; e.currentTarget.style.color = T.textSub; }}
-            >
-              ◈ View on Steam
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+    </aside>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 6. STUDIO BLOCK — significantly improved
-// ═══════════════════════════════════════════════════════════════════════════════
-function GameStudioBlock({ game, allGames }) {
+function ProgressBar({ dl, uiState }) {
+  if (![UI.DOWNLOADING, UI.UPDATING, UI.PAUSED, UI.INSTALLING].includes(uiState)) return null;
+  const percent = uiState === UI.INSTALLING ? 100 : (dl?.percent ?? 0);
+  return <div style={{ width: 260, height: 3, marginTop: 10, borderRadius: 99, background: "rgba(255,255,255,.18)", overflow: "hidden" }}><div style={{ width: `${percent}%`, height: "100%", background: T.text, transition: "width .3s ease" }}/></div>;
+}
+
+function GameHero({ game, uiState, dl, subscriptionStatus, demoMode, busy, installedVersion, isFavorite, onToggleFavorite, onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onRefreshAccess, onUninstall, onBack }) {
+  const hasAccess = demoMode || Boolean(subscriptionStatus?.hasAccess);
+  const cta = ctaConfig(uiState, hasAccess, game, dl, busy);
+  const banner = game.banner || game.heroImage || game.coverImage || game.thumbnail || game.coverUrl;
+  const [confirmUninstall, setConfirmUninstall] = useState(false);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  function invoke(action) {
+    if (!action) return;
+    if (action === "subscribe") return window.rload?.openExternal?.("https://rload.be/pricing?source=launcher");
+    ({ install:onInstall, play:onPlay, update:onUpdate, pause:onPause, resume:onResume, cancel:onCancel }[action])?.();
+  }
+
+  function uninstall() {
+    if (confirmUninstall) { clearTimeout(timer.current); setConfirmUninstall(false); onUninstall?.(); return; }
+    setConfirmUninstall(true);
+    timer.current = setTimeout(() => setConfirmUninstall(false), 3000);
+  }
+
+  const genres = (game.genres?.length ? game.genres : game.tags || []).slice(0, 3);
+  const size = humanBytes(game.downloadSize);
+
+  return (
+    <section style={{ position: "relative", width: "100%", height: 640, display: "flex", alignItems: "flex-end", overflow: "hidden", background: coverGradient(game.gameId || game.title) }}>
+      <button onClick={onBack} style={{position:"absolute",zIndex:3,left:24,top:24,height:40,padding:"0 16px",display:"flex",alignItems:"center",gap:8,borderRadius:999,border:"1px solid rgba(255,255,255,.25)",background:"rgba(15,8,29,.48)",backdropFilter:"blur(10px)",color:"#fff",font:`600 13px/1 ${T.body}`,cursor:"pointer"}}>← Back to Games</button>
+      {banner && <img src={banner} alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 28%" }} onError={(event) => { event.currentTarget.style.display = "none"; }}/>}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(20,10,34,.08) 20%, rgba(13,5,26,.55) 60%, rgba(13,5,26,.94) 100%)" }}/>
+      <div style={{ position: "relative", zIndex: 1, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "clamp(28px, 3.4vw, 48px)", padding: "clamp(32px, 4.45vw, 64px)", boxSizing: "border-box" }}>
+        <div style={{ flex: "1 1 680px", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16 }}>
+          {genres.length > 0 && <div style={{ display: "flex", gap: 8 }}>{genres.map((genre) => <span key={genre} style={{ padding: "7px 14px", borderRadius: 999, background: "rgba(255,255,255,.14)", font: `600 13px/16px ${T.body}`, color: T.text }}>{capitalize(genre)}</span>)}</div>}
+          <h1 style={{ margin: 0, font: `800 clamp(52px,5vw,72px)/1.05 ${T.head}`, letterSpacing: "-2px", color: T.text, textTransform: "uppercase" }}>{game.title}</h1>
+          {game.studio && <div style={{ display: "flex", gap: 6, font: `400 16px/20px ${T.body}` }}><span style={{ color: "rgba(255,255,255,.7)" }}>by</span><span style={{ color: T.text, fontWeight: 700 }}>{game.studio}</span></div>}
+          {game.shortDescription && <p style={{ width: 500, maxWidth: "100%", margin: 0, font: `400 17px/1.5 ${T.body}`, color: T.sub }}>{game.shortDescription}</p>}
+          <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+            <button disabled={cta.disabled} onClick={() => invoke(cta.action)} style={{ display: "inline-flex", alignItems: "center", gap: 8, minHeight: 45, padding: "0 25px", border: 0, borderRadius: 999, background: T.text, color: "#140f1f", font: `700 14px/1 ${T.body}`, cursor: cta.disabled ? "default" : "pointer", opacity: cta.disabled ? .65 : 1 }}>{cta.icon}{cta.label}</button>
+            <button onClick={onToggleFavorite} aria-pressed={isFavorite} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: 0, border: 0, background: "none", color: T.text, font: `700 13px/1 ${T.body}`, cursor: "pointer" }}><span style={{ fontSize: 15 }}>{isFavorite ? "♥" : "☆"}</span>{isFavorite ? "IN FAVORITES" : "ADD TO FAVORITE"}</button>
+            {[UI.DOWNLOADING, UI.UPDATING].includes(uiState) && <button onClick={onCancel} style={{ border: 0, background: "none", color: T.muted, cursor: "pointer", fontFamily: T.body }}>Cancel</button>}
+            {[UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR].includes(uiState) && !game.comingSoon && <button onClick={uninstall} style={{ border: 0, background: "none", color: confirmUninstall ? T.red : T.muted, cursor: "pointer", fontFamily: T.body }}>{confirmUninstall ? "Confirm uninstall?" : "Uninstall"}</button>}
+            {!hasAccess && onRefreshAccess && <button onClick={onRefreshAccess} style={{ border: 0, background: "none", color: T.muted, cursor: "pointer", fontFamily: T.body }}>Refresh access</button>}
+          </div>
+          <ProgressBar dl={dl} uiState={uiState}/>
+          <div style={{ font: `400 13px/16px ${T.body}`, color: T.muted }}>{[size, "Windows Only", installedVersion ? `v${installedVersion} installed` : null].filter(Boolean).join("  ·  ")}</div>
+        </div>
+      </div>
+      <div style={{ position: "absolute", left: "50%", bottom: 18, transform: "translateX(-50%)", color: "rgba(255,255,255,.7)", fontSize: 22 }}>⌄</div>
+    </section>
+  );
+}
+
+function SocialButton({ label, href }) {
+  if (!href) return null;
+  return <button onClick={() => window.rload?.openExternal?.(href)} title={label} style={{ width: 36, height: 36, borderRadius: 999, border: `1px solid ${T.border}`, background: "rgba(255,255,255,.04)", color: T.muted, cursor: "pointer", font: `600 11px/1 ${T.body}` }}>{label.slice(0, 1)}</button>;
+}
+
+function StudioArticle({ game, allGames }) {
   if (!game.studio) return null;
-
-  const studioGamesCount = allGames
-    ? allGames.filter(g => g.studio === game.studio).length
-    : null;
-
-  const flag    = countryFlag(game.studioCountry);
-  const country = countryName(game.studioCountry);
-  const hasLinks = game.studioLinks && Object.values(game.studioLinks).some(Boolean);
-
+  const studioGames = (allGames || []).filter((item) => item.studio === game.studio);
+  const team = Array.isArray(game.studioTeam) ? game.studioTeam : [];
+  const facts = [
+    game.studioFounded ? `Founded ${game.studioFounded}` : null,
+    game.studioCountry || null,
+    studioGames.length ? `${studioGames.length} game${studioGames.length > 1 ? "s" : ""} on Rload` : null,
+  ].filter(Boolean);
+  const links = game.studioLinks || {};
   return (
-    <div>
-      <SectionHeading tight>About the Studio</SectionHeading>
-      <div style={{
-        padding: "20px", borderRadius: T.radius,
-        background: T.bgCard,
-        border: `1px solid ${T.border}`,
-      }}>
-        {/* Logo + name row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: T.radiusSm, flexShrink: 0,
-            background: game.studioLogo ? "transparent" : T.brandGrad,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            overflow: "hidden", border: `1px solid ${T.border}`,
-            boxShadow: T.shadowCard,
-          }}>
-            {game.studioLogo ? (
-              <img src={game.studioLogo} alt={game.studio} style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
-            ) : (
-              <span style={{ fontFamily: T.fontHead, fontSize: 24, fontWeight: 800, color: "#fff" }}>
-                {game.studio.charAt(0).toUpperCase()}
-              </span>
-            )}
+    <section style={{ padding: "64px", boxSizing: "border-box" }}>
+      <div style={{ marginBottom: 24, font: `600 12px/16px ${T.head}`, letterSpacing: ".96px", color: "rgba(255,255,255,.5)" }}>ABOUT THE STUDIO</div>
+      <article style={{ padding: "36px 40px", borderRadius: 24, border: `1px solid ${T.border}`, background: T.card }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 999, display: "grid", placeItems: "center", overflow: "hidden", background: "linear-gradient(135deg,#7255e5,rgba(114,85,229,.55))", font: `800 26px/1 ${T.head}` }}>{game.studioLogo ? <img src={game.studioLogo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/> : game.studio.charAt(0).toUpperCase()}</div>
+            <div><h2 style={{ margin: 0, font: `700 28px/34px ${T.head}`, color: T.text }}>{game.studio}</h2>{game.studioTagline && <div style={{ marginTop: 4, font: `400 14px/20px ${T.body}`, color: T.muted }}>{game.studioTagline}</div>}</div>
           </div>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: T.fontHead, fontSize: 16, fontWeight: 700, color: T.text, lineHeight: 1.2 }}>
-              {game.studio}
-            </div>
-            {(country || flag) && (
-              <div style={{ fontSize: 12, color: T.textMuted, marginTop: 3 }}>
-                {flag && <span style={{ marginRight: 5 }}>{flag}</span>}
-                {country}
-              </div>
-            )}
-          </div>
+          <div style={{ display: "flex", gap: 8 }}><SocialButton label="Website" href={links.website || game.website}/><SocialButton label="X" href={links.twitter}/><SocialButton label="Discord" href={links.discord}/><SocialButton label="Steam" href={links.steam}/></div>
         </div>
-
-        {/* Stats row */}
-        <div style={{
-          display: "flex", gap: 0,
-          borderRadius: T.radiusSm, overflow: "hidden",
-          border: `1px solid ${T.border}`,
-          marginBottom: 14,
-        }}>
-          {studioGamesCount !== null && (
-            <div style={{ flex: 1, padding: "10px 14px", borderRight: `1px solid ${T.border}`, textAlign: "center" }}>
-              <div style={{ fontFamily: T.fontHead, fontSize: 20, fontWeight: 700, color: T.text }}>
-                {studioGamesCount}
-              </div>
-              <div style={{ fontSize: 10, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>
-                {studioGamesCount === 1 ? "Game" : "Games"} on Rload
-              </div>
-            </div>
-          )}
-          <div style={{ flex: 1, padding: "10px 14px", textAlign: "center" }}>
-            <div style={{ fontFamily: T.fontHead, fontSize: 20, fontWeight: 700, color: T.text }}>
-              {game.studioCountry || "—"}
-            </div>
-            <div style={{ fontSize: 10, color: T.textDim, textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 1 }}>
-              Country
-            </div>
-          </div>
-        </div>
-
-        {/* View Studio button (M5 stub) */}
-        <button
-          onClick={() => { /* M5: navigate to studio page */ }}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            width: "100%", padding: "10px 16px", borderRadius: T.radiusSm,
-            background: T.brandSoft, border: `1px solid ${T.borderBrand}`,
-            color: T.brandLight, fontSize: 13, fontWeight: 600,
-            cursor: "pointer", fontFamily: T.fontBody, transition: "all 0.15s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(128,74,240,0.25)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = T.brandSoft; }}
-        >
-          View Studio <ArrowRightIcon/>
-        </button>
-
-        {/* Social links */}
-        {hasLinks && (
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            {game.studioLinks?.website && (
-              <button onClick={() => window.rload?.openExternal?.(game.studioLinks.website)}
-                style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: T.radiusSm, background: T.bgCard, border: `1px solid ${T.border}`, color: T.textMuted, fontSize: 11, cursor: "pointer", fontFamily: T.fontBody, transition: "color 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = T.text}
-                onMouseLeave={e => e.currentTarget.style.color = T.textMuted}
-              >
-                <GlobeIcon/> Website
-              </button>
-            )}
-            {game.studioLinks?.discord && (
-              <button onClick={() => window.rload?.openExternal?.(game.studioLinks.discord)}
-                style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: T.radiusSm, background: T.bgCard, border: `1px solid ${T.border}`, color: T.textMuted, fontSize: 11, cursor: "pointer", fontFamily: T.fontBody, transition: "color 0.15s" }}
-                onMouseEnter={e => e.currentTarget.style.color = T.text}
-                onMouseLeave={e => e.currentTarget.style.color = T.textMuted}
-              >
-                Discord
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+        {facts.length > 0 && <div style={{ display: "flex", gap: 18, marginTop: 22, font: `600 12px/16px ${T.body}`, color: T.sub }}>{facts.map((fact, index) => <React.Fragment key={fact}>{index > 0 && <span style={{ color: T.dim }}>·</span>}<span>{fact}</span></React.Fragment>)}</div>}
+        {game.studioDescription && <p style={{ margin: "22px 0 0", font: `400 14px/1.7 ${T.body}`, color: T.sub }}>{game.studioDescription}</p>}
+        {team.length > 0 && <div style={{ marginTop: 24 }}><div style={{ marginBottom: 12, font: `700 13px/18px ${T.body}` }}>The Team</div><div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 }}>{team.slice(0, 4).map((member) => <div key={member.name} style={{ minHeight: 74, padding: 14, borderRadius: 12, background: T.cardStrong }}><div style={{ width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: 999, background: "rgba(114,85,229,.45)", font: `600 10px/1 ${T.body}` }}>{member.initials || member.name?.split(" ").map((part) => part[0]).join("").slice(0, 2)}</div><div style={{ marginTop: 8, font: `600 12px/16px ${T.body}` }}>{member.name}</div>{member.role && <div style={{ font: `400 10px/14px ${T.body}`, color: T.muted }}>{member.role}</div>}</div>)}</div></div>}
+      </article>
+    </section>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// 7. MORE GAMES — full width, always at bottom
-// ═══════════════════════════════════════════════════════════════════════════════
-function MoreGames({ currentGameId, allGames, uiByGame, onSelectGame, onViewAll }) {
-  const related = (allGames || []).filter(g => g.gameId !== currentGameId).slice(0, 8);
-  if (related.length === 0) return null;
-
-  function statusChip(gameId) {
-    const s = uiByGame?.[gameId];
-    if (s === UI.INSTALLED || s === UI.RUNNING)  return { color: T.green,  label: "Installed" };
-    if (s === UI.UPDATE_AVAILABLE)               return { color: T.orange, label: "Update" };
-    if (s === UI.DOWNLOADING || s === UI.UPDATING) return { color: T.blue, label: "Installing" };
-    return null;
-  }
-
-  return (
-    <div style={{
-      padding: "28px 48px 48px",
-      borderTop: `1px solid ${T.border}`,
-      marginTop: 8,
-    }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 18 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-          <SectionHeading tight>More Games</SectionHeading>
-          <span style={{ fontSize: 12, color: T.textDim }}>on Rload</span>
+function FigmaStudioCard({ game, allGames }) {
+  const studioGames=(allGames||[]).filter(item=>item.studio===game.studio);
+  if (!game.studio) return <div style={{minHeight:280,borderRadius:16,background:T.heroCard}}/>;
+  return <section style={{height:372,padding:20,borderRadius:16,background:T.heroCard,boxSizing:"border-box"}}>
+    <h2 style={{margin:"0 0 20px",font:`700 28px/34px ${T.head}`}}>About the Studio</h2>
+    <div style={{height:"calc(100% - 54px)",minHeight:226,padding:20,borderRadius:16,background:"rgba(35,13,71,.5)",boxSizing:"border-box",display:"flex",flexDirection:"column",gap:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:16}}>
+        <div style={{display:"flex",alignItems:"center",gap:14,minWidth:0}}>
+          <div style={{width:50,height:50,borderRadius:999,display:"grid",placeItems:"center",background:"linear-gradient(135deg,#7255e5,rgba(114,85,229,.55))",font:`800 20px/1 ${T.head}`,flexShrink:0}}>{game.studio.charAt(0).toUpperCase()}</div>
+          <div style={{minWidth:0}}><div style={{font:`700 16px/20px ${T.head}`,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{game.studio}</div><div style={{font:`400 12px/17px ${T.body}`,color:T.muted}}>Independent studio on Rload.</div></div>
         </div>
-        {onViewAll && (
-          <button onClick={onViewAll} style={{
-            display: "flex", alignItems: "center", gap: 5,
-            background: "none", border: "none", cursor: "pointer",
-            fontSize: 12, color: T.textMuted, fontFamily: T.fontBody, padding: 0,
-            transition: "color 0.15s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = T.brandLight}
-            onMouseLeave={e => e.currentTarget.style.color = T.textMuted}
-          >
-            See all games
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-          </button>
-        )}
+        <button style={{padding:"9px 18px",border:0,borderRadius:999,background:T.violet,color:"#fff",font:`600 12px/1 ${T.body}`}}>+ Follow</button>
       </div>
-
-      <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6 }}>
-        {related.map(g => {
-          const cover = g.thumbnail || g.coverUrl || g.coverImage || null;
-          const chip  = statusChip(g.gameId);
-          return (
-            <button key={g.gameId} onClick={() => onSelectGame?.(g)} style={{
-              flexShrink: 0, width: 148, padding: 0, background: "none", border: "none",
-              cursor: "pointer", textAlign: "left",
-            }}>
-              <div style={{
-                width: 148, height: 93, borderRadius: T.radiusSm, overflow: "hidden",
-                background: coverGradient(g.gameId || g.title),
-                border: `1px solid ${T.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                position: "relative", transition: "border-color 0.15s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = T.borderBrand; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; }}
-              >
-                {/* Monogram always rendered under the gradient — stays visible if the cover image 404s */}
-                <span style={{ fontSize: 20, fontWeight: 800, fontFamily: T.fontHead, color: "rgba(255,255,255,0.28)" }}>
-                  {(g.title || g.gameId || "?").charAt(0).toUpperCase()}
-                </span>
-                {cover && (
-                  <img src={cover} alt={g.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                    onError={e => { e.currentTarget.style.display = "none"; }}/>
-                )}
-                {chip && (
-                  <div style={{
-                    position: "absolute", bottom: 5, left: 5,
-                    padding: "2px 7px", borderRadius: T.radiusPill,
-                    background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)",
-                    fontSize: 9, fontWeight: 700, color: chip.color, letterSpacing: "0.04em",
-                  }}>
-                    {chip.label}
-                  </div>
-                )}
-              </div>
-              <div style={{ marginTop: 7, fontSize: 12, fontWeight: 600, color: T.textSub, lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {g.title}
-              </div>
-              {g.studio && (
-                <div style={{ fontSize: 11, color: T.textDim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {g.studio}
-                </div>
-              )}
-            </button>
-          );
-        })}
+      <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:"10px 20px",font:`400 13px/18px ${T.body}`}}>
+        <span style={{color:T.muted}}>Games on Rload</span><strong>{studioGames.length}</strong>
+        {game.studioCountry&&<><span style={{color:T.muted}}>Location</span><strong>{game.studioCountry}</strong></>}
+        {game.studioFounded&&<><span style={{color:T.muted}}>Founded</span><strong>{game.studioFounded}</strong></>}
       </div>
+      {game.studioDescription&&<p style={{margin:0,font:`400 12px/18px ${T.body}`,color:T.sub}}>{game.studioDescription}</p>}
     </div>
-  );
+  </section>;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// ROOT — GameSinglePage
-// Layout: Hero → Screenshots → WhyPlay → [About + Sidebar] → [Studio] → MoreGames
-// ═══════════════════════════════════════════════════════════════════════════════
-export function GameSinglePage({
-  game, uiState, dl, resolvedExe, installedVersion,
-  subscriptionStatus, demoMode, busy, error,
-  onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onUninstall,
-  onBack, allGames, uiByGame, onSelectGame, onRefreshAccess, onViewAllGames,
-}) {
+function ScreenshotGallery({ game }) {
+  const raw=[...(LOCAL_GAME_SHOTS[game.gameId]||[]),...(Array.isArray(game.screenshots)?game.screenshots:[]),game.banner,game.heroImage,game.thumbnail,game.coverUrl].filter(Boolean);
+  const unique=[...new Set(raw.map(item=>typeof item==="string"?item:(item.url||item.src)).filter(Boolean))];
+  const images=unique.length?Array.from({length:6},(_,index)=>unique[index%unique.length]):[];
+  if (!images.length) return null;
+  return <section style={{height:772,padding:"56px 24px 8px",boxSizing:"border-box"}}><h2 style={{margin:"0 0 24px",font:`700 32px/48px ${T.head}`}}>Captures d’écran</h2>
+    <div style={{display:"grid",height:636,gridTemplateColumns:"repeat(6,minmax(0,1fr))",gridTemplateRows:"192px 192px 220px",gap:16}}>
+      {images.map((src,index)=>{const areas=[{gridColumn:"1 / 4",gridRow:"1 / 3"},{gridColumn:"4 / 7",gridRow:"1"},{gridColumn:"4 / 7",gridRow:"2"},{gridColumn:"1 / 3",gridRow:"3"},{gridColumn:"3 / 5",gridRow:"3"},{gridColumn:"5 / 7",gridRow:"3"}];return <div key={`${src}-${index}`} style={{...areas[index],borderRadius:14,overflow:"hidden",background:T.card,position:"relative"}}><img src={src} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} onError={e=>e.currentTarget.parentElement.style.display="none"}/>{index===0&&<span style={{position:"absolute",left:14,bottom:14,padding:"6px 12px",borderRadius:999,background:"rgba(13,5,26,.82)",font:`700 11px/1 ${T.body}`}}>▶ TRAILER</span>}</div>})}
+    </div>
+  </section>;
+}
+
+function PlayerReviews({ game }) {
+  const genre=capitalize(game.genres?.[0]||game.tags?.[0]||"game");
+  const authored=[
+    {author:"Max R.",stars:5,text:`${game.title} nails the ${genre.toLowerCase()} feel. The first hour was rough, then everything clicked and I couldn't put it down.`},
+    {author:"Sofia L.",stars:5,text:`J’adore l’identité de ${game.title}. Les sensations sont précises et la direction artistique lui donne une vraie personnalité.`},
+    {author:"Théo B.",stars:4,text:`Eerst was ik niet overtuigd, maar na een paar runs zat ik er helemaal in. Uitdagend, eerlijk en verrassend verslavend.`},
+  ];
+  const reviews=(Array.isArray(game.reviews)&&game.reviews.length?game.reviews:authored).slice(0,3);
+  return <section style={{height:432,padding:"40px 64px 8px",boxSizing:"border-box"}}><h2 style={{margin:"0 0 20px",font:`700 32px/48px ${T.head}`}}>Avis des joueurs</h2>
+    <div style={{font:`600 14px/17px ${T.body}`,color:"rgba(255,255,255,.7)",margin:"16px 0 12px"}}>Laisser un avis</div>
+    <div style={{height:80,borderRadius:12,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.07)",display:"flex",alignItems:"flex-start",padding:"12px 16px",boxSizing:"border-box",color:T.dim,fontSize:14}}>Partage ton avis sur ce jeu…</div>
+    <button style={{marginTop:12,padding:"12px 20px",border:0,borderRadius:999,background:T.violet,color:"#fff",font:`600 14px/17px ${T.body}`}}>Publier</button>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:20,marginTop:20}}>{reviews.map((review,index)=><article key={review.id||index} style={{height:118,padding:20,borderRadius:16,background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.07)",boxSizing:"border-box",minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{width:36,height:36,borderRadius:999,display:"grid",placeItems:"center",background:"linear-gradient(135deg,#7255e5,#261a40)",font:`700 14px/1 ${T.head}`}}>{(review.author||"P")[0]}</span><div><strong style={{fontSize:13}}>{review.author||"Player"}</strong><div style={{color:"#ffc700",fontSize:11,marginTop:2}}>{"★".repeat(review.stars||5)}{"☆".repeat(Math.max(0,5-(review.stars||5)))}</div></div></div><p style={{margin:"10px 0 0",font:`400 13px/16px ${T.body}`,color:"rgba(255,255,255,.7)",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{review.text||review.content}</p></article>)}</div>
+  </section>;
+}
+
+function MoreGameCard({ game, onSelect, favorite, onFavorite }) {
+  const cover = game.coverImage || game.thumbnail || game.coverUrl || game.banner;
+  const genre = game.genres?.[0] || game.tags?.[0];
+  return <button onClick={() => onSelect?.(game)} style={{ position: "relative", flex: "1 1 0", minWidth: 0, height: 353, padding: 0, overflow: "hidden", border: `1px solid ${T.border}`, borderRadius: 16, background: coverGradient(game.gameId || game.title), color: T.text, textAlign: "left", cursor: "pointer" }}>
+    {cover && <img src={cover} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} onError={(event) => { event.currentTarget.style.display = "none"; }}/>}
+    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,transparent 42%,rgba(9,5,18,.9) 100%)" }}/>
+    <span onClick={(event) => { event.stopPropagation(); onFavorite?.(game.gameId); }} style={{ position: "absolute", top: 14, right: 14, width: 30, height: 30, display: "grid", placeItems: "center", borderRadius: 999, background: "rgba(7,6,14,.48)", backdropFilter: "blur(8px)", fontSize: 16 }}>{favorite ? "♥" : "♡"}</span>
+    <div style={{ position: "absolute", left: 16, right: 16, bottom: 16 }}><div style={{ font: `700 clamp(20px,2vw,30px)/32px ${T.head}`, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", letterSpacing:".3px" }}>{game.title}</div><div style={{ display: "flex", alignItems:"center", gap: 10, marginTop: 8 }}>{genre && <span style={{ padding: "5px 14px", borderRadius: 999, background: T.violet, font: `500 12px/16px ${T.body}` }}>{capitalize(genre)}</span>}<span style={{ font: `600 12px/20px ${T.body}`, color: "#ffffa6" }}>★ {game.rating || "4.5"}</span></div></div>
+  </button>;
+}
+
+function MoreGames({ currentGameId, allGames, onSelectGame, onViewAll, favoriteIds, onToggleGameFavorite }) {
+  const games = (allGames || []).filter((item) => item.gameId !== currentGameId).slice(0, 5);
+  if (!games.length) return null;
+  return <section style={{ height: 543, padding: "64px 24px", boxSizing: "border-box" }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}><h2 style={{ margin: 0, font: `700 32px/38px ${T.head}` }}>More Games</h2><button onClick={onViewAll} style={{ border: 0, background: "none", color: T.violet, cursor: "pointer", font: `600 14px/18px ${T.head}` }}>See all games →</button></div><div style={{ display: "flex", gap: 24 }}>{games.map((game) => <MoreGameCard key={game.gameId} game={game} onSelect={onSelectGame} favorite={favoriteIds?.has(game.gameId)} onFavorite={onToggleGameFavorite}/>)}</div></section>;
+}
+
+function GameFooter() {
+  return <footer style={{ height: 80, padding: "0 48px", background: "#110523", borderTop: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", boxSizing: "border-box", fontFamily: T.body }}><div style={{ display: "flex", alignItems: "center", gap: 18 }}><strong style={{ font: `700 16px/20px ${T.head}`, letterSpacing: "1.6px" }}>RLOAD</strong><span style={{ fontSize: 11, color: T.muted }}>© 2026 Rload SRL · Belgium</span></div><div style={{ display: "flex", alignItems: "center", gap: 28, fontSize: 11, color: T.muted }}><span>Terms</span><span>Privacy</span><span>Support</span><span>v0.1.0</span></div></footer>;
+}
+
+export function GameSinglePage({ game, uiState, dl, installedVersion, subscriptionStatus, demoMode, busy, error, onInstall, onPlay, onUpdate, onPause, onResume, onCancel, onUninstall, allGames, onSelectGame, onRefreshAccess, onViewAllGames, isFavorite, onToggleFavorite, favoriteIds, onToggleGameFavorite }) {
   const effectiveUiState = uiState || UI.IDLE;
-
   const [uninstallToast, setUninstallToast] = useState(false);
-  const prevGameIdRef  = useRef(game?.gameId);
-  const prevUiStateRef = useRef(effectiveUiState);
-
+  const previousGame = useRef(game?.gameId);
+  const previousState = useRef(effectiveUiState);
   useEffect(() => {
-    if (prevGameIdRef.current !== game?.gameId) {
-      prevGameIdRef.current  = game?.gameId;
-      prevUiStateRef.current = effectiveUiState;
-      return;
-    }
-    const prev = prevUiStateRef.current;
-    prevUiStateRef.current = effectiveUiState;
-    const wasInstalled = [UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR, UI.RUNNING].includes(prev);
-    if (wasInstalled && effectiveUiState === UI.IDLE) {
-      setUninstallToast(true);
-      const t = setTimeout(() => setUninstallToast(false), 3500);
-      return () => clearTimeout(t);
-    }
+    if (previousGame.current !== game?.gameId) { previousGame.current = game?.gameId; previousState.current = effectiveUiState; return; }
+    const before = previousState.current;
+    previousState.current = effectiveUiState;
+    if ([UI.INSTALLED, UI.INSTALLED_NO_EXE, UI.UPDATE_AVAILABLE, UI.ERROR, UI.RUNNING].includes(before) && effectiveUiState === UI.IDLE) { setUninstallToast(true); const timer = setTimeout(() => setUninstallToast(false), 3500); return () => clearTimeout(timer); }
   }, [effectiveUiState, game?.gameId]);
-
-  if (!game) {
-    return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontFamily: T.fontBody }}>
-        Game not found.
-      </div>
-    );
-  }
-
-  const hasContent = (game.screenshots?.length > 0) || game.featureCards?.length > 0
-    || game.description || game.systemRequirements || game.trailer;
-
-  return (
-    <div style={{
-      flex: 1, display: "flex", flexDirection: "column",
-      overflowY: "auto",
-      background: `linear-gradient(160deg, ${T.bgDeep} 0%, #241d4a 55%, #1c1640 100%)`,
-      fontFamily: T.fontBody, color: T.text,
-    }}>
-
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <GameHero
-        game={game}
-        uiState={effectiveUiState}
-        dl={dl}
-        installedVersion={installedVersion}
-        subscriptionStatus={subscriptionStatus}
-        demoMode={demoMode}
-        busy={busy}
-        onInstall={onInstall}
-        onPlay={onPlay}
-        onUpdate={onUpdate}
-        onPause={onPause}
-        onResume={onResume}
-        onCancel={onCancel}
-        onBack={onBack}
-        onRefreshAccess={onRefreshAccess}
-        onUninstall={onUninstall}
-      />
-
-      {/* ── Uninstall success toast ───────────────────────────────────────── */}
-      {uninstallToast && (
-        <div style={{ margin: "12px 48px 0", padding: "10px 16px", borderRadius: T.radiusSm, background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.28)", fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 8 }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-          {game.title} has been uninstalled successfully.
-        </div>
-      )}
-
-      {/* ── Error notice ──────────────────────────────────────────────────── */}
-      {error && (
-        <div style={{ margin: "12px 48px 0", padding: "10px 16px", borderRadius: T.radiusSm, background: T.redBg, border: `1px solid ${T.redBorder}`, fontSize: 13, color: T.red }}>
-          {error}
-        </div>
-      )}
-
-      {/* ── INSTALLED_NO_EXE notice ───────────────────────────────────────── */}
-      {effectiveUiState === UI.INSTALLED_NO_EXE && (
-        <div style={{ margin: "12px 48px 0", padding: "10px 16px", borderRadius: T.radiusSm, background: "rgba(251,146,60,0.10)", border: "1px solid rgba(251,146,60,0.28)", fontSize: 13, color: T.orange }}>
-          Game is installed but the executable could not be found. Try uninstalling then reinstalling.
-        </div>
-      )}
-
-      {/* ── Main content ──────────────────────────────────────────────────── */}
-      {hasContent ? (
-        <div style={{ padding: "32px 48px 0" }}>
-
-          {/* Full-width: Screenshots */}
-          {game.screenshots?.length > 0 && (
-            <div style={{ marginBottom: 40 }}>
-              <GameScreenshots screenshots={game.screenshots}/>
-            </div>
-          )}
-
-          {/* Full-width: Why Play */}
-          {game.featureCards?.length > 0 && (
-            <div style={{ marginBottom: 40 }}>
-              <GameWhyPlay featureCards={game.featureCards}/>
-            </div>
-          )}
-
-          {/* Two-column: About + Sidebar */}
-          <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-
-            {/* Left — primary editorial content */}
-            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 36 }}>
-              <GameAbout game={game}/>
-              <GameTrailer trailerUrl={game.trailer}/>
-              <GameRequirements systemRequirements={game.systemRequirements}/>
-            </div>
-
-            {/* Right — metadata sidebar */}
-            <div style={{ width: 272, flexShrink: 0, display: "flex", flexDirection: "column", gap: 24 }}>
-              <GameInfoGrid game={game}/>
-              <GameStudioBlock game={game} allGames={allGames}/>
-            </div>
-          </div>
-
-          <div style={{ paddingBottom: 8 }}/>
-        </div>
-      ) : (
-        <div style={{ margin: "40px 48px", padding: "32px", borderRadius: T.radius, background: T.bgCard, border: `1px solid ${T.border}`, textAlign: "center" }}>
-          <div style={{ fontSize: 22, marginBottom: 10 }}>🎮</div>
-          <div style={{ fontSize: 14, color: T.textMuted, fontFamily: T.fontBody }}>More details coming soon.</div>
-        </div>
-      )}
-
-      {/* ── More Games — always full width at bottom ──────────────────────── */}
-      <MoreGames
-        currentGameId={game.gameId}
-        allGames={allGames}
-        uiByGame={uiByGame}
-        onSelectGame={onSelectGame}
-        onViewAll={onViewAllGames}
-      />
-    </div>
-  );
+  if (!game) return <div style={{ flex: 1, display: "grid", placeItems: "center", background: T.page, color: T.muted }}>Game not found.</div>;
+  return <div style={{ flex: 1, overflowY: "auto", background: T.page, color: T.text, fontFamily: T.body }}>
+    <GameHero game={game} uiState={effectiveUiState} dl={dl} installedVersion={installedVersion} subscriptionStatus={subscriptionStatus} demoMode={demoMode} busy={busy} isFavorite={isFavorite} onToggleFavorite={onToggleFavorite} onInstall={onInstall} onPlay={onPlay} onUpdate={onUpdate} onPause={onPause} onResume={onResume} onCancel={onCancel} onRefreshAccess={onRefreshAccess} onUninstall={onUninstall} onBack={onViewAllGames}/>
+    {uninstallToast && <div style={{ margin: "16px 64px 0", padding: "12px 16px", borderRadius: 12, background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.28)", color: T.green }}>{game.title} has been uninstalled successfully.</div>}
+    {error && <div style={{ margin: "16px 64px 0", padding: "12px 16px", borderRadius: 12, background: "rgba(248,113,113,.1)", border: "1px solid rgba(248,113,113,.28)", color: T.red }}>{error}</div>}
+    {effectiveUiState === UI.INSTALLED_NO_EXE && <div style={{ margin: "16px 64px 0", padding: "12px 16px", borderRadius: 12, background: "rgba(251,146,60,.1)", border: "1px solid rgba(251,146,60,.28)", color: T.orange }}>Game is installed but the executable could not be found. Try reinstalling it.</div>}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,padding:"38px 24px"}}><GameInfoCard game={game}/><FigmaStudioCard game={game} allGames={allGames}/></div>
+    <ScreenshotGallery game={game}/>
+    <div style={{height:38}}/>
+    <PlayerReviews game={game}/>
+    <div style={{height:38}}/>
+    <MoreGames currentGameId={game.gameId} allGames={allGames} onSelectGame={onSelectGame} onViewAll={onViewAllGames} favoriteIds={favoriteIds} onToggleGameFavorite={onToggleGameFavorite}/>
+    <div style={{height:38}}/>
+    <GameFooter/>
+  </div>;
 }
