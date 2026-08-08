@@ -157,11 +157,9 @@ const UPCOMING_EVENTS = [
   { id:"devcom-2026",    day:"17", month:"AUG", category:"Creator Events",  status:"Upcoming", title:"devcom Developer Conference 2026",   description:"Europe's largest game developer conference, co-located with Gamescom.",           time:"17–18 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"./images/events/devcom-2026.jpeg"                 },
   // Local asset was just the gamescom wordmark on white — swapped for a real crowd/booth photo so
   // the thumbnail actually reads as an event, not a logo. CC0, Wikimedia Commons (see M4.6 summary).
-  { id:"gamescom-2026",  day:"19", month:"AUG", category:"Games Launches",  status:"Upcoming", title:"Gamescom 2026",                      description:"The world's largest gaming event — reveals, demos, and live shows.",              time:"19–23 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"https://upload.wikimedia.org/wikipedia/commons/7/77/Gamescom-crowd.jpg"                },
+  { id:"gamescom-2026",  day:"26", month:"AUG", category:"Games Launches",  status:"Upcoming", title:"Gamescom 2026",                      description:"The world's largest gaming event — reveals, demos, and live shows.",              time:"26–30 Aug · Cologne, Germany",     lieu:"Cologne, Germany",     imageUrl:"./images/events/gamescom-2026.png"                },
   { id:"egx-2026",       day:"24", month:"SEP", category:"Games Launches",  status:"Upcoming", title:"EGX 2026",                           description:"The UK's biggest gaming festival — playable demos, tournaments, and reveals.",     time:"24–27 Sep · London, UK",           lieu:"London, UK",           imageUrl:"./images/events/egx-2026.jpeg"                    },
-  { id:"pgw-2026",       day:"29", month:"OCT", category:"Games Launches",  status:"Upcoming", title:"Paris Games Week 2026",              description:"France's premier gaming event. Indie spotlight, reveals, and esports stages.",    time:"29 Oct – 2 Nov · Paris, France",   lieu:"Paris, France",        imageUrl:"./images/events/pgw-2026.jpg"                     },
-  { id:"indigo-2026",    day:"05", month:"NOV", category:"Creator Events",  status:"Upcoming", title:"IndiGO Showcase 2026",               description:"European indie games showcase — demos, pitches, and publisher meetings.",         time:"5–6 Nov · Amsterdam, Netherlands", lieu:"Amsterdam, Netherlands",imageUrl:"./images/events/events_placeholder.jpg"           },
-  { id:"bxlgames-2026",  day:"20", month:"NOV", category:"Tournaments",     status:"Upcoming", title:"Brussels Games Festival 2026",       description:"Indie games, esports, and developer talks in the heart of Europe.",               time:"20–22 Nov · Brussels, Belgium",    lieu:"Brussels, Belgium",    imageUrl:"./images/events/events_placeholder.jpg"           },
+  { id:"pgw-2026",       day:"22", month:"OCT", category:"Games Launches",  status:"Upcoming", title:"Paris Games Week 2026",              description:"France's premier gaming event. Indie spotlight, reveals, and esports stages.",    time:"22–25 Oct · Paris, France",   lieu:"Paris, France",        imageUrl:"./images/events/pgw-2026.jpg"                     },
   { id:"gameawards-2026",day:"10", month:"DEC", category:"Lives & streams", status:"Upcoming", title:"The Game Awards 2026 — Watch Party", description:"Community watch party for the biggest night in gaming. Live reactions & giveaways.", time:"10 Dec · Online + Local screenings",lieu:"Online",             imageUrl:"./images/events/game-awards-2026.png"             },
 ];
 const PREVIOUS_EVENTS = [
@@ -225,7 +223,7 @@ function gameToRankedItem(game, rank) {
     title: game.title,
     genre: game.genres?.length ? game.genres : (game.tags?.length ? game.tags : [game.studio || "Game"]),
     studio: game.studio || "",
-    imageUrl: LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png",
+    imageUrl: LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/kakudo/cover.jpg",
   };
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -933,9 +931,9 @@ function GameGridCard({ game, uiState, dl, isSelected, onSelect }) {
         transform:hov&&!isSelected ? "translateY(-3px)" : "translateY(0)",
         transition:"transform 0.2s ease-out, box-shadow 0.2s ease-out",
       }}>
-      <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt={game.title}
+      <img src={game.thumbnail||game.coverUrl||"./images/games/kakudo/cover.jpg"} alt={game.title}
         style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", display:"block", transform:hov?"scale(1.07)":"scale(1)", transition:"transform 0.22s ease-out" }}
-        onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+        onError={e=>{ e.currentTarget.src="./images/games/kakudo/cover.jpg"; e.currentTarget.onerror=null; }}/>
       {/* Light bottom-only scrim for text legibility — no full-cover dark holo; covers stay vibrant, like Figma. */}
       <div style={{ position:"absolute", left:0, right:0, bottom:0, height:"55%", background:"linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.75) 100%)" }}/>
       {badge && (
@@ -973,8 +971,8 @@ function SmallCoverCard({ game, uiState, onSelect }) {
     <div onClick={()=>onSelect(game)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{ borderRadius:T.radiusSm, overflow:"hidden", cursor:"pointer", transform:hov?"translateY(-2px)":"none", transition:"transform 0.18s ease-out, border-color 0.18s ease-out, background 0.18s ease-out", border:`1px solid ${hov?T.borderBright:T.border}` }}>
       <div style={{ position:"relative", paddingTop:"133%", background:"#0a0914" }}>
-        <img src={game.thumbnail||game.coverUrl||"./images/games/default_game_cover.png"} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }}
-          onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+        <img src={game.thumbnail||game.coverUrl||"./images/games/kakudo/cover.jpg"} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }}
+          onError={e=>{ e.currentTarget.src="./images/games/kakudo/cover.jpg"; e.currentTarget.onerror=null; }}/>
         {badge && <div style={{ position:"absolute", top:5, right:5, padding:"2px 6px", borderRadius:T.radiusPill, fontSize:8.5, fontWeight:700, color:badge.color, background:badge.bg, border:`1px solid ${badge.border}` }}>{badge.label}</div>}
         <div style={{ position:"absolute", bottom:0, left:0, right:0, height:"40%", background:"linear-gradient(to top, rgba(14,12,31,0.7) 0%, transparent 100%)" }}/>
       </div>
@@ -1604,9 +1602,9 @@ function InMyLibraryWidget({ games, onSelectGame }) {
         {games.map(g=>(
           <div key={g.gameId} onClick={()=>onSelectGame(g)} role="button" tabIndex={0}
             style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer", flexShrink:0, height:44, scrollSnapAlign:"start" }}>
-            <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
+            <img src={LOCAL_COVERS[g.gameId]||g.thumbnail||g.coverUrl||"./images/games/kakudo/cover.jpg"} alt={g.title}
               style={{ width:44, height:44, borderRadius:10, objectFit:"cover", flexShrink:0, background:"#0a0914" }}
-              onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+              onError={e=>{ e.currentTarget.src="./images/games/kakudo/cover.jpg"; e.currentTarget.onerror=null; }}/>
             <div style={{ minWidth:0 }}>
               <div style={{ fontSize:14.5, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{g.title||g.gameId}</div>
               <div style={{ display:"flex", gap:6, marginTop:3 }}>
@@ -1794,32 +1792,32 @@ function HomePage({ games, onSelectGame, onTabChange, onSelectStudio }) {
 // PLACEHOLDER_GAMES — visual-only grid cards. isPlaceholder:true is the guard flag.
 // These are NEVER passed into install / download / launch flows.
 const PLACEHOLDER_GAMES = [
-  { id:"ph-01", isPlaceholder:true, title:"Rogue Barrel",       genre:"Shooter",  imageUrl:"./images/games/placeholders/ph_rogue_barrel.png"   },
-  { id:"ph-02", isPlaceholder:true, title:"Snailtrain",         genre:"Puzzle",   imageUrl:"./images/games/placeholders/ph_snailtrain.png"      },
-  { id:"ph-03", isPlaceholder:true, title:"Neon Prism",         genre:"Puzzle",   imageUrl:"./images/games/placeholders/ph_neon_prism.png"      },
-  { id:"ph-04", isPlaceholder:true, title:"Circuit Bloom",      genre:"Puzzle",   imageUrl:"./images/games/placeholders/ph_circuit_bloom.png"   },
-  { id:"ph-05", isPlaceholder:true, title:"Bouncewood",         genre:"Platform", imageUrl:"./images/games/placeholders/ph_bouncewood.png"      },
-  { id:"ph-06", isPlaceholder:true, title:"Steampunk Tower",    genre:"Platform", imageUrl:"./images/games/placeholders/ph_steampunk.png"       },
-  { id:"ph-07", isPlaceholder:true, title:"Echoes: Room 313",   genre:"Horror",   imageUrl:"./images/games/placeholders/ph_echoes_room.png"     },
-  { id:"ph-08", isPlaceholder:true, title:"Toy Factory Terror", genre:"Horror",   imageUrl:"./images/games/placeholders/ph_toy_factory.png"     },
-  { id:"ph-09", isPlaceholder:true, title:"Eerie Forest",       genre:"Horror",   imageUrl:"./images/games/placeholders/ph_eerie_forest.png"    },
-  { id:"ph-10", isPlaceholder:true, title:"Knights Stand",      genre:"RPG",      imageUrl:"./images/games/placeholders/ph_knight.png"          },
-  { id:"ph-11", isPlaceholder:true, title:"Tokyo Drift Night",  genre:"Racing",   imageUrl:"./images/games/placeholders/ph_tokyo_drift.png"     },
-  { id:"ph-12", isPlaceholder:true, title:"Overdrive 2099",     genre:"Racing",   imageUrl:"./images/games/placeholders/ph_overdrive.png"       },
-  { id:"ph-13", isPlaceholder:true, title:"Shadow Samurai",     genre:"Fights",   imageUrl:"./images/games/placeholders/ph_shadow_samurai.png"  },
-  { id:"ph-14", isPlaceholder:true, title:"Mech Battle",        genre:"Fights",   imageUrl:"./images/games/placeholders/ph_mech_battle.png"     },
-  { id:"ph-15", isPlaceholder:true, title:"Hellcode 16",        genre:"Shooter",  imageUrl:"./images/games/placeholders/ph_hellcode.png"        },
+  { id:"ph-01", isPlaceholder:true, title:"Karlson", genre:"Action", imageUrl:"./images/games/covers/karlson.png" },
+  { id:"ph-02", isPlaceholder:true, title:"Jelly Drift", genre:"Racing", imageUrl:"./images/games/covers/jelly-drift.png" },
+  { id:"ph-03", isPlaceholder:true, title:"Rerun", genre:"Action", imageUrl:"./images/games/covers/rerun.png" },
+  { id:"ph-04", isPlaceholder:true, title:"Um's Quest", genre:"Adventure", imageUrl:"./images/games/covers/ums-quest.jpg" },
+  { id:"ph-05", isPlaceholder:true, title:"Balls", genre:"Arcade", imageUrl:"./images/games/covers/balls.png" },
+  { id:"ph-06", isPlaceholder:true, title:"Don't Fall in the Pool", genre:"Platform", imageUrl:"./images/games/covers/dont-fall-in-the-pool.png" },
+  { id:"ph-07", isPlaceholder:true, title:"Pinoseeo", genre:"Adventure", imageUrl:"./images/games/covers/pinoseeo.png" },
+  { id:"ph-08", isPlaceholder:true, title:"Below Decks", genre:"Adventure", imageUrl:"./images/games/covers/below-decks.png" },
+  { id:"ph-09", isPlaceholder:true, title:"Gravity Warrior", genre:"Action", imageUrl:"./images/games/covers/gravity-warrior.jpg" },
+  { id:"ph-10", isPlaceholder:true, title:"Alternate Watch", genre:"Horror", imageUrl:"./images/games/covers/alternate-watch.png" },
+  { id:"ph-11", isPlaceholder:true, title:"KAKUDO", genre:"Adventure", imageUrl:"./images/games/kakudo/cover.jpg" },
+  { id:"ph-12", isPlaceholder:true, title:"Ravenfield", genre:"Shooter", imageUrl:"./images/my-rload/ravenfield.png" },
+  { id:"ph-13", isPlaceholder:true, title:"ULTRAKILL", genre:"Action", imageUrl:"./images/my-rload/ultrakill.png" },
+  { id:"ph-14", isPlaceholder:true, title:"Machinarium", genre:"Puzzle", imageUrl:"./images/my-rload/machinarium.png" },
+  { id:"ph-15", isPlaceholder:true, title:"Jelly Drift", genre:"Racing", imageUrl:"./images/my-rload/jelly-drift.png" },
 ];
 
 // FEATURED_PLACEHOLDERS — visual-only featured section (character art style).
 // isPlaceholder:true — never enter CDN flows.
 const FEATURED_PLACEHOLDERS = [
-  { id:"fp-01", isPlaceholder:true, title:"Cyberpunk Battle",   genre:"Action",   imageUrl:"./images/games/placeholders/ph_cyberpunk_battle.png" },
-  { id:"fp-02", isPlaceholder:true, title:"Nightfall Blade",    genre:"Action",   imageUrl:"./images/games/placeholders/ph_nightfall_blade.png"  },
-  { id:"fp-03", isPlaceholder:true, title:"Desert Bounty",      genre:"Action",   imageUrl:"./images/games/placeholders/ph_bounty_hunter.png"    },
-  { id:"fp-04", isPlaceholder:true, title:"Gladiator Arena",    genre:"Fights",   imageUrl:"./images/games/placeholders/ph_gladiator.png"        },
-  { id:"fp-05", isPlaceholder:true, title:"Shadow Assassin",    genre:"Shooter",  imageUrl:"./images/games/placeholders/ph_assassin.png"         },
-  { id:"fp-06", isPlaceholder:true, title:"Wasteland Rising",   genre:"Action",   imageUrl:"./images/games/placeholders/ph_wasteland.png"        },
+  { id:"fp-01", isPlaceholder:true, title:"KAKUDO", genre:"Adventure", imageUrl:"./images/games/kakudo/banner.jpg" },
+  { id:"fp-02", isPlaceholder:true, title:"Ravenfield", genre:"Shooter", imageUrl:"./images/my-rload/ravenfield.png" },
+  { id:"fp-03", isPlaceholder:true, title:"ULTRAKILL", genre:"Action", imageUrl:"./images/my-rload/ultrakill.png" },
+  { id:"fp-04", isPlaceholder:true, title:"Karlson", genre:"Action", imageUrl:"./images/my-rload/karlson.png" },
+  { id:"fp-05", isPlaceholder:true, title:"Jelly Drift", genre:"Racing", imageUrl:"./images/my-rload/jelly-drift.png" },
+  { id:"fp-06", isPlaceholder:true, title:"Machinarium", genre:"Puzzle", imageUrl:"./images/my-rload/machinarium.png" },
 ];
 
 // PlaceholderCard — purely visual, no CDN actions. Dimmed & "Soon" badge.
@@ -2140,10 +2138,10 @@ function RecentCard({ g, badge, sel, onClick, compact=false }) {
         boxShadow:hov?"0 16px 40px rgba(0,0,0,0.65)":"0 4px 16px rgba(0,0,0,0.35)",
         transform:hov?"translateY(-4px)":"translateY(0)",
         transition:"transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out" }}>
-      <img src={g.thumbnail||g.coverUrl||"./images/games/default_game_cover.png"} alt={g.title}
+      <img src={g.thumbnail||g.coverUrl||"./images/games/kakudo/cover.jpg"} alt={g.title}
         style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover",
           transform:hov?"scale(1.06)":"scale(1)", transition:"transform 0.28s ease-out" }}
-        onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+        onError={e=>{ e.currentTarget.src="./images/games/kakudo/cover.jpg"; e.currentTarget.onerror=null; }}/>
       <div style={{ position:"absolute", inset:0,
         background:"linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.20) 55%, transparent 100%)" }}/>
       {badge && (
@@ -2171,7 +2169,7 @@ function FeaturedCard({ game, large, onSelect }) {
   const [hov, setHov] = useState(false);
   const imgSrc = game.isPlaceholder
     ? game.imageUrl
-    : (LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png");
+    : (LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/kakudo/cover.jpg");
   const genreLabel = game.isPlaceholder ? game.genre : (game.genres?.[0] || game.tags?.[0] || "");
 
   return (
@@ -2392,7 +2390,7 @@ function ThreeDRow({ games, uiByGame, dlByGame, selectedGameId, onSelectGame }) 
 
 function ThreeDCard({ game, badge, sel, rotY, scl, onClick }) {
   const [hov, setHov] = useState(false);
-  const imgSrc = LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/default_game_cover.png";
+  const imgSrc = LOCAL_COVERS[game.gameId] || game.thumbnail || game.coverUrl || "./images/games/kakudo/cover.jpg";
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       onClick={onClick}
@@ -2411,7 +2409,7 @@ function ThreeDCard({ game, badge, sel, rotY, scl, onClick }) {
       <img src={imgSrc} alt={game.title}
         style={{ position:"absolute", inset:0, width:"100%", height:"100%",
           objectFit:"cover", objectPosition:"center top" }}
-        onError={e=>{ e.currentTarget.src="./images/games/default_game_cover.png"; e.currentTarget.onerror=null; }}/>
+        onError={e=>{ e.currentTarget.src="./images/games/kakudo/cover.jpg"; e.currentTarget.onerror=null; }}/>
       <div style={{ position:"absolute", inset:0,
         background:"linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 55%)" }}/>
       {badge && (
@@ -2867,7 +2865,7 @@ function EventsPage({ onTabChange }) {
           )}
         </div>
         {/* Side placeholder image */}
-        <div style={{ borderRadius:"1rem", overflow:"hidden", background:"url('./images/events/events_placeholder.jpg') no-repeat center/cover", minHeight:400 }}/>
+        <div style={{ borderRadius:"1rem", overflow:"hidden", background:"url('./images/events/gamescom-2026.png') no-repeat center/cover", minHeight:400 }}/>
       </div>
 
       {/* ── Previous events — 3-column grid ── */}
@@ -4014,7 +4012,7 @@ const STUDIOS = [
   { id:"driftglass",      name:"Driftglass Studio",       initial:"D", country:"Écosse",         founded:2019, genre:"Aventure",   games:1 },
   { id:"emberlane",       name:"Emberlane Interactive",   initial:"E", country:"Belgique",       founded:2020, genre:"Action",     games:2 },
 ];
-const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo"];
+const FOLLOWED_STUDIO_IDS = ["new-blood","kakudo","nightshift","pale-horse"];
 // New Blood's own devlog history, shown on its studio_single page only.
 const NEW_BLOOD_DEVLOGS = [
   { time:"il y a 2 jours",    title:"Patch 1.3 — équilibrage des armes",             text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
@@ -4023,43 +4021,38 @@ const NEW_BLOOD_DEVLOGS = [
 ];
 // Cross-studio feed shown on the My Rload page ("Devlogs des studios suivis").
 const FOLLOWED_DEVLOG_FEED = [
-  { studioId:"kakudo",     studio:"Bad Weather Studios",   initial:"B", time:"Il y a 2 jours",   title:"Aperçu du niveau 4 : le marais empoisonné",  text:"On teste un nouveau système de brouillard dynamique qui réagit à vos pas. Encore expérimental, mais ça change tout l'ambiance du niveau." },
+  { studioId:"kakudo", studio:"Studio Kakoudo", initial:"K", time:"Il y a 2 jours", title:"Aperçu du niveau 4 : le marais empoisonné", text:"On teste un nouveau système de brouillard dynamique qui réagit à vos pas. Encore expérimental, mais ça change tout l'ambiance du niveau." },
   { studioId:"new-blood",  studio:"New Blood Interactive", initial:"N", time:"Il y a 5 jours",   title:"Patch 1.3 — équilibrage des armes",          text:"Le fusil à pompe recule un peu en dégâts, la scie circulaire y gagne en portée. Notes complètes dans le changelog." },
+  { studioId:"nightshift", studio:"Nightshift Interactive", initial:"N", time:"Il y a 1 semaine", title:"Pourquoi on a mis 8 mois sur l'écran-titre", text:"Un petit post un peu long sur l'itération artistique et pourquoi le perfectionnisme n'est pas toujours un défaut." },
 ];
 const GAME_HISTORY = [
-  { title:"Ravenfield",  imageUrl:HERO_IMAGE,                  meta:"Il y a 2h" },
-  { title:"ULTRAKILL",   imageUrl:"./images/games/default_game_cover.png", meta:"Hier" },
-  { title:"Jelly Drift", imageUrl:LOCAL_COVERS["jelly-drift"], meta:"La semaine dernière" },
-  { title:"Karlson",     imageUrl:LOCAL_COVERS["karlson"],     meta:"Il y a 5 jours" },
-  { title:"Machinarium", imageUrl:"./images/games/default_game_cover.png", meta:"Il y a 3 jours" },
+  { title:"Karlson", imageUrl:"./images/games/covers/karlson.png", meta:"Il y a 2h" },
+  { title:"Jelly Drift", imageUrl:"./images/games/covers/jelly-drift.png", meta:"Hier" },
+  { title:"Rerun", imageUrl:"./images/games/covers/rerun.png", meta:"La semaine dernière" },
+  { title:"Um's Quest", imageUrl:"./images/games/covers/ums-quest.jpg", meta:"Il y a 5 jours" },
+  { title:"Balls", imageUrl:"./images/games/covers/balls.png", meta:"Il y a 3 jours" },
 ];
 const LIKED_GAMES = [
-  { title:"ULTRAKILL",   imageUrl:"./images/games/default_game_cover.png", meta:"Hier" },
-  { title:"Ravenfield",  imageUrl:HERO_IMAGE,                  meta:"Il y a 2h" },
-  { title:"Karlson",     imageUrl:LOCAL_COVERS["karlson"],     meta:"Il y a 5 jours" },
-  { title:"Machinarium", imageUrl:"./images/games/default_game_cover.png", meta:"Il y a 3 jours" },
-  { title:"Jelly Drift", imageUrl:LOCAL_COVERS["jelly-drift"], meta:"La semaine dernière" },
+  { title:"Don't Fall in the Pool", imageUrl:"./images/games/covers/dont-fall-in-the-pool.png", meta:"Hier" },
+  { title:"Pinoseeo", imageUrl:"./images/games/covers/pinoseeo.png", meta:"Il y a 2h" },
+  { title:"Below Decks", imageUrl:"./images/games/covers/below-decks.png", meta:"Il y a 5 jours" },
+  { title:"Gravity Warrior", imageUrl:"./images/games/covers/gravity-warrior.jpg", meta:"Il y a 3 jours" },
+  { title:"Alternate Watch", imageUrl:"./images/games/covers/alternate-watch.png", meta:"La semaine dernière" },
 ];
 const SAVED_EVENTS = [
-  { id:"gamescom-2026",  day:"19", month:"AUG", category:"Games Launches",  title:"Gamescom 2026",                        lieu:"Cologne, Allemagne" },
-  { id:"devcom-2026",    day:"17", month:"AUG", category:"Creator Events",  title:"devcom Developer Conference",          lieu:"Cologne, Allemagne" },
-  { id:"pgw-2026",       day:"29", month:"OCT", category:"Games Launches",  title:"Paris Games Week 2026",                lieu:"Paris, France" },
-  { id:"gameawards-2026",day:"10", month:"DEC", category:"Lives & streams", title:"The Game Awards — Watch Party",        lieu:"En ligne" },
-  { id:"igds-2026",      day:"19", month:"AUG", category:"Workshops & Panels", title:"Indie Game Developer Summit",       lieu:"Berlin, Allemagne" },
+  { id:"devcom-2026", imageUrl:"./images/events/devcom-2026.jpeg", day:"17", month:"AUG", category:"Creator Events", title:"devcom Developer Conference", lieu:"Cologne, Allemagne" },
+  { id:"gamescom-2026", imageUrl:"./images/events/gamescom-2026.png", day:"26", month:"AUG", category:"Games Launches", title:"Gamescom 2026", lieu:"Cologne, Allemagne" },
+  { id:"egx-2026", imageUrl:"./images/events/egx-2026.jpeg", day:"24", month:"SEP", category:"Games Launches", title:"EGX 2026", lieu:"Londres, Royaume-Uni" },
+  { id:"pgw-2026", imageUrl:"./images/events/pgw-2026.jpg", day:"22", month:"OCT", category:"Games Launches", title:"Paris Games Week 2026", lieu:"Paris, France" },
+  { id:"gameawards-2026", imageUrl:"./images/events/game-awards-2026.png", day:"10", month:"DEC", category:"Lives & streams", title:"The Game Awards — Watch Party", lieu:"En ligne" },
 ];
 // Matches the real Stripe plan structure (planType "trial"/"monthly"/"yearly",
 // see [[rload-stripe-decisions]] memory) and the pricing screen Figma: Pack
 // Découverte (5-day trial), Elite Pack (monthly), Pack Annuel (yearly).
 const PLAN_TIERS = [
-  { id:"trial",  planType:"trial",  name:"Pack Découverte", headline:"5 jours gratuits", badge:null,
-    features:["Accès aux jeux indés sélectionnés","Téléchargements limités","Publicités activées","Pas de multijoueur","Pas de titres premium","Pas d'avantages événements exclusifs","Annulez à tout moment"],
-    cta:"Essai gratuit 5 jours" },
-  { id:"monthly",planType:"monthly",name:"Elite Pack",      price:"9,99 €",  period:"/ mois", badge:"LE PLUS POPULAIRE",
-    features:["Accès complet à tous les jeux","Jeu sans publicité","Multijoueur activé","Téléchargements illimités","Sauvegardes cloud","Support prioritaire","Avantages événements exclusifs"],
-    cta:"S'inscrire" },
-  { id:"yearly", planType:"yearly", name:"Pack Annuel",     price:"99,99 €", period:"/ an",   badge:"MEILLEURE OFFRE",
-    features:["Tout ce qui est dans Premium","Meilleure valeur, économisez vs mensuel","Accès anticipé aux nouveaux titres","Badge exclusif annuel","Téléchargements illimités","Avantages événements exclusifs","Sauvegardes cloud prioritaires"],
-    cta:"S'inscrire" },
+  { id:"trial", planType:"trial", name:"Pack Découverte", price:"0 €", period:"5 jours", features:["Accès aux jeux indés sélectionnés","Téléchargements limités","Annulation à tout moment"], cta:"Essai gratuit 5 jours" },
+  { id:"monthly", planType:"monthly", name:"Elite Pack", price:"9,99 €", period:"/ mois", features:["Accès complet à tous les jeux","Téléchargements illimités","Sauvegardes cloud"], cta:"Choisir le plan mensuel" },
+  { id:"yearly", planType:"yearly", name:"Pack Annuel", price:"99,99 €", period:"/ an", features:["Tout Elite Pack, plus :","Économie sur douze mois","Accès anticipé aux nouveaux titres"], cta:"Choisir le plan annuel" },
 ];
 
 function FollowButton({ following=false, onToggle }) {
@@ -4212,7 +4205,7 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
           <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Jeux du studio</div>
           <div style={{ display:"flex", gap:14 }}>
             <div style={{ width:259 }}>
-              <HomeGameCard title={studio.gameTitle || studio.name} imageUrl={"./images/games/default_game_cover.png"} genre={studio.genre} onSelect={()=>onTabChange("games")}/>
+              <HomeGameCard title={studio.gameTitle || studio.name} imageUrl={LOCAL_COVERS[studio.gameTitle?.toLowerCase()] || "./images/games/kakudo/cover.jpg"} genre={studio.genre} onSelect={()=>onTabChange("games")}/>
             </div>
           </div>
         </div>
@@ -4253,9 +4246,9 @@ function StudioSinglePage({ studioId, onBack, onTabChange }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function MyRloadGameRow({ items, onTabChange }) {
   return (
-    <div style={{ display:"flex", gap:24, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+    <div style={{ display:"grid", gridTemplateColumns:"repeat(5, minmax(0, 1fr))", gap:24, width:"100%" }}>
       {items.map((g,i)=>(
-        <div key={g.title+i} style={{ width:259, flexShrink:0 }}>
+        <div key={g.title+i} style={{ minWidth:0 }}>
           <HomeGameCard title={g.title} imageUrl={g.imageUrl} genre={g.meta} onSelect={()=>onTabChange("games")}/>
         </div>
       ))}
@@ -4266,7 +4259,10 @@ function MyRloadGameRow({ items, onTabChange }) {
 function SavedEventCard({ ev }) {
   return (
     <div style={{ width:280, flexShrink:0, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, overflow:"hidden" }}>
-      <div style={{ position:"relative", height:120, background:coverGradient(ev.title) }}>
+      <div style={{ position:"relative", height:120, background:coverGradient(ev.title), overflow:"hidden" }}>
+        {ev.imageUrl && (
+          <img src={ev.imageUrl} alt="" style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover" }}/>
+        )}
         <div style={{ position:"absolute", top:10, left:10, background:"#fff", borderRadius:10, padding:"6px 8px", textAlign:"center", minWidth:36 }}>
           <div style={{ fontSize:16, fontWeight:700, color:"#140f24", fontFamily:T.fontHead, lineHeight:1 }}>{ev.day}</div>
           <div style={{ fontSize:10, fontWeight:600, color:"rgba(20,15,36,0.6)" }}>{ev.month}</div>
@@ -4282,43 +4278,24 @@ function SavedEventCard({ ev }) {
 }
 
 function PlanTierCard({ tier, isCurrent }) {
-  const highlight = tier.badge === "LE PLUS POPULAIRE";
   return (
-    <div style={{ position:"relative", flex:1, background:"rgba(255,255,255,0.04)",
-      border:highlight ? `1.5px solid ${T.borderBrand}` : `1px solid ${T.border}`,
-      borderRadius:20, padding:"30px 24px 24px", display:"flex", flexDirection:"column", gap:16,
-      boxShadow:highlight ? T.brandGlow : "none" }}>
-      {tier.badge && (
-        <span style={{ position:"absolute", top:-13, left:"50%", transform:"translateX(-50%)",
-          padding:"6px 16px", borderRadius:999, fontSize:11, fontWeight:700, whiteSpace:"nowrap",
-          background:highlight ? T.brandGrad : "#f2b400", color:highlight ? "#fff" : "#241a05" }}>
-          {tier.badge}
-        </span>
-      )}
-      <div>
-        <div style={{ fontSize:11, fontWeight:700, letterSpacing:"0.08em", color:T.textMuted, textTransform:"uppercase", marginBottom:10 }}>{tier.name}</div>
-        {tier.headline ? (
-          <div style={{ fontSize:26, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.headline}</div>
-        ) : (
-          <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
-            <span style={{ fontSize:32, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
-            <span style={{ fontSize:14, color:T.textMuted }}>{tier.period}</span>
-          </div>
-        )}
+    <div style={{ flex:1, height:260, background:isCurrent?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.05)", border:isCurrent?`1.5px solid ${T.borderBrand}`:`1px solid ${T.border}`, borderRadius:16, padding:24, display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div style={{ fontSize:18, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{tier.name}</div>
+        {isCurrent && <span style={{ padding:"4px 10px", borderRadius:999, background:"rgba(114,85,229,0.22)", color:T.brand, fontSize:11, fontWeight:600 }}>Actif</span>}
       </div>
-      <div style={{ height:1, background:T.border }}/>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:11, fontSize:13.5, color:T.textSub }}>
+      <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+        <span style={{ fontSize:28, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
+        <span style={{ fontSize:13, color:T.textMuted }}>{tier.period}</span>
+      </div>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8, fontSize:13, color:T.textSub }}>
         {tier.features.map(f=>(
-          <div key={f} style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <span style={{ width:18, height:18, borderRadius:"50%", background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:T.textMuted, flexShrink:0 }}>✓</span>
-            {f}
-          </div>
+          <div key={f}>✓&nbsp;&nbsp;{f}</div>
         ))}
       </div>
       <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} disabled={isCurrent}
-        style={{ padding:"12px 0", borderRadius:999, border:highlight ? "none" : `1px solid ${T.border}`,
-          background:highlight ? T.brandGrad : (isCurrent ? "rgba(255,255,255,0.06)" : "transparent"),
-          color:isCurrent ? T.textMuted : "#fff", fontSize:13.5, fontWeight:700,
+        style={{ padding:"10px 0", borderRadius:999, border:"none", background:isCurrent?"rgba(255,255,255,0.06)":T.brand,
+          color:isCurrent?T.textMuted:"#fff", fontSize:13, fontWeight:600,
           cursor:isCurrent ? "default" : "pointer", fontFamily:T.fontBody }}>
         {isCurrent ? "Plan actuel" : tier.cta}
       </button>
@@ -4328,18 +4305,19 @@ function PlanTierCard({ tier, isCurrent }) {
 
 function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, demoMode }) {
   const followedStudios = REAL_STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
+  const followedLabels = { kakudo:["Studio Kakoudo",2], nightshift:["Nightshift Interactive",1], "pale-horse":["Pale Horse Games",3], "new-blood":["New Blood Interactive",1] };
   const periodEnd = subscriptionStatus?.currentPeriodEnd ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString() : null;
   const trialEnd  = subscriptionStatus?.trialEnd ? new Date(subscriptionStatus.trialEnd).toLocaleDateString() : null;
-  const currentPlanTierId = subscriptionStatus?.hasAccess ? PLAN_TIERS.find(t=>t.planType===subscriptionStatus.planType)?.id : null;
+  const currentPlanTierId = subscriptionStatus?.hasAccess ? (PLAN_TIERS.find(t=>t.planType===subscriptionStatus.planType)?.id || "monthly") : null;
 
   return (
     <div style={{ flex:1, overflowY:"auto", fontFamily:T.fontBody }}>
-      <div style={{ position:"relative", height:272, display:"flex", alignItems:"flex-end", padding:"0 24px 32px", overflow:"hidden", background:coverGradient("myrload") }}>
+      <div style={{ position:"relative", height:272, display:"flex", alignItems:"center", padding:"0 100px", overflow:"hidden", backgroundImage:"url('./images/my-rload/hero.png')", backgroundSize:"cover", backgroundPosition:"center" }}>
         <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.35)" }}/>
-        <div style={{ position:"relative", fontSize:44, fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1px" }}>My Rload</div>
+        <div style={{ position:"relative", fontSize:60, lineHeight:"72px", fontWeight:800, color:T.text, fontFamily:T.fontHead, letterSpacing:"-1.8px" }}>My Rload</div>
       </div>
 
-      <div style={{ padding:"32px 24px 40px", display:"flex", flexDirection:"column", gap:32 }}>
+      <div style={{ padding:"32px 24px 40px", display:"flex", flexDirection:"column", gap:24 }}>
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Historique de jeu</div>
           <MyRloadGameRow items={GAME_HISTORY} onTabChange={onTabChange}/>
@@ -4352,14 +4330,14 @@ function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, d
 
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Studios suivis</div>
-          <div style={{ display:"flex", gap:20, flexWrap:"wrap" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4, minmax(0, 1fr))", gap:20 }}>
             {followedStudios.map(s=>(
               <div key={s.id} onClick={()=>onSelectStudio(s.id)} role="button" tabIndex={0}
-                style={{ width:310, height:80, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:16, display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
+                style={{ minWidth:0, height:80, background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`, borderRadius:16, padding:16, display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
                 <StudioLogo initial={s.initial}/>
                 <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:4 }}>
-                  <div style={{ fontSize:14, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{s.name}</div>
-                  <div style={{ fontSize:12, color:T.textMuted }}>{s.games} jeu{s.games>1?"x":""} sur Rload</div>
+                  <div style={{ fontSize:14, fontWeight:600, color:T.text, fontFamily:T.fontHead, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{followedLabels[s.id]?.[0] || s.name}</div>
+                  <div style={{ fontSize:12, color:T.textMuted }}>{followedLabels[s.id]?.[1] || s.games} jeu{(followedLabels[s.id]?.[1] || s.games)>1?"x":""} sur Rload</div>
                 </div>
                 <span style={{ padding:"6px 12px", borderRadius:999, background:"rgba(114,85,229,0.18)", color:"#7255e5", fontSize:12, flexShrink:0 }}>Suivi</span>
               </div>
@@ -4390,7 +4368,7 @@ function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, d
 
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div style={{ fontSize:24, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>Événements enregistrés</div>
-          <div style={{ display:"flex", gap:20, overflowX:"auto", paddingBottom:4 }} className="hide-scrollbar">
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(5, minmax(0, 1fr))", gap:20 }}>
             {SAVED_EVENTS.map(ev=><SavedEventCard key={ev.id} ev={ev}/>)}
           </div>
         </div>
@@ -4417,7 +4395,7 @@ function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, d
               {subscriptionStatus?.hasAccess ? "Gérer le paiement" : "S'abonner"}
             </button>
           </div>
-          <div style={{ display:"flex", gap:24 }}>
+          <div style={{ display:"flex", gap:53 }}>
             {PLAN_TIERS.map(tier=><PlanTierCard key={tier.id} tier={tier} isCurrent={tier.id===currentPlanTierId}/>)}
           </div>
         </div>
