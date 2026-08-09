@@ -47,11 +47,11 @@ export function CollectionOverview({ profile, t, onOpenCategory }) {
   ];
 
   return (
-    <div style={{ borderRadius: T.radius, border: `1px solid ${T.border}`, background: T.bgCard, padding: 16, marginTop: 12 }}>
+    <div style={{ borderRadius:16, border:"1px solid rgba(255,255,255,.07)", background:"rgba(255,255,255,.05)", padding:"20px 24px", marginTop:24 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12 }}>
         {t.collectionLabel || "Collection"}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5, minmax(0, 1fr))", gap:24 }}>
         {rows.map((r) => {
           const pct = r.total > 0 ? Math.min(100, Math.round((r.have / r.total) * 100)) : 0;
           const complete = r.total > 0 && r.have >= r.total;
@@ -61,7 +61,7 @@ export function CollectionOverview({ profile, t, onOpenCategory }) {
               onClick={onOpenCategory ? () => onOpenCategory(r.key) : undefined}
               style={{
                 cursor: onOpenCategory ? "pointer" : "default", borderRadius: T.radiusSm,
-                padding: "6px 8px", margin: "-6px -8px", transition: "background 0.15s ease",
+                padding:0, margin:0, transition:"background 0.15s ease",
               }}
               onMouseEnter={(e) => { if (onOpenCategory) e.currentTarget.style.background = T.bgCardHover; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}

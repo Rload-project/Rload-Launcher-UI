@@ -13,6 +13,46 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // TEMPORARY dev-only smoke-test mock — visual verification of real-catalog
+      // data wiring in a plain browser (no real Electron/IPC/Auth0 available here).
+      // Removed before this branch is used for anything else. Never committed.
+      window.rload = {
+        auth: {
+          getSession: async () => ({ user: { name: "Dev Tester", email: "dev@rload.local" } }),
+          subscribeSession: (cb) => { cb({ user: { name: "Dev Tester", email: "dev@rload.local" } }); return () => {}; },
+          subscribeAuthError: () => () => {},
+          login: async () => ({ ok: true }),
+          logout: async () => ({ ok: true }),
+        },
+        games: {
+          listLocal: async () => ([
+            { gameId:"ultrakill", title:"ULTRAKILL", studio:"New Blood Interactive", tags:["FPS","Action"] },
+            { gameId:"ravenfield", title:"Ravenfield", studio:"SteelRaven7", tags:["FPS","Sandbox"] },
+            { gameId:"jelly-drift", title:"Jelly Drift", studio:"Wobble Games", tags:["Racing","Arcade"] },
+            { gameId:"karlson", title:"Karlson", studio:"DANIDEV", tags:["FPS","Movement"] },
+            { gameId:"kakudo", title:"KAKUDO", studio:"Bad Weather Studios", tags:["Adventure"] },
+            { gameId:"ums-quest", title:"UMS Quest", studio:"Studio TBD", tags:["RPG"] },
+            { gameId:"turbo-fat", title:"Turbo Fat", studio:"Studio TBD", tags:["Racing"] },
+            { gameId:"balls", title:"Balls", studio:"Studio TBD", tags:["Arcade"] },
+            { gameId:"rerun", title:"ReRun", studio:"Studio TBD", tags:["Platformer"] },
+            { gameId:"alternate-watch", title:"Alternate Watch", studio:"Studio TBD", tags:["Puzzle"] },
+            { gameId:"below-decks", title:"Below Decks", studio:"Studio TBD", tags:["Sim"] },
+            { gameId:"dont-fall-in-the-pool", title:"Don't Fall in the Pool", studio:"Studio TBD", tags:["Party"] },
+            { gameId:"gravity-warrior", title:"Gravity Warrior", studio:"Studio TBD", tags:["Action"] },
+            { gameId:"pinoseeo", title:"Pinoseeo", studio:"Studio TBD", tags:["Adventure"] },
+          ]),
+          isInstalled: async () => ({ installed:false, extracted:false, target:null, installedVersion:null }),
+        },
+        downloads: { subscribe: () => () => {}, list: async () => ([]) },
+        getAppInfo: async () => ({ version: "0.0.0-devmock" }),
+        settings: { get: async () => ({}), set: async () => {}, getLanguage: async () => "en", setLanguage: async () => {} },
+        updater: { onEvent: () => () => {}, check: async () => {}, getDiagnostics: async () => ({}) },
+        app: { getConfig: async () => ({}), openLogs: () => {} },
+        openExternal: () => {},
+        player: { get: async () => null, set: async () => {} },
+      };
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -46,27 +46,18 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
     .sort((a, b) => (b.progress.current / b.progress.goal) - (a.progress.current / a.progress.goal))[0];
 
   return (
-    <div style={{ padding: "20px 20px 0" }}>
-      {/* Banner + avatar wrapper: the avatar must live OUTSIDE the banner's own
-          overflow:hidden box, or its bottom half (the overlap) gets clipped. */}
-      <div style={{ position: "relative" }}>
-        <PlayerBanner bannerId={profile.bannerId} height={200} onEdit={() => onOpenCosmetics("banner")} editLabel={t.changeBanner || "Change Banner"} />
-        <div
-          onClick={() => onOpenCosmetics("avatar")}
-          style={{ position: "absolute", bottom: -40, left: 24, cursor: "pointer", zIndex: 2, transition: "transform 0.18s ease-out" }}
-          title={t.changeAvatar || "Change Avatar"}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.05)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
-        >
-          <PlayerAvatar avatarId={profile.avatarId} fallbackInitial={username[0]?.toUpperCase() || "U"} size={96} ring />
-        </div>
-      </div>
+    <div style={{ padding: "32px 64px 0" }}>
+      <PlayerBanner bannerId={profile.bannerId} height={300} onEdit={() => onOpenCosmetics("banner")} editLabel={t.changeBanner || "Change Banner"} />
 
-      <div style={{ paddingTop: 52, paddingBottom: 4 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-          <div>
+      <div style={{ paddingTop:24 }}>
+        <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", gap:24 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:12, alignItems:"flex-start" }}>
+            <div onClick={()=>onOpenCosmetics("avatar")} title={t.changeAvatar || "Change Avatar"}
+              style={{ cursor:"pointer", filter:"drop-shadow(0 0 12px rgba(114,85,229,.55))" }}>
+              <PlayerAvatar avatarId={profile.avatarId} fallbackInitial={username[0]?.toUpperCase() || "U"} size={96} ring />
+            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ fontSize: 24, fontWeight: 700, color: T.text, fontFamily: T.fontHead, letterSpacing: "-0.2px" }}>{username}</div>
+              <div style={{ fontSize:30, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{username}</div>
               <PlayerLevel level={level} size="md" />
               {profile.activeBadgeId && <PlayerBadge badgeId={profile.activeBadgeId} size={26} />}
             </div>
@@ -75,7 +66,7 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
                 <PlayerTitle titleId={profile.titleId} />
               </div>
             )}
-            <div style={{ fontSize: 13.5, color: T.textMuted, marginTop: 4 }}>
+            <div style={{ fontSize:14, color:T.textMuted }}>
               {profile.foundingMember ? (t.foundingMemberLabel || "Founding Member") : (t.rloadMemberLabel || "Rload Member")}
               {" · "}{profile.points} {t.pointsLabel || "points"}
             </div>
@@ -83,8 +74,8 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
           <button
             onClick={() => onOpenCosmetics("avatar")}
             style={{
-              padding: "9px 18px", borderRadius: T.radiusSm, border: `1px solid ${T.borderBrand}`,
-              background: "rgba(128,74,240,0.14)", color: T.text, fontSize: 13.5, fontWeight: 600,
+              padding:"12px 20px", borderRadius:12, border:"1px solid rgba(255,255,255,.10)",
+              background:"rgba(255,255,255,.08)", color:T.text, fontSize:14, fontWeight:700,
               fontFamily: T.fontBody, cursor: "pointer", flexShrink: 0,
             }}
           >
@@ -92,13 +83,13 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
           </button>
         </div>
 
-        <div style={{ marginTop: 16, maxWidth: 360 }}>
+        <div style={{ marginTop:16, width:500 }}>
           <PlayerXPBar xp={profile.xp} />
         </div>
       </div>
 
       {/* Quick stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 18 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginTop:24 }}>
         {stats.map((s) => <PlayerStatsCard key={s.label} {...s} />)}
       </div>
 
@@ -110,8 +101,8 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
       />
 
       {/* Recent Achievements + Next Reward */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
-        <div onClick={onOpenAchievements} style={{ borderRadius: T.radius, border: `1px solid ${T.border}`, background: T.bgCard, padding: 16, cursor: "pointer" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginTop:24 }}>
+        <div onClick={onOpenAchievements} style={{ borderRadius:16, border:"1px solid rgba(255,255,255,.07)", background:"rgba(255,255,255,.05)", padding:"20px 24px", cursor:"pointer" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
             {t.recentAchievements || "Recent Achievements"}
           </div>
@@ -137,7 +128,7 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
           )}
         </div>
 
-        <div style={{ borderRadius: T.radius, border: `1px solid ${T.border}`, background: T.bgCard, padding: 16 }}>
+        <div style={{ borderRadius:16, border:"1px solid rgba(255,255,255,.07)", background:"rgba(255,255,255,.05)", padding:"20px 24px" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: T.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>
             {t.nextReward || "Next Reward"}
           </div>
@@ -155,7 +146,7 @@ export function ProfileHeader({ profile, username, subscriptionLabel, memberSinc
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: T.textMuted, marginTop: 14, marginBottom: 16 }}>
+      <div style={{ fontSize:13, color:T.textMuted, marginTop:24, marginBottom:16 }}>
         {subscriptionLabel} · {t.memberSinceStat || "Member Since"} {memberSinceLabel}
       </div>
     </div>

@@ -3830,7 +3830,7 @@ function MembershipPage({ onBack, t, subscriptionLabel, subscriptionStatus, demo
   );
 }
 
-function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLang, subscriptionStatus, demoMode }) {
+function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLang, subscriptionStatus, demoMode, onTabChange }) {
   const [subPage, setSubPage] = useState(null);
   const [displayMode, setDisplayMode] = useState("dark");
   // Hooks must run unconditionally on every render — declared before the sub-page early returns below.
@@ -3900,9 +3900,9 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
 
       {/* Membership — the only remaining "tile" outside Settings, since it's
           the one thing a player checks often (renewal date, plan). */}
-      <div style={{ padding:"0 20px 16px" }}>
-        <div onClick={()=>setSubPage("membership")} style={{ padding:"13px 16px", borderRadius:T.radiusSm,
-          background:"rgba(255,255,255,0.05)", border:`1px solid ${T.border}`,
+      <div style={{ padding:"0 64px 16px" }}>
+        <div onClick={()=>setSubPage("membership")} style={{ padding:"16px 20px", borderRadius:14,
+          background:"rgba(255,255,255,0.05)", border:"1px solid rgba(255,255,255,.07)",
           display:"flex", alignItems:"center", justifyContent:"space-between", cursor:"pointer" }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:32, height:32, borderRadius:"0.6rem", background:"rgba(128,74,240,0.15)", border:`1px solid ${T.borderBrand}`, display:"flex", alignItems:"center", justifyContent:"center", color:T.brandLight }}>
@@ -3918,9 +3918,9 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
       </div>
 
       {/* Settings list */}
-      <div style={{ padding:"16px 20px" }}>
+      <div style={{ padding:"0 64px 40px" }}>
         <div style={{ fontSize:11, fontWeight:700, color:T.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, paddingLeft:6 }}>{t.settings}</div>
-        <div style={{ borderRadius:T.radius, background:T.bgCard, border:`1px solid ${T.border}`, overflow:"hidden" }}>
+        <div style={{ borderRadius:14, background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.07)", overflow:"hidden" }}>
           <SettingsRow icon={Icon.Profile}   label={t.profileDetails || "Profile Details"}  onClick={()=>setSubPage("profile-details")}/>
           <div style={{ height:1, background:T.border, margin:"0 16px" }}/>
           <SettingsRow icon={Icon.Bell}      label={t.notifications}   onClick={()=>setSubPage("notifications")}/>
@@ -3934,14 +3934,16 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
 
         {/* Sign out of all devices */}
         <button onClick={onLogout} disabled={authBusy}
-          style={{ width:"100%", marginTop:18, padding:"12px 16px", borderRadius:T.radius,
-            border:"1px solid rgba(248,113,113,0.25)", background:"rgba(248,113,113,0.07)",
-            color:T.red, cursor:authBusy?"not-allowed":"pointer",
+          style={{ width:"100%", marginTop:4, padding:"14px 20px", borderRadius:14,
+            border:"1px solid rgba(255,255,255,.07)", background:"rgba(255,255,255,.05)",
+            color:T.text, cursor:authBusy?"not-allowed":"pointer",
             fontSize:13.5, fontWeight:600, fontFamily:T.fontBody, opacity:authBusy?0.6:1,
-            display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-          <Icon.Logout/> {authBusy ? t.signingOut : t.signOut}
+            display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+          <span>{authBusy ? t.signingOut : t.signOut}</span><Icon.ChevronRight/>
         </button>
       </div>
+
+      <AppFooter onTabChange={onTabChange}/>
 
       {cosmeticsTab && (
         <CosmeticsPickerModal profile={profile} t={t} initialTab={cosmeticsTab} onClose={()=>setCosmeticsTab(null)}/>
@@ -4278,25 +4280,38 @@ function SavedEventCard({ ev }) {
 }
 
 function PlanTierCard({ tier, isCurrent }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <div style={{ flex:1, height:260, background:isCurrent?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.05)", border:isCurrent?`1.5px solid ${T.borderBrand}`:`1px solid ${T.border}`, borderRadius:16, padding:24, display:"flex", flexDirection:"column", gap:14 }}>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)} style={{ position:"relative", overflow:"hidden", flex:1, height:260,
+      background:isCurrent
+        ? "linear-gradient(145deg, rgba(114,85,229,0.24) 0%, rgba(58,38,101,0.28) 42%, rgba(255,255,255,0.055) 100%)"
+        : "linear-gradient(145deg, rgba(255,255,255,0.065) 0%, rgba(255,255,255,0.035) 100%)",
+      border:isCurrent?"1.5px solid rgba(124,92,252,0.72)":"1px solid rgba(255,255,255,0.11)", borderRadius:16, padding:24,
+      display:"flex", flexDirection:"column", gap:14,
+      boxShadow:isCurrent?"0 0 0 1px rgba(124,92,252,0.10), 0 14px 38px rgba(49,20,108,0.30)":"0 10px 28px rgba(0,0,0,0.12)",
+      transform:hovered?"translateY(-2px)":"translateY(0)", transition:"transform .18s ease, border-color .18s ease, box-shadow .18s ease" }}>
+      <div aria-hidden style={{ position:"absolute", inset:0, pointerEvents:"none",
+        background:isCurrent
+          ? "radial-gradient(110% 78% at 50% -8%, rgba(151,106,255,0.30) 0%, rgba(114,85,229,0.10) 48%, transparent 72%)"
+          : `linear-gradient(135deg, rgba(124,92,252,${hovered?"0.13":"0.055"}) 0%, transparent 58%)`,
+        opacity:hovered?1:.9, transition:"opacity .18s ease, background .18s ease" }}/>
+      <div style={{ position:"relative", zIndex:1, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div style={{ fontSize:18, fontWeight:600, color:T.text, fontFamily:T.fontHead }}>{tier.name}</div>
-        {isCurrent && <span style={{ padding:"4px 10px", borderRadius:999, background:"rgba(114,85,229,0.22)", color:T.brand, fontSize:11, fontWeight:600 }}>Actif</span>}
+        {isCurrent && <span style={{ padding:"4px 10px", borderRadius:999, background:"rgba(124,92,252,0.20)", border:"1px solid rgba(151,106,255,0.22)", color:"#b99dff", fontSize:11, fontWeight:600 }}>Actif</span>}
       </div>
-      <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+      <div style={{ position:"relative", zIndex:1, display:"flex", alignItems:"baseline", gap:4 }}>
         <span style={{ fontSize:28, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>{tier.price}</span>
         <span style={{ fontSize:13, color:T.textMuted }}>{tier.period}</span>
       </div>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8, fontSize:13, color:T.textSub }}>
+      <div style={{ position:"relative", zIndex:1, flex:1, display:"flex", flexDirection:"column", gap:8, fontSize:13, color:T.textSub }}>
         {tier.features.map(f=>(
           <div key={f}>✓&nbsp;&nbsp;{f}</div>
         ))}
       </div>
       <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} disabled={isCurrent}
-        style={{ padding:"10px 0", borderRadius:999, border:"none", background:isCurrent?"rgba(255,255,255,0.06)":T.brand,
+        style={{ position:"relative", zIndex:1, padding:"10px 0", borderRadius:999, border:isCurrent?"1px solid rgba(255,255,255,0.035)":"1px solid rgba(174,132,255,0.26)", background:isCurrent?"rgba(255,255,255,0.065)":"linear-gradient(90deg, #7255e5 0%, #8b4df4 100%)",
           color:isCurrent?T.textMuted:"#fff", fontSize:13, fontWeight:600,
-          cursor:isCurrent ? "default" : "pointer", fontFamily:T.fontBody }}>
+          cursor:isCurrent ? "default" : "pointer", fontFamily:T.fontBody, boxShadow:isCurrent?"none":"0 8px 20px rgba(114,85,229,0.22)" }}>
         {isCurrent ? "Plan actuel" : tier.cta}
       </button>
     </div>
@@ -5036,7 +5051,7 @@ export default function LauncherGames() {
           <ProfilePage user={authSession?.user} authBusy={authBusy}
             onLogout={handleSignOut} games={games} uiByGame={uiByGame}
             lang={lang} changeLang={changeLang}
-            subscriptionStatus={subscriptionStatus} demoMode={demoMode}/>
+            subscriptionStatus={subscriptionStatus} demoMode={demoMode} onTabChange={handleTabChange}/>
         )}
       </div>
     </div>

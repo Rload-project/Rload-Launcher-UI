@@ -6,14 +6,14 @@ import { T } from "../../lib/theme";
 export function PlayerStatsCard({ icon, label, value }) {
   return (
     <div style={{
-      background: "rgba(128,74,240,0.14)", borderRadius: "0.65rem", border: `1px solid ${T.borderBrand}`,
-      padding: "12px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+      background:"rgba(255,255,255,.05)", borderRadius:16, border:"1px solid rgba(255,255,255,.07)",
+      padding:"24px 16px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:8,
     }}>
       {typeof icon === "string" && (icon.startsWith(".") || icon.startsWith("/"))
-        ? <img src={icon} alt="" style={{ width: 22, height: 22 }} onError={(e) => (e.currentTarget.style.display = "none")} />
-        : <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>}
-      <div style={{ fontSize: 11.5, color: T.textSub, textAlign: "center", lineHeight: 1.25 }}>{label}</div>
-      <div style={{ fontSize: 21, fontWeight: 700, color: T.text, textAlign: "center" }}>{value}</div>
+        ? <span style={{ width:40, height:40, borderRadius:12, background:"rgba(114,85,229,.18)", display:"grid", placeItems:"center" }}><img src={icon} alt="" style={{ width:24, height:24 }} onError={(e) => (e.currentTarget.style.display = "none")} /></span>
+        : <span style={{ width:40, height:40, borderRadius:12, background:"rgba(255,199,0,.18)", display:"grid", placeItems:"center", fontSize:24 }}>{icon}</span>}
+      <div style={{ fontSize:14, color:T.textMuted, textAlign:"center" }}>{label}</div>
+      <div style={{ fontSize:26, fontWeight:700, color:T.text, fontFamily:T.fontHead, textAlign:"center" }}>{value}</div>
     </div>
   );
 }
