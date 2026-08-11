@@ -3863,9 +3863,11 @@ function ProfilePage({ user, authBusy, onLogout, games, uiByGame, lang, changeLa
   ];
   const subscriptionLabel = demoMode
     ? (t.subscriptionDemo || "Demo Mode")
-    : subscriptionStatus?.hasAccess
-      ? (subscriptionStatus.planName || t.subscriptionPremium || "Premium")
-      : (t.subscriptionFree || "Free");
+    : subscriptionStatus?.subscriptionStatus === "error"
+      ? "Vérification..."
+      : subscriptionStatus?.hasAccess
+        ? (subscriptionStatus.planName || t.subscriptionPremium || "Premium")
+        : (t.subscriptionFree || "Free");
 
   const memberSinceLabel = profile
     ? new Date(profile.memberSince).toLocaleDateString(lang === "en" ? "en-US" : lang, { year: "numeric", month: "short" })
@@ -4303,9 +4305,10 @@ function PlanTierCard({ tier, isCurrent }) {
   );
 }
 
-function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, demoMode }) {
+function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, demoMode, onRetrySubscription }) {
   const followedStudios = REAL_STUDIOS.filter(s=>FOLLOWED_STUDIO_IDS.includes(s.id));
   const followedLabels = { kakudo:["Studio Kakoudo",2], nightshift:["Nightshift Interactive",1], "pale-horse":["Pale Horse Games",3], "new-blood":["New Blood Interactive",1] };
+  const subscriptionCheckFailed = subscriptionStatus?.subscriptionStatus === "error";
   const periodEnd = subscriptionStatus?.currentPeriodEnd ? new Date(subscriptionStatus.currentPeriodEnd).toLocaleDateString() : null;
   const trialEnd  = subscriptionStatus?.trialEnd ? new Date(subscriptionStatus.trialEnd).toLocaleDateString() : null;
   const currentPlanTierId = subscriptionStatus?.hasAccess ? (PLAN_TIERS.find(t=>t.planType===subscriptionStatus.planType)?.id || "monthly") : null;
@@ -4379,20 +4382,25 @@ function MyRloadPage({ games, onTabChange, onSelectStudio, subscriptionStatus, d
             <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
               <div style={{ fontSize:12, fontWeight:600, color:T.textMuted, letterSpacing:"0.06em" }}>PLAN ACTUEL</div>
               <div style={{ fontSize:22, fontWeight:700, color:T.text, fontFamily:T.fontHead }}>
-                {demoMode ? "Mode démo" : (subscriptionStatus?.planName || "Aucun abonnement actif")}
+                {demoMode ? "Mode démo" : subscriptionCheckFailed ? "Vérification impossible" : (subscriptionStatus?.planName || "Aucun abonnement actif")}
               </div>
               <div style={{ fontSize:13, color:T.textSub }}>
                 {demoMode
                   ? "Abonnement non requis — build de démonstration."
-                  : subscriptionStatus?.hasAccess
-                    ? (periodEnd ? `Prochain renouvellement le ${periodEnd}` : "Actif")
-                    : trialEnd
-                      ? `Essai expiré le ${trialEnd}`
-                      : "Choisis un plan ci-dessous pour débloquer l'accès complet."}
+                  : subscriptionCheckFailed
+                    ? "Impossible de vérifier ton abonnement pour le moment — réessaie plus tard."
+                    : subscriptionStatus?.hasAccess
+                      ? (periodEnd ? `Prochain renouvellement le ${periodEnd}` : "Actif")
+                      : trialEnd
+                        ? `Essai expiré le ${trialEnd}`
+                        : "Choisis un plan ci-dessous pour débloquer l'accès complet."}
               </div>
             </div>
-            <button onClick={()=>openExternal("https://rload.be/pricing?source=launcher")} style={{ padding:"10px 18px", borderRadius:999, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}>
-              {subscriptionStatus?.hasAccess ? "Gérer le paiement" : "S'abonner"}
+            <button
+              onClick={() => subscriptionCheckFailed ? onRetrySubscription?.() : openExternal("https://rload.be/pricing?source=launcher")}
+              style={{ padding:"10px 18px", borderRadius:999, background:"rgba(255,255,255,0.1)", border:`1px solid ${T.border}`, color:T.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:T.fontBody }}
+            >
+              {subscriptionCheckFailed ? "Réessayer" : subscriptionStatus?.hasAccess ? "Gérer le paiement" : "S'abonner"}
             </button>
           </div>
           <div style={{ display:"flex", gap:53 }}>
@@ -5017,7 +5025,8 @@ export default function LauncherGames() {
         {activeTab==="myrload"   && (
           <MyRloadPage games={games} onTabChange={handleTabChange}
             onSelectStudio={(id)=>{ setSelectedStudioId(id); handleTabChange("studios"); }}
-            subscriptionStatus={subscriptionStatus} demoMode={demoMode}/>
+            subscriptionStatus={subscriptionStatus} demoMode={demoMode}
+            onRetrySubscription={handleRefreshSubscription}/>
         )}
         {activeTab==="studios" && (
           selectedStudioId ? (

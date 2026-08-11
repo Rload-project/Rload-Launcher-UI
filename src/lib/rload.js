@@ -390,7 +390,10 @@ export async function getSubscriptionStatus() {
   if (!hasRload()) return { hasAccess: false, subscriptionStatus: "none" };
   const a = window.rload.auth;
   if (!a?.getSubscriptionStatus) return { hasAccess: false, subscriptionStatus: "none" };
-  try { return await a.getSubscriptionStatus(); } catch { return { hasAccess: false, subscriptionStatus: "none" }; }
+  // "error" (network/IPC failure) is kept distinct from "none" (checked
+  // successfully, genuinely no subscription) — callers must not treat a
+  // failed check the same as a confirmed non-subscriber.
+  try { return await a.getSubscriptionStatus(); } catch { return { hasAccess: false, subscriptionStatus: "error" }; }
 }
 
 /**
