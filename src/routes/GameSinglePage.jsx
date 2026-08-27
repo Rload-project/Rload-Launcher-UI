@@ -68,15 +68,31 @@ function PauseIcon() {
 function ctaConfig(uiState, hasAccess, game, dl, busy) {
   if (game?.comingSoon) return { label: "COMING SOON", action: null, disabled: true };
   if (!hasAccess) return { label: "SUBSCRIBE TO PLAY", action: "subscribe", disabled: false };
+  // A download-only game (Website-First, gameId absent from the catalog —
+  // see buildShadowGame() in launcher-games.jsx) has no downloadUrl/sha256
+  // to install from, and its backend installation_job has zero outgoing
+  // transitions once failed (state-machine `failed: []`) — "RETRY INSTALL"
+  // would silently do nothing useful. Catalog games are untouched.
+  const isDownloadOnly = game?._source === "download-only";
   switch (uiState) {
     case UI.DOWNLOADING: return { label: `DOWNLOADING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
-    case UI.PAUSED: return { label: "RESUME DOWNLOAD", action: "resume", icon: <PlayIcon/>, disabled: busy };
+    case UI.PAUSED:
+      // Resume is a real action only when the backend says the job can
+      // actually resume (canResume:true) — otherwise the button would call
+      // resumeDownload() against a download the Runtime already knows is a
+      // dead end. Applies to catalog and download-only games alike.
+      return dl?.canResume === true
+        ? { label: "RESUME DOWNLOAD", action: "resume", icon: <PlayIcon/>, disabled: busy }
+        : { label: "PAUSED", action: null, disabled: true };
     case UI.INSTALLING: return { label: "INSTALLING…", action: null, disabled: true };
     case UI.INSTALLED: return { label: "PLAY", action: "play", icon: <PlayIcon/>, disabled: busy };
     case UI.RUNNING: return { label: "PLAYING…", action: null, disabled: true };
     case UI.UPDATE_AVAILABLE: return { label: "UPDATE", action: "update", icon: <DownloadIcon/>, disabled: busy };
     case UI.UPDATING: return { label: `UPDATING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
-    case UI.ERROR: return { label: "RETRY INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
+    case UI.ERROR:
+      return isDownloadOnly
+        ? { label: "DOWNLOAD FAILED", action: null, disabled: true }
+        : { label: "RETRY INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
     default: return { label: "INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
   }
 }
