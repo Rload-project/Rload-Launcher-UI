@@ -96,6 +96,44 @@ export function computeHydratedEntryUpdate(existing, rawEntry) {
   };
 }
 
+// Pause/Resume/Retry/Play button decision — pure, NO JSX (icons are added
+// by the caller, which is a .jsx file). This was the last untested piece
+// of the render path per Avi's review: the actual CTA logic (which action
+// fires, whether it's enabled, whether Resume/Retry even exist for this
+// state) now lives here, testable with plain node:test. GameSinglePage.jsx
+// wraps this with a thin icon lookup — see its own ctaConfig().
+export function getDownloadAction(uiState, hasAccess, game, dl, busy) {
+  if (game?.comingSoon) return { label: "COMING SOON", action: null, disabled: true };
+  if (!hasAccess) return { label: "SUBSCRIBE TO PLAY", action: "subscribe", disabled: false };
+  // A download-only game (Website-First, gameId absent from the catalog —
+  // see buildShadowGame() above) has no downloadUrl/sha256 to install
+  // from, and its backend installation_job has zero outgoing transitions
+  // once failed (state-machine `failed: []`) — "RETRY INSTALL" would
+  // silently do nothing useful. Catalog games are untouched.
+  const isDownloadOnly = game?._source === "download-only";
+  switch (uiState) {
+    case UI.DOWNLOADING: return { label: `DOWNLOADING ${dl?.percent ?? 0}%`, action: "pause", disabled: busy };
+    case UI.PAUSED:
+      // Resume is a real action only when the backend says the job can
+      // actually resume (canResume:true) — otherwise the button would call
+      // resumeDownload() against a download the Runtime already knows is a
+      // dead end. Applies to catalog and download-only games alike.
+      return dl?.canResume === true
+        ? { label: "RESUME DOWNLOAD", action: "resume", disabled: busy }
+        : { label: "PAUSED", action: null, disabled: true };
+    case UI.INSTALLING: return { label: "INSTALLING…", action: null, disabled: true };
+    case UI.INSTALLED: return { label: "PLAY", action: "play", disabled: busy };
+    case UI.RUNNING: return { label: "PLAYING…", action: null, disabled: true };
+    case UI.UPDATE_AVAILABLE: return { label: "UPDATE", action: "update", disabled: busy };
+    case UI.UPDATING: return { label: `UPDATING ${dl?.percent ?? 0}%`, action: "pause", disabled: busy };
+    case UI.ERROR:
+      return isDownloadOnly
+        ? { label: "DOWNLOAD FAILED", action: null, disabled: true }
+        : { label: "RETRY INSTALL", action: "install", disabled: busy };
+    default: return { label: "INSTALL", action: "install", disabled: busy };
+  }
+}
+
 // Badge label/colors for a given UI state — pure projection, no JSX. Used
 // by GameGridCard/SmallCoverCard/ThreeDRow etc. Moved here (still
 // re-exported the same way from launcher-games.jsx) so RENDER_PATH_TESTED

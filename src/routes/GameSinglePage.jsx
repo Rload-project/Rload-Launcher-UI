@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { getDownloadAction } from "../lib/download-state-model.js";
 
 const T = {
   page: "#240c4a",
@@ -65,36 +66,22 @@ function PauseIcon() {
   return <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>;
 }
 
+// Thin JSX wrapper — all decision logic (label/action/disabled) lives in
+// getDownloadAction() (download-state-model.js, pure, unit-tested with
+// node:test). This function's only job is attaching the right icon
+// component per action, which requires JSX and so can't itself be
+// unit-tested without a JSX-capable runner.
+const CTA_ICONS = {
+  pause: () => <PauseIcon/>,
+  resume: () => <PlayIcon/>,
+  play: () => <PlayIcon/>,
+  update: () => <DownloadIcon/>,
+  install: () => <DownloadIcon/>,
+};
 function ctaConfig(uiState, hasAccess, game, dl, busy) {
-  if (game?.comingSoon) return { label: "COMING SOON", action: null, disabled: true };
-  if (!hasAccess) return { label: "SUBSCRIBE TO PLAY", action: "subscribe", disabled: false };
-  // A download-only game (Website-First, gameId absent from the catalog —
-  // see buildShadowGame() in launcher-games.jsx) has no downloadUrl/sha256
-  // to install from, and its backend installation_job has zero outgoing
-  // transitions once failed (state-machine `failed: []`) — "RETRY INSTALL"
-  // would silently do nothing useful. Catalog games are untouched.
-  const isDownloadOnly = game?._source === "download-only";
-  switch (uiState) {
-    case UI.DOWNLOADING: return { label: `DOWNLOADING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
-    case UI.PAUSED:
-      // Resume is a real action only when the backend says the job can
-      // actually resume (canResume:true) — otherwise the button would call
-      // resumeDownload() against a download the Runtime already knows is a
-      // dead end. Applies to catalog and download-only games alike.
-      return dl?.canResume === true
-        ? { label: "RESUME DOWNLOAD", action: "resume", icon: <PlayIcon/>, disabled: busy }
-        : { label: "PAUSED", action: null, disabled: true };
-    case UI.INSTALLING: return { label: "INSTALLING…", action: null, disabled: true };
-    case UI.INSTALLED: return { label: "PLAY", action: "play", icon: <PlayIcon/>, disabled: busy };
-    case UI.RUNNING: return { label: "PLAYING…", action: null, disabled: true };
-    case UI.UPDATE_AVAILABLE: return { label: "UPDATE", action: "update", icon: <DownloadIcon/>, disabled: busy };
-    case UI.UPDATING: return { label: `UPDATING ${dl?.percent ?? 0}%`, action: "pause", icon: <PauseIcon/>, disabled: busy };
-    case UI.ERROR:
-      return isDownloadOnly
-        ? { label: "DOWNLOAD FAILED", action: null, disabled: true }
-        : { label: "RETRY INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
-    default: return { label: "INSTALL", action: "install", icon: <DownloadIcon/>, disabled: busy };
-  }
+  const base = getDownloadAction(uiState, hasAccess, game, dl, busy);
+  const iconFactory = base.action ? CTA_ICONS[base.action] : null;
+  return iconFactory ? { ...base, icon: iconFactory() } : base;
 }
 
 function GameInfoCard({ game }) {

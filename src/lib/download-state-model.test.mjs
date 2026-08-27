@@ -3,7 +3,87 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge } from './download-state-model.js';
+import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge, getDownloadAction } from './download-state-model.js';
+
+describe('getDownloadAction — CTA decision logic, no JSX (RENDER_PATH_TESTED, closes Avi\'s last gap)', () => {
+  const catalogGame = { gameId: 'ultrakill', _source: 'local' };
+  const downloadOnlyGame = { gameId: 'synthetic-15gb-staging-test', _source: 'download-only' };
+  const access = true;
+
+  test('DOWNLOADING -> pause, enabled', () => {
+    const a = getDownloadAction(UI.DOWNLOADING, access, catalogGame, { percent: 40 }, false);
+    assert.equal(a.action, 'pause');
+    assert.equal(a.disabled, false);
+  });
+
+  test('PAUSED + canResume:true -> resume, enabled', () => {
+    const a = getDownloadAction(UI.PAUSED, access, catalogGame, { canResume: true }, false);
+    assert.equal(a.action, 'resume');
+    assert.equal(a.disabled, false);
+  });
+
+  test('PAUSED + canResume:false -> no action, disabled — never call resumeDownload() on a dead end', () => {
+    const a = getDownloadAction(UI.PAUSED, access, catalogGame, { canResume: false }, false);
+    assert.equal(a.action, null);
+    assert.equal(a.disabled, true);
+  });
+
+  test('PAUSED + canResume missing (undefined/null) -> treated the same as false, no action', () => {
+    const a = getDownloadAction(UI.PAUSED, access, catalogGame, {}, false);
+    assert.equal(a.action, null);
+  });
+
+  test('ERROR on a download-only game -> no action, never Retry — the exact fix for the fake-button bug', () => {
+    const a = getDownloadAction(UI.ERROR, access, downloadOnlyGame, null, false);
+    assert.equal(a.action, null);
+    assert.equal(a.disabled, true);
+    assert.equal(a.label, 'DOWNLOAD FAILED');
+  });
+
+  test('ERROR on a real catalog game -> RETRY INSTALL still offered (unchanged existing behavior)', () => {
+    const a = getDownloadAction(UI.ERROR, access, catalogGame, null, false);
+    assert.equal(a.action, 'install');
+    assert.equal(a.label, 'RETRY INSTALL');
+  });
+
+  test('VERIFYING/EXTRACTING/INSTALLING states (all map to UI.INSTALLING) -> no action', () => {
+    const a = getDownloadAction(UI.INSTALLING, access, catalogGame, null, false);
+    assert.equal(a.action, null);
+  });
+
+  test('RUNNING -> no action (PLAYING…)', () => {
+    assert.equal(getDownloadAction(UI.RUNNING, access, catalogGame, null, false).action, null);
+  });
+
+  test('INSTALLED -> play', () => {
+    assert.equal(getDownloadAction(UI.INSTALLED, access, catalogGame, null, false).action, 'play');
+  });
+
+  test('unknown/undefined uiState -> falls to default (install), never crashes', () => {
+    const a = getDownloadAction(undefined, access, catalogGame, null, false);
+    assert.equal(a.action, 'install');
+  });
+
+  test('no CTA depends on catalog membership except the ERROR/Retry distinction — DOWNLOADING/PAUSED behave identically for catalog and download-only games', () => {
+    const catalogA = getDownloadAction(UI.DOWNLOADING, access, catalogGame, { percent: 10 }, false);
+    const shadowA = getDownloadAction(UI.DOWNLOADING, access, downloadOnlyGame, { percent: 10 }, false);
+    assert.equal(catalogA.action, shadowA.action);
+    const catalogP = getDownloadAction(UI.PAUSED, access, catalogGame, { canResume: true }, false);
+    const shadowP = getDownloadAction(UI.PAUSED, access, downloadOnlyGame, { canResume: true }, false);
+    assert.equal(catalogP.action, shadowP.action);
+  });
+
+  test('no subscription access overrides everything else with SUBSCRIBE TO PLAY', () => {
+    const a = getDownloadAction(UI.DOWNLOADING, false, catalogGame, { percent: 50 }, false);
+    assert.equal(a.action, 'subscribe');
+  });
+
+  test('busy disables pause/resume/install/update/play but does not change the action itself', () => {
+    const a = getDownloadAction(UI.DOWNLOADING, access, catalogGame, {}, true);
+    assert.equal(a.action, 'pause');
+    assert.equal(a.disabled, true);
+  });
+});
 
 describe('getStateBadge — RENDER_PATH_TESTED (pure projection level, no DOM)', () => {
   test('ERROR state gets a distinct, non-null badge — this is literally what makes the failed job visible in Active Downloads', () => {
