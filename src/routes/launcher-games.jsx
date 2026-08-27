@@ -1,13 +1,13 @@
 // launcher-ui/src/routes/launcher-games.jsx
 // ── Rload Launcher — Premium UI (Vercel website style) ──
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GameSinglePage } from "./GameSinglePage.jsx";
 
 import {
   rloadAvailable, listLocalGames, getInstalledStatus, installGame, updateGame,
   pauseDownload, resumeDownload, cancelDownload, uninstallGame, launchGame,
-  subscribeDownloads, subscribeRunning, isUpdateAvailable,
+  subscribeDownloads, subscribeRunning, isUpdateAvailable, listDownloads,
   getSession, login, logout, subscribeSession, subscribeAuthError,
   getSubscriptionStatus, subscribeSubscriptionRefresh,
 } from "../lib/rload";
@@ -88,6 +88,58 @@ function mapBackendStateToUI(s) {
   if (["canceled","cancelled"].includes(state))                            return UI.CANCELED;
   if (["error","failed"].includes(state))                                  return UI.ERROR;
   return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Website-First download-only games — a download can exist (downloads.json /
+// an installation_job) for a gameId that is deliberately absent from the
+// catalog (e.g. a staging-only synthetic test, or any future Website-First
+// title not yet published to catalog.json). Before this fix, `games` (the
+// catalog array) was the ONLY source ever iterated to build Active Downloads,
+// so such a job was invisible and uncontrollable no matter its real status —
+// see the "Gate de contrôle des téléchargements Website-First" audit.
+//
+// A shadow game is the minimal, safe-to-render stand-in used ONLY for a
+// gameId that has no catalog entry. It intentionally mirrors the exact shape
+// listLocalGames()'s normalization already produces (same fields, empty/
+// null defaults) so every existing consumer (GameGridCard, GameSinglePage,
+// search, badges) can render it without a special case — except
+// `_source:"download-only"`, which GameSinglePage.jsx uses to suppress the
+// catalog-only "RETRY INSTALL" action for a job that structurally cannot be
+// retried in place (see state-machine `failed: []` on the backend).
+function buildShadowGame(gameId, dl) {
+  return {
+    gameId,
+    title: gameId, // no catalog title to enrich with — fallback is the raw gameId, per spec
+    studio: null,
+    version: dl?.version || "",
+    exe: "",
+    downloadUrl: "",
+    sha256: "",
+    downloadSize: dl?.totalBytes || null,
+    updateStrategy: "full",
+    description: null,
+    shortDescription: null,
+    thumbnail: null,
+    coverUrl: null,
+    coverImage: null,
+    banner: null,
+    screenshots: [],
+    trailer: null,
+    tags: [],
+    genres: [],
+    comingSoon: false,
+    releaseDate: null,
+    languages: [],
+    ageRating: null,
+    featureCards: [],
+    systemRequirements: null,
+    studioSlug: null,
+    studioLogo: null,
+    studioCountry: null,
+    studioLinks: null,
+    _source: "download-only",
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2441,7 +2493,7 @@ function formatPlaytime(mins) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, gameDetailProps, gamesLoading, onTabChange }) {
+function MyGamesPage({ games, uiByGame, dlByGame, downloadOnlyGames=[], selectedGameId, onSelectGame, gameDetailProps, gamesLoading, onTabChange }) {
   const [sidebarView, setSidebarView] = useState("all"); // all|installed|updates|favorites|recent|downloads|queue|tag:X
   const [search, setSearch]           = useState("");
   const [online, setOnline]           = useState(navigator.onLine);
@@ -2497,7 +2549,23 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
   const installed      = realGames.filter(g => INSTALLED_SET.has(uiByGame[g.gameId]));
   const withUpdates    = realGames.filter(g => uiByGame[g.gameId] === UI.UPDATE_AVAILABLE);
   const favorited      = realGames.filter(g => favorites.has(g.gameId));
-  const activeDownloads= realGames.filter(g => [UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING].includes(uiByGame[g.gameId]));
+  // Active Downloads must be derived from real download state, not just the
+  // catalog — downloadOnlyGames covers any gameId absent from the catalog
+  // (Website-First titles not yet published, staging synthetic tests). Every
+  // other view (installed/updates/favorites/all) stays catalog-only on
+  // purpose: a download-only shadow game is never "installed" or
+  // "favoritable" in this scope.
+  //
+  // Catalog games keep their EXACT pre-existing filter (unchanged behavior —
+  // stable/legacy must not regress). Download-only games additionally
+  // surface UI.ERROR — a failed job would otherwise be invisible everywhere
+  // (no catalog card exists to show it on), which is the actual defect this
+  // fix closes; a failed CATALOG game keeps its existing (unrelated,
+  // untouched) behavior of not appearing here.
+  const activeDownloads = [
+    ...realGames.filter(g => [UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING].includes(uiByGame[g.gameId])),
+    ...downloadOnlyGames.filter(g => [UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING,UI.ERROR].includes(uiByGame[g.gameId])),
+  ];
   const running        = realGames.filter(g => uiByGame[g.gameId] === UI.RUNNING);
 
   // Continue Playing — prefer: running → last played (localStorage) → first installed
@@ -2530,7 +2598,7 @@ function MyGamesPage({ games, uiByGame, dlByGame, selectedGameId, onSelectGame, 
     if (sidebarView==="updates")      return normalizedSearch ? searchBase.filter(g=>uiByGame[g.gameId]===UI.UPDATE_AVAILABLE) : withUpdates;
     if (sidebarView==="favorites")    return search ? searchBase.filter(g=>favorites.has(g.gameId)) : favorited;
     if (sidebarView==="recent")       return normalizedSearch ? searchBase.filter(g=>INSTALLED_SET.has(uiByGame[g.gameId])) : (installed.length ? installed : realGames);
-    if (sidebarView==="downloads")    return normalizedSearch ? searchBase.filter(g=>[UI.DOWNLOADING,UI.PAUSED,UI.INSTALLING,UI.UPDATING].includes(uiByGame[g.gameId])) : activeDownloads;
+    if (sidebarView==="downloads")    return normalizedSearch ? activeDownloads.filter(g=>[g.title,g.gameId,g.studio,...(g.genres||[]),...(g.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(normalizedSearch))) : activeDownloads;
     if (sidebarView==="queue")        return [];
     return searchBase; // "all"
   };
@@ -4711,6 +4779,11 @@ export default function LauncherGames() {
       onState: s => {
         if (!s?.gameId) return;
         if (s.id) setDlIdByGame(prev => ({ ...prev, [s.gameId]: s.id }));
+        // canResume lives on the state event, not progress — merge it onto
+        // whatever's already in dlByGame (progress fields) rather than
+        // replacing, so a PAUSED state right after a DOWNLOADING progress
+        // tick doesn't wipe bytesDownloaded/percent.
+        setDlByGame(prev => ({ ...prev, [s.gameId]: { ...prev[s.gameId], canResume: s.canResume ?? null } }));
         const mapped = mapBackendStateToUI(s.state);
         if (mapped) setUiByGame(prev => {
           if (DOWNLOAD_SAFE_STATES.has(prev[s.gameId])) return prev;
@@ -4723,6 +4796,61 @@ export default function LauncherGames() {
     unsubRef.current = unsub;
     return () => { try { unsubRef.current?.(); } catch {} unsubRef.current = null; };
   }, [desktop]);
+
+  // ── Download hydration — cold-start visibility ───────────────────────────
+  // subscribeDownloads() above only ever sees events that happen while this
+  // window is open. A download that already reached a terminal or paused
+  // state in a PRIOR session (e.g. it failed before this renderer existed)
+  // would otherwise stay permanently invisible — this is the exact defect
+  // reported for the Website-First synthetic test job. One-shot read of the
+  // Runtime's own downloads.json via listDownloads(), applied through the
+  // SAME safety guard (DOWNLOAD_SAFE_STATES) the live handlers use, so it
+  // can never clobber a freshly-computed INSTALLED/RUNNING/etc. state.
+  useEffect(() => {
+    if (!desktop) return;
+    let alive = true;
+    (async () => {
+      const entries = await listDownloads();
+      if (!alive || !Array.isArray(entries)) return;
+      for (const e of entries) {
+        if (!e?.gameId) continue;
+        const mapped = mapBackendStateToUI(e.status ?? e.state);
+        if (!mapped) continue;
+        if (e.id) setDlIdByGame(prev => (prev[e.gameId] ? prev : { ...prev, [e.gameId]: e.id }));
+        setDlByGame(prev => (prev[e.gameId] ? prev : {
+          ...prev,
+          [e.gameId]: {
+            id: e.id ?? null, gameId: e.gameId, version: e.version ?? null,
+            bytesDownloaded: e.bytesDownloaded ?? 0, totalBytes: e.totalBytes ?? 0,
+            percent: e.totalBytes > 0 ? Math.round(((e.bytesDownloaded ?? 0) / e.totalBytes) * 100) : 0,
+            canResume: e.canResume ?? null,
+          },
+        }));
+        setUiByGame(prev => {
+          if (prev[e.gameId] != null) return prev; // a live event already won this race
+          if (DOWNLOAD_SAFE_STATES.has(prev[e.gameId])) return prev;
+          return { ...prev, [e.gameId]: mapped };
+        });
+        if (mapped === UI.ERROR) {
+          setErrByGame(prev => (prev[e.gameId] ? prev : { ...prev, [e.gameId]: toErrStr(e.error) || "failed" }));
+        }
+      }
+    })();
+    return () => { alive = false; };
+  }, [desktop]);
+
+  // ── Website-First shadow games — any gameId with real download state but
+  // no catalog entry. Built from uiByGame's own keys (populated by the live
+  // events + hydration effects above), so this naturally stays empty on a
+  // stable build or for any normal catalog-only download — zero behavior
+  // change there. See buildShadowGame()'s header for the full rationale.
+  const catalogGameIds = useMemo(() => new Set(games.map(g => g.gameId)), [games]);
+  const shadowGames = useMemo(
+    () => Object.keys(uiByGame)
+      .filter(gid => gid !== "smoke" && !catalogGameIds.has(gid))
+      .map(gid => buildShadowGame(gid, dlByGame[gid])),
+    [uiByGame, catalogGameIds, dlByGame]
+  );
 
   // ── Running events ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -4944,7 +5072,12 @@ export default function LauncherGames() {
   if (!authSession) return <LoginScreen authBusy={authBusy} authError={authError} onSignIn={handleSignIn}/>;
 
   // ── Detail panel props ────────────────────────────────────────────────────
-  const selGame = selectedGameId ? games.find(g=>g.gameId===selectedGameId) : null;
+  // Falls back to a shadow game so opening a Website-First download-only
+  // entry from the Active Downloads grid actually navigates somewhere,
+  // instead of silently rendering nothing (selGame was catalog-only before).
+  const selGame = selectedGameId
+    ? (games.find(g=>g.gameId===selectedGameId) || shadowGames.find(g=>g.gameId===selectedGameId))
+    : null;
   const selId   = selGame?.gameId;
   const gameDetailProps = selId ? {
     dl:               dlByGame[selId],
@@ -5014,6 +5147,7 @@ export default function LauncherGames() {
         )}
         {activeTab==="games" && (
           <MyGamesPage games={games} uiByGame={uiByGame} dlByGame={dlByGame}
+            downloadOnlyGames={shadowGames}
             selectedGameId={selectedGameId} onSelectGame={handleSelectGame}
             gameDetailProps={gameDetailProps} gamesLoading={gamesLoading}
             onTabChange={handleTabChange}/>
