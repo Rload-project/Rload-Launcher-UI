@@ -87,7 +87,12 @@ function normalizeState(s) {
   const bytesDownloaded = s.bytesDownloaded ?? 0;
   const totalBytes      = s.totalBytes      ?? 0;
   const error           = s.error           || null;
-  return { id, gameId, version, state, bytesDownloaded, totalBytes, error };
+  // canResume was silently dropped here before — a job-backed download
+  // (Website-First, gameId absent from the catalog) needs it to decide
+  // whether Resume is a real action or a dead end (see FIX_REQUIRED gate:
+  // "Resume uniquement si paused et canResume=true").
+  const canResume       = s.canResume       ?? null;
+  return { id, gameId, version, state, bytesDownloaded, totalBytes, error, canResume };
 }
 
 // ---------------------------------------------------------------------------
@@ -259,6 +264,24 @@ export async function cancelDownload(downloadId) {
   const d = window.rload.downloads;
   if (!d?.cancel) return { ok: false, error: "cancel() not available" };
   return await d.cancel(downloadId);
+}
+
+/**
+ * All download records the Runtime currently knows about (downloads.json),
+ * regardless of whether their gameId exists in the catalog. Used to hydrate
+ * UI state on mount so a download that failed/paused in a PRIOR session
+ * (before this renderer even existed) is still visible — subscribeDownloads()
+ * alone only ever sees events that happen while this window is open.
+ * @returns {Promise<Array<{id,gameId,version,status,bytesDownloaded,totalBytes,canResume,error,entrypoint}>>}
+ */
+export async function listDownloads() {
+  if (!hasRload()) return [];
+  const d = window.rload.downloads;
+  if (!d?.list) return [];
+  const res = await safeFn(() => d.list(), null);
+  if (!res) return [];
+  const entries = Array.isArray(res) ? res : Array.isArray(res?.entries) ? res.entries : [];
+  return entries;
 }
 
 // ---------------------------------------------------------------------------
