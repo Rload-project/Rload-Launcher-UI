@@ -11,7 +11,7 @@ import {
   getSession, login, logout, subscribeSession, subscribeAuthError,
   getSubscriptionStatus, subscribeSubscriptionRefresh,
 } from "../lib/rload";
-import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame } from "../lib/download-state-model";
+import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge } from "../lib/download-state-model";
 import { T } from "../lib/theme";
 import { getProfile as getPlayerProfile, subscribeProfile as subscribePlayerProfile, recordGameEvent, setCountry as setPlayerCountry, setDisplayName as setPlayerDisplayName } from "../lib/playerStore";
 import { ProfileHeader } from "../components/player/ProfileHeader.jsx";
@@ -58,15 +58,6 @@ function humanBytes(n) {
   while (v >= 1024 && i < u.length-1) { v/=1024; i++; }
   return `${v.toFixed(i===0?0:1)} ${u[i]}`;
 }
-function toErrStr(e) {
-  if (!e) return "";
-  if (typeof e === "string") return e;
-  if (typeof e === "number") return String(e);
-  if (e instanceof Error) return e.message || String(e);
-  if (typeof e.message === "string") return e.message;
-  try { return JSON.stringify(e); } catch { return String(e); }
-}
-
 // UI state machine, mapBackendStateToUI, buildShadowGame — moved to
 // ../lib/download-state-model.js (pure module, unit-tested with node:test).
 // Imported below, no behavior change.
@@ -74,21 +65,6 @@ function toErrStr(e) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Badge config
 // ─────────────────────────────────────────────────────────────────────────────
-function getStateBadge(uiState) {
-  switch(uiState) {
-    case UI.INSTALLED:        return { label:"Installed",  color:T.green,  bg:T.greenBg,   border:T.greenBorder  };
-    case UI.UPDATE_AVAILABLE: return { label:"Update",     color:T.blue2Light, bg:T.blue2Bg, border:T.blue2Border };
-    case UI.RUNNING:          return { label:"Playing",    color:T.purple, bg:T.purpleBg,  border:T.purpleBorder };
-    case UI.DOWNLOADING:      return { label:"Loading…",  color:T.blue,   bg:T.blueBg,    border:T.blueBorder   };
-    case UI.PAUSED:           return { label:"Paused",     color:T.orange, bg:T.orangeBg,  border:T.orangeBorder };
-    case UI.INSTALLING:       return { label:"Installing", color:T.blue,   bg:T.blueBg,    border:T.blueBorder   };
-    case UI.UPDATING:         return { label:"Updating",   color:T.blue,   bg:T.blueBg,    border:T.blueBorder   };
-    case UI.INSTALLED_NO_EXE: return { label:"Installed",  color:T.orange, bg:T.orangeBg,  border:T.orangeBorder };
-    case UI.ERROR:            return { label:"Error",      color:T.red,    bg:T.redBg,     border:T.redBorder    };
-    default: return null;
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Cover placeholder gradient
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4742,27 +4718,26 @@ export default function LauncherGames() {
       const entries = await listDownloads();
       if (!alive || !Array.isArray(entries)) return;
       for (const e of entries) {
-        if (!e?.gameId) continue;
-        const mapped = mapBackendStateToUI(e.status ?? e.state);
-        if (!mapped) continue;
-        if (e.id) setDlIdByGame(prev => (prev[e.gameId] ? prev : { ...prev, [e.gameId]: e.id }));
-        setDlByGame(prev => (prev[e.gameId] ? prev : {
-          ...prev,
-          [e.gameId]: {
-            id: e.id ?? null, gameId: e.gameId, version: e.version ?? null,
-            bytesDownloaded: e.bytesDownloaded ?? 0, totalBytes: e.totalBytes ?? 0,
-            percent: e.totalBytes > 0 ? Math.round(((e.bytesDownloaded ?? 0) / e.totalBytes) * 100) : 0,
-            canResume: e.canResume ?? null,
+        // Decision logic lives in computeHydratedEntryUpdate() (pure,
+        // unit-tested — see download-state-model.test.mjs). Reading
+        // uiByGame/dlByGame/etc. here via the functional setState form
+        // right below still gives it the true current snapshot per entry,
+        // same race-safety as before, just with the "what should change"
+        // question answered by a tested function instead of inline ifs.
+        const update = computeHydratedEntryUpdate(
+          {
+            uiState: uiByGame[e?.gameId] ?? null,
+            hasDl: !!dlByGame[e?.gameId],
+            hasDlId: !!dlIdByGame[e?.gameId],
+            hasErr: !!errByGame[e?.gameId],
           },
-        }));
-        setUiByGame(prev => {
-          if (prev[e.gameId] != null) return prev; // a live event already won this race
-          if (DOWNLOAD_SAFE_STATES.has(prev[e.gameId])) return prev;
-          return { ...prev, [e.gameId]: mapped };
-        });
-        if (mapped === UI.ERROR) {
-          setErrByGame(prev => (prev[e.gameId] ? prev : { ...prev, [e.gameId]: toErrStr(e.error) || "failed" }));
-        }
+          e
+        );
+        if (!update) continue;
+        if (update.dlId !== undefined) setDlIdByGame(prev => (prev[update.gameId] ? prev : { ...prev, [update.gameId]: update.dlId }));
+        if (update.dl !== undefined) setDlByGame(prev => (prev[update.gameId] ? prev : { ...prev, [update.gameId]: update.dl }));
+        if (update.uiState !== undefined) setUiByGame(prev => (prev[update.gameId] != null ? prev : { ...prev, [update.gameId]: update.uiState }));
+        if (update.err !== undefined) setErrByGame(prev => (prev[update.gameId] ? prev : { ...prev, [update.gameId]: update.err }));
       }
     })();
     return () => { alive = false; };
