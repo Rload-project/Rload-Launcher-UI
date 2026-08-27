@@ -62,7 +62,10 @@ export function isUpdateAvailable(installedVersion, registryVersion) {
 // Payload normalizers
 // ---------------------------------------------------------------------------
 
-function normalizeProgress(p) {
+// Exported (in addition to internal use by subscribeDownloads below) so
+// they can be unit-tested directly with node:test — no DOM, no Electron,
+// no real download needed. See rload.download-state.test.mjs.
+export function normalizeProgress(p) {
   if (!p) return null;
   const id      = p.id      || null;
   const gameId  = p.gameId  || null;
@@ -78,7 +81,7 @@ function normalizeProgress(p) {
   return { id, gameId, version, bytesDownloaded, totalBytes, percent };
 }
 
-function normalizeState(s) {
+export function normalizeState(s) {
   if (!s) return null;
   const id      = s.id      || null;
   const gameId  = s.gameId  || null;
