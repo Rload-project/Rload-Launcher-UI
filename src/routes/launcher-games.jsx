@@ -11,7 +11,7 @@ import {
   getSession, login, logout, subscribeSession, subscribeAuthError,
   getSubscriptionStatus, subscribeSubscriptionRefresh,
 } from "../lib/rload";
-import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge } from "../lib/download-state-model";
+import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge, resolveDownloadCommandTarget, executeDownloadAction } from "../lib/download-state-model";
 import { T } from "../lib/theme";
 import { getProfile as getPlayerProfile, subscribeProfile as subscribePlayerProfile, recordGameEvent, setCountry as setPlayerCountry, setDisplayName as setPlayerDisplayName } from "../lib/playerStore";
 import { ProfileHeader } from "../components/player/ProfileHeader.jsx";
@@ -4994,8 +4994,23 @@ export default function LauncherGames() {
     onInstall:  ()=>handleInstall(selGame),
     onUpdate:   ()=>handleUpdate(selGame, installedVersionByGame[selId]||null),
     onPlay:     ()=>handlePlay(selGame),
-    onPause:    ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:UI.PAUSED})); return await pauseDownload(dlIdByGame[selId]); }),
-    onResume:   ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:UI.DOWNLOADING})); return await resumeDownload(dlIdByGame[selId]); }),
+    // Both handlers resolve the target via resolveDownloadCommandTarget()
+    // (pure, unit-tested — proves gameId is never used as a fallback for
+    // the download id) and dispatch via executeDownloadAction() (pure,
+    // unit-tested — proves pause/resume each fire exactly once with that
+    // exact id, and that a missing target fires neither).
+    onPause:    ()=>wrapBusy(selId, async()=>{
+      const targetId = resolveDownloadCommandTarget({ selectedGameId: selId, downloadIdByGame: dlIdByGame });
+      if (!targetId) return { ok:false };
+      setUiByGame(p=>({...p,[selId]:UI.PAUSED}));
+      return await executeDownloadAction({ action: 'pause', targetId, pause: pauseDownload, resume: resumeDownload });
+    }),
+    onResume:   ()=>wrapBusy(selId, async()=>{
+      const targetId = resolveDownloadCommandTarget({ selectedGameId: selId, downloadIdByGame: dlIdByGame });
+      if (!targetId) return { ok:false };
+      setUiByGame(p=>({...p,[selId]:UI.DOWNLOADING}));
+      return await executeDownloadAction({ action: 'resume', targetId, pause: pauseDownload, resume: resumeDownload });
+    }),
     onCancel:   ()=>wrapBusy(selId, async()=>{ if(!dlIdByGame[selId]) return {ok:false}; setUiByGame(p=>({...p,[selId]:p[selId]===UI.UPDATING?UI.UPDATE_AVAILABLE:UI.CANCELED})); return await cancelDownload(dlIdByGame[selId]); }),
     onUninstall:        ()=>handleUninstall(selGame),
     onRefreshAccess:    handleRefreshSubscription,

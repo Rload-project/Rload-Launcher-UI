@@ -3,7 +3,7 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge, getDownloadAction } from './download-state-model.js';
+import { UI, DOWNLOAD_SAFE_STATES, mapBackendStateToUI, buildShadowGame, toErrStr, computeHydratedEntryUpdate, getStateBadge, getDownloadAction, resolveDownloadCommandTarget, executeDownloadAction } from './download-state-model.js';
 
 describe('getDownloadAction — CTA decision logic, no JSX (RENDER_PATH_TESTED, closes Avi\'s last gap)', () => {
   const catalogGame = { gameId: 'ultrakill', _source: 'local' };
@@ -59,9 +59,22 @@ describe('getDownloadAction — CTA decision logic, no JSX (RENDER_PATH_TESTED, 
     assert.equal(getDownloadAction(UI.INSTALLED, access, catalogGame, null, false).action, 'play');
   });
 
-  test('unknown/undefined uiState -> falls to default (install), never crashes', () => {
+  test('unknown/undefined uiState on a real catalog game -> falls to default (install), unchanged legacy behavior', () => {
     const a = getDownloadAction(undefined, access, catalogGame, null, false);
     assert.equal(a.action, 'install');
+  });
+
+  test('unknown/undefined uiState on a download-only game -> no action, NOT install (Avi\'s catch: the legacy fallback cannot install a shadow game — empty downloadUrl/sha256)', () => {
+    const a = getDownloadAction(undefined, access, downloadOnlyGame, null, false);
+    assert.equal(a.action, null);
+    assert.equal(a.disabled, true);
+  });
+
+  test('no download-only path ever reaches the legacy "install" action, across every state', () => {
+    for (const state of [UI.IDLE, UI.DOWNLOADING, UI.PAUSED, UI.INSTALLING, UI.INSTALLED, UI.RUNNING, UI.UPDATE_AVAILABLE, UI.UPDATING, UI.ERROR, UI.CANCELED, undefined, 'totally_unknown']) {
+      const a = getDownloadAction(state, access, downloadOnlyGame, { canResume: true, percent: 1 }, false);
+      assert.notEqual(a.action, 'install', `state=${state} must never resolve to "install" for a download-only game`);
+    }
   });
 
   test('no CTA depends on catalog membership except the ERROR/Retry distinction — DOWNLOADING/PAUSED behave identically for catalog and download-only games', () => {
@@ -82,6 +95,89 @@ describe('getDownloadAction — CTA decision logic, no JSX (RENDER_PATH_TESTED, 
     const a = getDownloadAction(UI.DOWNLOADING, access, catalogGame, {}, true);
     assert.equal(a.action, 'pause');
     assert.equal(a.disabled, true);
+  });
+});
+
+describe('resolveDownloadCommandTarget — never gameId as a fallback for the download id', () => {
+  test('returns the download id looked up by gameId, not the gameId itself', () => {
+    const id = resolveDownloadCommandTarget({
+      selectedGameId: 'synthetic-15gb-staging-test',
+      downloadIdByGame: { 'synthetic-15gb-staging-test': 'b94023a9-5aa1-48b5-b29c-759b875daa4b' },
+    });
+    assert.equal(id, 'b94023a9-5aa1-48b5-b29c-759b875daa4b');
+    assert.notEqual(id, 'synthetic-15gb-staging-test', 'must never return the gameId itself');
+  });
+
+  test('no entry for this gameId -> null, never falls back to selectedGameId', () => {
+    const id = resolveDownloadCommandTarget({ selectedGameId: 'no-download-yet', downloadIdByGame: {} });
+    assert.equal(id, null);
+  });
+
+  test('no selectedGameId at all -> null', () => {
+    assert.equal(resolveDownloadCommandTarget({ selectedGameId: null, downloadIdByGame: { g: 'd1' } }), null);
+  });
+
+  test('a gameId that happens to collide with another game\'s download id is not confused — exact key lookup only', () => {
+    const id = resolveDownloadCommandTarget({
+      selectedGameId: 'ultrakill',
+      downloadIdByGame: { ultrakill: 'd-ultrakill-1', 'synthetic-15gb-staging-test': 'd-synthetic-1' },
+    });
+    assert.equal(id, 'd-ultrakill-1');
+  });
+});
+
+describe('executeDownloadAction — proves exactly one IPC call, with exactly the resolved id, never gameId', () => {
+  function spies() {
+    const calls = { pause: [], resume: [] };
+    return {
+      calls,
+      pause: async (id) => { calls.pause.push(id); return { ok: true }; },
+      resume: async (id) => { calls.resume.push(id); return { ok: true }; },
+    };
+  }
+
+  test('action:"pause" calls pause(targetId) exactly once, never resume', async () => {
+    const { calls, pause, resume } = spies();
+    const res = await executeDownloadAction({ action: 'pause', targetId: 'd1', pause, resume });
+    assert.deepEqual(calls.pause, ['d1']);
+    assert.deepEqual(calls.resume, []);
+    assert.equal(res.ok, true);
+  });
+
+  test('action:"resume" calls resume(targetId) exactly once, never pause', async () => {
+    const { calls, pause, resume } = spies();
+    await executeDownloadAction({ action: 'resume', targetId: 'd1', pause, resume });
+    assert.deepEqual(calls.resume, ['d1']);
+    assert.deepEqual(calls.pause, []);
+  });
+
+  test('the id passed to the IPC call is exactly targetId — a gameId-shaped string is passed through unchanged, never re-derived', async () => {
+    const { calls, pause, resume } = spies();
+    // Deliberately gameId-shaped to prove this function does no lookup of
+    // its own — resolveDownloadCommandTarget already did that upstream.
+    await executeDownloadAction({ action: 'pause', targetId: 'synthetic-15gb-staging-test', pause, resume });
+    assert.deepEqual(calls.pause, ['synthetic-15gb-staging-test']);
+  });
+
+  test('action:"none"/null -> no IPC call at all', async () => {
+    const { calls, pause, resume } = spies();
+    const res = await executeDownloadAction({ action: null, targetId: 'd1', pause, resume });
+    assert.deepEqual(calls.pause, []);
+    assert.deepEqual(calls.resume, []);
+    assert.equal(res.ok, false);
+  });
+
+  test('missing targetId -> no IPC call, even with a valid action', async () => {
+    const { calls, pause, resume } = spies();
+    await executeDownloadAction({ action: 'pause', targetId: null, pause, resume });
+    assert.deepEqual(calls.pause, []);
+  });
+
+  test('unsupported action -> no IPC call', async () => {
+    const { calls, pause, resume } = spies();
+    await executeDownloadAction({ action: 'install', targetId: 'd1', pause, resume });
+    assert.deepEqual(calls.pause, []);
+    assert.deepEqual(calls.resume, []);
   });
 });
 

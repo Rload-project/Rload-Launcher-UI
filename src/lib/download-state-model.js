@@ -96,6 +96,33 @@ export function computeHydratedEntryUpdate(existing, rawEntry) {
   };
 }
 
+// Resolves which id a Pause/Resume click actually targets — pure, so it's
+// provable that gameId is NEVER used as a fallback for the download/job
+// id. downloadIdByGame is keyed by gameId but its VALUES are download ids
+// (dlIdByGame in launcher-games.jsx, populated from event.id/entry.id —
+// see computeHydratedEntryUpdate/subscribeDownloads) — this function is
+// the single place that crosses from "which game is selected" to "which
+// download does the IPC call target", so it's the one place worth
+// unit-testing in isolation rather than trusting the call site by eye.
+export function resolveDownloadCommandTarget({ selectedGameId, downloadIdByGame }) {
+  if (!selectedGameId) return null;
+  const id = downloadIdByGame?.[selectedGameId];
+  return id ?? null;
+}
+
+// Pure executor — takes an already-resolved target id and the two IPC
+// functions (injected, so this is testable with plain spies, no real
+// window.rload). Proves exactly what Avi asked: pause fires pause(id)
+// once, resume fires resume(id) once, action:"none"/missing id fires
+// neither, and the id passed through is exactly targetId — never
+// re-derived from anything else inside this function.
+export async function executeDownloadAction({ action, targetId, pause, resume }) {
+  if (!targetId || !action) return { ok: false, code: 'no-target' };
+  if (action === 'pause') return await pause(targetId);
+  if (action === 'resume') return await resume(targetId);
+  return { ok: false, code: 'unsupported-action' };
+}
+
 // Pause/Resume/Retry/Play button decision — pure, NO JSX (icons are added
 // by the caller, which is a .jsx file). This was the last untested piece
 // of the render path per Avi's review: the actual CTA logic (which action
@@ -130,7 +157,15 @@ export function getDownloadAction(uiState, hasAccess, game, dl, busy) {
       return isDownloadOnly
         ? { label: "DOWNLOAD FAILED", action: null, disabled: true }
         : { label: "RETRY INSTALL", action: "install", disabled: busy };
-    default: return { label: "INSTALL", action: "install", disabled: busy };
+    default:
+      // Avi's catch: the legacy "INSTALL" fallback must never apply to a
+      // download-only shadow game — its downloadUrl/sha256 are empty
+      // strings (see buildShadowGame()), so calling onInstall() would
+      // attempt a catalog install that cannot succeed. Real catalog games
+      // keep the exact pre-existing default behavior.
+      return isDownloadOnly
+        ? { label: "DOWNLOAD FAILED", action: null, disabled: true }
+        : { label: "INSTALL", action: "install", disabled: busy };
   }
 }
 
